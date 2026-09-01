@@ -1,0 +1,8 @@
+{
+  "129c9f9": "Appka nahraná na GitHub, přidáno automatické nasazování na FTP",
+  "11f6e10": "Přidána patička s automatickým seznamem změn",
+  "42ee4a6": "Oprava chyby v generování seznamu změn (nevalidní YAML)",
+  "485c50f": "Odstraněna zbytečná sekce s pevnou platbou za jedno pivo",
+  "cb160aa": "Oprava tlačítka Platím, které nechávalo prázdné místo na mobilu",
+  "578a3b3": "Tlačítka u lístku (mínus, velké, malé, Platím) se teď na mobilu vejdou na jeden řádek"
+}
