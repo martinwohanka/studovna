@@ -205,22 +205,6 @@
   .hall-stat{font-family:'Space Grotesk',sans-serif;font-weight:600;color:var(--txt-2);font-variant-numeric:tabular-nums;white-space:nowrap}
   .hall-stat b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700}
 
-  /* ===== platba ===== */
-  .pay{margin-top:16px;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
-    padding:clamp(22px,4vw,30px) clamp(16px,4vw,28px);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);display:flex;flex-direction:column;align-items:center;gap:12px;}
-  .pay-head{font-family:'Space Grotesk',sans-serif;font-weight:700;letter-spacing:-.01em;font-size:clamp(21px,5vw,28px);
-    background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;}
-  .pay-sub{color:var(--txt-2);font-size:13.5px;max-width:520px;line-height:1.65}
-  .pay-sub b{color:var(--txt);font-weight:600}
-  .qr-card{background:#fff;border-radius:18px;padding:18px 18px 13px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;
-    box-shadow:0 18px 44px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.1);transition:transform .22s ease, box-shadow .22s ease;}
-  .qr-card:hover{transform:translateY(-4px);box-shadow:0 26px 54px rgba(0,0,0,.6), 0 0 0 1px rgba(245,185,66,.4)}
-  .qr-card .title{font-family:'Space Grotesk',sans-serif;font-weight:700;color:#0a0c10;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
-  .qr-card #qr{width:200px;height:200px;display:flex;align-items:center;justify-content:center}
-  .qr-card #qr img,.qr-card #qr canvas{width:200px!important;height:200px!important;image-rendering:pixelated}
-  .qr-card .acct{font-family:'Space Grotesk',sans-serif;font-weight:600;color:#0a0c10;font-size:15.5px;font-variant-numeric:tabular-nums}
-  .qr-card .qr-fallback{color:#0a0c10;font-size:13px;max-width:180px;text-align:center}
-
   /* ===== toast / tooltip ===== */
   .toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);
     background:rgba(20,23,29,.92);border:1px solid var(--line-2);color:var(--txt);
@@ -453,16 +437,6 @@
       <div id="dbStatus" class="dbstat"></div>
     </section>
 
-    <section class="pay">
-      <div class="pay-head">🍺 Splať svůj dluh cti</div>
-      <p class="pay-sub">Pivo se samo nenačepuje a už vůbec ne nezaplatí. Jedno pivo = <b class="price-now">40 Kč</b>. Klikni na kartu, naskenuj QR a hoď peníze do <b>sladového fondu</b> — vyhneš se zápisu na tabuli dlužníků. Drobek děkuje, játra promíjejí. 🍻</p>
-      <div class="qr-card" id="qrCard">
-        <div class="title">Pivo</div>
-        <div id="qr"><span class="qr-fallback">Účet pro žíznivé:</span></div>
-        <div class="acct">197958465 / 0300</div>
-      </div>
-    </section>
-
     <footer class="site-footer">
       🍺 Studovna u Drobka · <span class="ver" id="footVer">seznam změn…</span>
     </footer>
@@ -553,18 +527,6 @@
       <p class="pay-note">Sloupec „Piv" ukazuje počet kusů (z toho malá jako křížek). Útrata je skutečně zaplacená částka v Kč.</p>
       <div class="modal-actions">
         <button class="btn-ghost" id="paymentsClose">Zavřít</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal" id="payModal">
-    <div class="modal-card" style="max-width:380px;text-align:center">
-      <h3>🍺 Zaplať za pivo</h3>
-      <p class="modal-hint">Naskenuj v bankovní aplikaci. Jedno pivo = <b class="price-now">40 Kč</b>.</p>
-      <div id="qrBig" style="background:#fff;border-radius:16px;padding:16px;display:inline-flex;align-items:center;justify-content:center"></div>
-      <p style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:16px;margin-top:14px;font-variant-numeric:tabular-nums">197958465 / 0300 · <span class="price-now" style="background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">40 Kč</span></p>
-      <div class="modal-actions" style="justify-content:center">
-        <button class="btn-gold" id="payClose">Na zdraví 🍻</button>
       </div>
     </div>
   </div>
@@ -745,7 +707,6 @@ function updatePriceUI(){
   PRICE_RENDERED=PRICE;
   const b=$("#priceBadge"); if(b) b.textContent="🍺 "+PRICE+" Kč";
   document.querySelectorAll(".price-now").forEach(el=>{ el.textContent=PRICE+" Kč"; });
-  refreshFixedQR();
 }
 async function loadPrice(){
   if(sb){
@@ -1425,9 +1386,6 @@ function makeQRInto(target,text,size){
   try{ new QRCode(target,{text,width:size,height:size,colorDark:"#0a0c10",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M}); }
   catch(e){ target.innerHTML='<span class="qr-fallback">Účet pro žíznivé:</span>'; }
 }
-function fixedSpayd(){ return "SPD*1.0*ACC:CZ7003000000000197958465*AM:"+Number(PRICE).toFixed(2)+"*CC:CZK*MSG:PIVO"; }
-function refreshFixedQR(){ const el=document.getElementById("qr"); if(el) makeQRInto(el,fixedSpayd(),200); }
-
 // ---- PWA (manifest + ikony za běhu) ----
 (function setupPWA(){
   try{
@@ -1485,16 +1443,6 @@ $("#changelogModal").addEventListener("click", e=>{ if(e.target.id==="changelogM
 })();
 tick(); setInterval(tick,1000);
 setInterval(()=>{ if(!busy && !tabBusy){ render(); renderTabs(); renderHall(); } }, 15000);
-
-// ---- pevný QR „jedno pivo" + zvětšení ----
-(function(){
-  refreshFixedQR();
-  const card=document.getElementById("qrCard"), modal=document.getElementById("payModal");
-  if(card&&modal){ card.title="Klikni pro zvětšení";
-    card.addEventListener("click",()=>{ makeQRInto(document.getElementById("qrBig"),fixedSpayd(),300); modal.style.display="flex"; });
-    document.getElementById("payClose").onclick=()=>{ modal.style.display="none"; };
-    modal.addEventListener("click",e=>{ if(e.target.id==="payModal") modal.style.display="none"; }); }
-})();
 </script>
 </body>
 </html>
