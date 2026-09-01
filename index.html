@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Studovna u Drobka</title>
+<meta name="theme-color" content="#0a0c10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="U Drobka">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8D%BA%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0c10;
+    --card:rgba(255,255,255,.04);
+    --card-2:rgba(255,255,255,.06);
+    --line:rgba(255,255,255,.09);
+    --line-2:rgba(255,255,255,.16);
+    --txt:#f2f3f5;
+    --txt-2:#9aa3ad;
+    --amber:#f5b942;
+    --amber-2:#e8762d;
+    --grad:linear-gradient(135deg,#f5b942,#e8762d);
+    --red:#ff6b5e;
+    --green:#3ddc84;
+    --wa:#25D366;
+    --r-lg:24px;
+    --r-md:16px;
+    --r-sm:12px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    background:var(--bg);
+    color:var(--txt);
+    min-height:100vh;
+    min-height:100dvh;
+    padding:calc(clamp(14px,3vw,40px) + env(safe-area-inset-top)) calc(clamp(12px,3vw,24px) + env(safe-area-inset-right)) calc(60px + env(safe-area-inset-bottom)) calc(clamp(12px,3vw,24px) + env(safe-area-inset-left));
+    display:flex;
+    justify-content:center;
+    overflow-x:hidden;
+    -webkit-tap-highlight-color:transparent;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:
+      radial-gradient(600px 420px at 18% -5%, rgba(245,185,66,.13), transparent 65%),
+      radial-gradient(720px 520px at 88% 12%, rgba(232,118,45,.09), transparent 65%),
+      radial-gradient(800px 600px at 50% 110%, rgba(61,220,132,.05), transparent 60%);
+  }
+  .wrap{width:100%;max-width:760px}
+
+  /* ===== hlavička ===== */
+  .hero{
+    position:relative;text-align:center;
+    padding:clamp(28px,5vw,44px) clamp(16px,4vw,36px) clamp(24px,4vw,34px);
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+    -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);overflow:hidden;
+  }
+  .hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(420px 200px at 50% -40px, rgba(245,185,66,.16), transparent 70%);}
+  .logo{display:block;margin:0 auto 10px;width:clamp(72px,16vw,104px);height:auto;
+    filter:drop-shadow(0 10px 26px rgba(245,185,66,.25));animation:pop .7s cubic-bezier(.2,.9,.3,1.2) both}
+  @keyframes pop{from{opacity:0;transform:scale(.7) rotate(-10deg)}to{opacity:1;transform:none}}
+  .kicker{display:inline-flex;align-items:center;gap:8px;
+    font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--txt-2);
+    border:1px solid var(--line);border-radius:999px;padding:6px 14px;margin-bottom:14px;
+    background:rgba(255,255,255,.03);position:relative;}
+  .kicker::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+  h1{font-family:'Space Grotesk',sans-serif;font-weight:700;
+    font-size:clamp(34px,8.5vw,62px);line-height:1.02;letter-spacing:-.02em;margin:2px 0 14px;position:relative;}
+  h1 .grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .chips{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;position:relative}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;font-weight:500;color:var(--txt-2);
+    border:1px solid var(--line);border-radius:999px;padding:8px 15px;background:rgba(255,255,255,.03);}
+  .chip b{color:var(--txt);font-weight:600}
+  .admin-btn{position:absolute;top:14px;right:14px;z-index:5;
+    width:40px;height:40px;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    color:var(--txt-2);background:rgba(255,255,255,.04);border:1px solid var(--line);transition:.2s ease;}
+  .admin-btn:hover{color:var(--amber);border-color:var(--amber);transform:rotate(45deg);box-shadow:0 0 0 4px rgba(245,185,66,.1)}
+
+  /* ===== odpočet ===== */
+  .count{margin-top:16px;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+    padding:clamp(22px,4vw,30px) 18px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);position:relative;overflow:hidden;}
+  .count::after{content:"";position:absolute;left:0;right:0;top:0;height:1px;
+    background:linear-gradient(90deg,transparent,rgba(245,185,66,.6),transparent);}
+  .count .lbl{font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--txt-2)}
+  .count .clock{font-family:'Space Grotesk',sans-serif;font-weight:700;
+    font-size:clamp(34px,8.5vw,58px);line-height:1.15;letter-spacing:-.01em;
+    background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+    font-variant-numeric:tabular-nums;margin:4px 0 8px;}
+  .count .when{font-size:clamp(14.5px,3.6vw,17px);color:var(--txt-2)}
+  .count .when .sess-day{color:var(--red);font-weight:700;text-transform:capitalize}
+  .count .keg-line{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);
+    font-size:clamp(13px,3.2vw,14.5px);color:var(--txt-2);line-height:1.55}
+  .count .keg-line b{color:var(--amber);font-weight:700}
+  .count .keg-line .keg-when{color:var(--txt);font-weight:600}
+  .count .keg-line .keg-empty{color:var(--red)}
+  .count .keg-bar{margin:9px auto 7px;max-width:420px;height:7px;border-radius:999px;
+    background:rgba(255,255,255,.07);overflow:hidden}
+  .count .keg-bar span{display:block;height:100%;border-radius:999px;background:var(--grad);transition:width .4s ease}
+  .count .keg-bar.low span{background:linear-gradient(135deg,#f5b942,#e8762d)}
+  .count .keg-bar.full span{background:linear-gradient(135deg,#ff6b6b,#e04747)}
+  .count .keg-foot{font-size:clamp(12px,3vw,13.5px)}
+  .count .keg-line:empty{display:none}
+
+  /* ===== panel ===== */
+  .panel{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+    padding:clamp(20px,4vw,28px);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);}
+  .poll-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px 12px;margin-bottom:6px}
+  .poll-head h2{font-family:'Space Grotesk',sans-serif;font-weight:700;letter-spacing:-.01em;font-size:clamp(21px,5vw,28px);}
+  .poll-head .week{color:var(--txt-2);font-size:13.5px;font-weight:500}
+  .head-left{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+  .price-badge{display:inline-flex;align-items:center;gap:6px;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13.5px;
+    color:#0a0c10;background:var(--grad);border-radius:999px;padding:5px 13px;
+    box-shadow:0 4px 14px rgba(232,118,45,.35);white-space:nowrap;font-variant-numeric:tabular-nums;transform:rotate(-2deg);}
+  .sound-btn{width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:15px;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--txt-2);background:rgba(255,255,255,.04);border:1px solid var(--line);transition:.18s ease;}
+  .sound-btn:hover{border-color:var(--line-2);color:var(--txt)}
+
+  /* výsledková tabule */
+  .result{margin:12px 0 4px;text-align:center;border:1px solid rgba(245,185,66,.35);border-radius:var(--r-md);
+    padding:16px;position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(245,185,66,.1),rgba(232,118,45,.06));}
+  .result-head{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--txt-2)}
+  .result-winner{font-family:'Space Grotesk',sans-serif;font-weight:700;letter-spacing:-.01em;
+    font-size:clamp(22px,5.5vw,32px);margin-top:4px;
+    background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;}
+
+  /* možnosti */
+  .options{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+  .opt{position:relative;border:1px solid var(--line);border-radius:var(--r-md);padding:14px 16px;cursor:pointer;overflow:hidden;
+    background:var(--card);transition:transform .18s ease, border-color .18s ease, background .18s ease;}
+  .opt:hover{transform:translateY(-2px);border-color:var(--line-2);background:var(--card-2)}
+  .opt:active{transform:translateY(0) scale(.995)}
+  .opt.mine{border-color:rgba(245,185,66,.55);box-shadow:0 0 0 3px rgba(245,185,66,.12)}
+  .opt.lead{border-color:rgba(245,185,66,.4)}
+  .opt-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .opt .name{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:clamp(16px,4.2vw,19px);font-weight:600;letter-spacing:-.005em;}
+  .opt .name .crown{filter:drop-shadow(0 0 8px rgba(245,185,66,.6))}
+  .own{font-size:11.5px;font-weight:600;color:var(--amber);border:1px solid rgba(245,185,66,.35);border-radius:999px;padding:2.5px 9px;background:rgba(245,185,66,.08);white-space:nowrap;}
+  .star{font-size:11.5px;font-weight:600;color:#0a0c10;background:var(--grad);border-radius:999px;padding:3px 9px;white-space:nowrap;}
+  .opt .votes{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(17px,4.4vw,21px);color:var(--amber);white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .bar{margin-top:11px;height:7px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden}
+  .bar > span{display:block;height:100%;width:0;border-radius:99px;background:var(--grad);box-shadow:0 0 12px rgba(245,185,66,.45);transition:width .6s cubic-bezier(.2,.8,.2,1);}
+
+  /* formulář */
+  .addform{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+  .addform input{flex:1;min-width:190px;font-family:inherit;font-size:16px;font-weight:500;color:var(--txt);
+    background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:var(--r-sm);padding:13px 16px;transition:.18s ease;}
+  .addform input::placeholder{color:var(--txt-2)}
+  .addform input:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,185,66,.14)}
+  .btn{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15.5px;color:#0a0c10;background:var(--grad);
+    border:none;border-radius:var(--r-sm);padding:13px 22px;cursor:pointer;transition:.18s ease;white-space:nowrap;}
+  .btn:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(232,118,45,.4)}
+  .btn:active{transform:translateY(0)}
+  .btn:disabled{opacity:.55;cursor:default;transform:none;box-shadow:none}
+
+  .note{text-align:center;color:var(--txt-2);margin-top:18px;font-size:13.5px;line-height:1.65;}
+  .note b{color:var(--txt);font-weight:600}
+  .dbstat{text-align:center;margin-top:12px;font-size:13px;font-weight:500;padding:10px 14px;border-radius:var(--r-sm);display:none;line-height:1.5}
+  .dbstat.ok{display:block;color:var(--green);border:1px solid rgba(61,220,132,.3);background:rgba(61,220,132,.07)}
+  .dbstat.warn{display:block;color:#ffb38a;border:1px solid rgba(232,118,45,.35);background:rgba(232,118,45,.08)}
+
+  /* ===== rozpitá piva ===== */
+  .tabs{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+  .tab{border:1px solid var(--line);border-radius:var(--r-md);padding:14px 16px;background:var(--card);transition:border-color .18s ease, background .18s ease;}
+  .tab:hover{border-color:var(--line-2);background:var(--card-2)}
+  .tab.mine{border-color:rgba(245,185,66,.55);box-shadow:0 0 0 3px rgba(245,185,66,.12)}
+  .tab-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .tab-name{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:clamp(16px,4.2vw,19px);font-weight:600;letter-spacing:-.005em;}
+  .tab-price{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(14.5px,3.8vw,17px);color:var(--txt-2);white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .tab-price b{font-weight:700;font-size:1.12em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .tab-marks{margin-top:8px;min-height:18px;line-height:1.3;word-break:break-all;display:flex;flex-wrap:wrap;align-items:center;gap:3px;}
+  .tab-marks .mk{height:17px;width:8px;flex:0 0 auto;overflow:visible}
+  .tab-marks .mk line{stroke:var(--amber);stroke-width:2.2;stroke-linecap:round;filter:drop-shadow(0 0 6px rgba(245,185,66,.5))}
+  .tab-marks .mk-small line{stroke:#7ec8e3;filter:drop-shadow(0 0 6px rgba(126,200,227,.5))}
+  .tab-marks .mk-gap{flex:0 0 auto;width:7px}
+  .tab-last{color:var(--txt-2);font-size:12px;margin-top:4px}
+  .tab-actions{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
+  .mini{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;color:var(--txt);background:rgba(255,255,255,.05);
+    border:1px solid var(--line);border-radius:10px;padding:8px 14px;cursor:pointer;transition:.18s ease;}
+  .mini:hover{border-color:var(--line-2);background:rgba(255,255,255,.08);transform:translateY(-1px)}
+  .mini.plus{color:#0a0c10;background:var(--grad);border:none;flex:1;min-width:90px}
+  .mini.plus:hover{box-shadow:0 6px 18px rgba(232,118,45,.4)}
+  .mini.plus-small{color:#0a0c10;background:linear-gradient(135deg,#7ec8e3,#4a9bbe);border:none;flex:1;min-width:90px}
+  .mini.plus-small:hover{box-shadow:0 6px 18px rgba(74,155,190,.4)}
+  .mini.pay{color:#06250f;background:var(--green);border:none}
+  .mini.pay:hover{box-shadow:0 6px 18px rgba(61,220,132,.4)}
+  .tabs-empty{text-align:center;color:var(--txt-2);font-size:14px;border:1px dashed var(--line-2);border-radius:var(--r-md);padding:20px 16px;margin-top:14px;}
+
+  /* ===== síň slávy ===== */
+  .hall-list{margin-top:6px}
+  .hall-row{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--card);margin-top:10px}
+  .hall-row.top{border-color:rgba(245,185,66,.4)}
+  .hall-rank{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;min-width:30px;text-align:center}
+  .hall-name{flex:1;font-weight:600;letter-spacing:-.005em}
+  .hall-stat{font-family:'Space Grotesk',sans-serif;font-weight:600;color:var(--txt-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .hall-stat b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700}
+
+  /* ===== platba ===== */
+  .pay{margin-top:16px;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+    padding:clamp(22px,4vw,30px) clamp(16px,4vw,28px);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);display:flex;flex-direction:column;align-items:center;gap:12px;}
+  .pay-head{font-family:'Space Grotesk',sans-serif;font-weight:700;letter-spacing:-.01em;font-size:clamp(21px,5vw,28px);
+    background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .pay-sub{color:var(--txt-2);font-size:13.5px;max-width:520px;line-height:1.65}
+  .pay-sub b{color:var(--txt);font-weight:600}
+  .qr-card{background:#fff;border-radius:18px;padding:18px 18px 13px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;
+    box-shadow:0 18px 44px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.1);transition:transform .22s ease, box-shadow .22s ease;}
+  .qr-card:hover{transform:translateY(-4px);box-shadow:0 26px 54px rgba(0,0,0,.6), 0 0 0 1px rgba(245,185,66,.4)}
+  .qr-card .title{font-family:'Space Grotesk',sans-serif;font-weight:700;color:#0a0c10;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+  .qr-card #qr{width:200px;height:200px;display:flex;align-items:center;justify-content:center}
+  .qr-card #qr img,.qr-card #qr canvas{width:200px!important;height:200px!important;image-rendering:pixelated}
+  .qr-card .acct{font-family:'Space Grotesk',sans-serif;font-weight:600;color:#0a0c10;font-size:15.5px;font-variant-numeric:tabular-nums}
+  .qr-card .qr-fallback{color:#0a0c10;font-size:13px;max-width:180px;text-align:center}
+
+  /* ===== toast / tooltip ===== */
+  .toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);
+    background:rgba(20,23,29,.92);border:1px solid var(--line-2);color:var(--txt);
+    padding:13px 22px;border-radius:999px;font-size:14px;font-weight:500;opacity:0;pointer-events:none;transition:.3s ease;z-index:150;
+    -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 14px 40px rgba(0,0,0,.55);max-width:92vw;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.has-action{pointer-events:auto}
+  .toast.warn{background:rgba(60,20,20,.96);border-color:rgba(224,71,71,.65);color:#ffd9d9;
+    box-shadow:0 14px 40px rgba(224,71,71,.3)}
+  .toast.warn b{color:#ff8a80;font-weight:700}
+  .count .keg-alert{margin-top:9px;padding:9px 12px;border-radius:10px;font-weight:700;
+    font-family:'Space Grotesk',sans-serif;font-size:clamp(13px,3.2vw,15px);
+    background:rgba(224,71,71,.12);border:1px solid rgba(224,71,71,.45);color:#ff8a80;
+    animation:kegPulse 1.9s ease-in-out infinite}
+  .count .keg-alert.done{background:rgba(224,71,71,.2);animation:none}
+  @keyframes kegPulse{0%,100%{opacity:1}50%{opacity:.62}}
+  @media (prefers-reduced-motion:reduce){.count .keg-alert{animation:none}}
+  .toast-undo{margin-left:10px;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;color:var(--amber);
+    background:none;border:1px solid var(--line-2);border-radius:999px;padding:4px 12px;cursor:pointer;transition:.15s ease}
+  .toast-undo:hover{color:#0a0c10;background:var(--amber);border-color:var(--amber)}
+  .tip{position:fixed;display:none;z-index:60;max-width:250px;pointer-events:none;
+    background:rgba(20,23,29,.95);color:var(--txt);border:1px solid var(--line-2);border-radius:var(--r-sm);padding:11px 14px;font-size:13.5px;line-height:1.5;
+    -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 14px 36px rgba(0,0,0,.55);}
+  .tip strong{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;display:block;margin-bottom:3px;
+    background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .tip em{color:var(--txt-2);font-style:normal}
+
+  /* ===== nalévací animace ===== */
+  .pourwrap{position:fixed;z-index:200;pointer-events:none;transform:translate(-50%,-50%);animation:pourFloat 1s ease-out forwards}
+  .pourwrap .beer{transform:scaleY(0);transform-origin:center bottom;animation:pourFill .5s ease-out forwards}
+  .pourwrap .foam{opacity:0;animation:pourFoam .35s ease-out .42s forwards}
+  @keyframes pourFill{to{transform:scaleY(1)}}
+  @keyframes pourFoam{to{opacity:1}}
+  @keyframes pourFloat{0%{opacity:0;transform:translate(-50%,-38%) scale(.5)}22%{opacity:1;transform:translate(-50%,-58%) scale(1)}78%{opacity:1}100%{opacity:0;transform:translate(-50%,-122%) scale(1.05)}}
+
+  /* ===== modaly ===== */
+  .modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:20px;
+    background:rgba(5,6,9,.7);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
+  .modal-card{width:100%;max-width:460px;background:rgba(18,21,27,.96);border:1px solid var(--line-2);border-radius:var(--r-lg);
+    padding:24px 24px 20px;box-shadow:0 30px 80px rgba(0,0,0,.65);max-height:90vh;overflow-y:auto;}
+  .modal-card h3{font-family:'Space Grotesk',sans-serif;font-weight:700;letter-spacing:-.01em;font-size:22px;margin-bottom:4px;}
+  .modal-hint{color:var(--txt-2);font-size:13px;line-height:1.55;margin-bottom:14px}
+  .modal-hint b{color:var(--amber);font-weight:600}
+  #adminText{width:100%;font-family:'Inter',sans-serif;font-size:15px;font-weight:500;line-height:1.6;color:var(--txt);
+    background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px 14px;resize:vertical;transition:.18s ease;}
+  #adminText:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,185,66,.14)}
+  #nameInput{width:100%;font-family:'Inter',sans-serif;font-size:16px;font-weight:500;color:var(--txt);
+    background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:var(--r-sm);padding:13px 15px;transition:.18s ease;}
+  #nameInput:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,185,66,.14)}
+  .sess-edit{margin:18px 0 2px;border-top:1px solid var(--line);padding-top:16px}
+  .sess-lbl{display:block;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:16px;color:var(--amber);margin-bottom:10px;}
+  .sess-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .sess-row input{flex:1;min-width:130px;font-family:'Inter',sans-serif;font-size:16px;font-weight:500;color:var(--txt);
+    color-scheme:dark;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 12px;transition:.18s ease;}
+  .sess-row input:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,185,66,.14)}
+  .sess-row .suffix{color:var(--txt-2);font-size:14px;font-weight:600;white-space:nowrap}
+  .sess-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:12px}
+  .sess-save{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;color:#0a0c10;background:var(--grad);
+    border:none;border-radius:10px;padding:9px 16px;cursor:pointer;transition:.18s ease;}
+  .sess-save:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(232,118,45,.4)}
+  .sess-note{margin-top:10px;color:var(--txt-2);font-size:12px;line-height:1.5}
+  .sess-note b{color:var(--txt);font-weight:600}
+  .linklike{background:none;border:none;color:var(--txt-2);text-decoration:underline;text-underline-offset:3px;
+    cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;transition:.15s ease;}
+  .linklike:hover{color:var(--txt)}
+  .admin-share{margin-top:16px;border-top:1px solid var(--line);padding-top:14px;text-align:center}
+  .wa-share{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;color:#06250f;background:var(--wa);
+    border:none;border-radius:var(--r-sm);padding:11px 20px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:.18s ease;}
+  .wa-share:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(37,211,102,.4)}
+  .admin-danger{margin-top:14px;border-top:1px solid var(--line);padding-top:13px;text-align:center;display:flex;flex-direction:column;gap:8px}
+  .admin-danger .linklike{color:var(--red)}
+  .admin-danger .linklike:hover{color:#ff8a80}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+  .btn-ghost{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14.5px;background:none;color:var(--txt-2);
+    border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 18px;cursor:pointer;transition:.18s ease;}
+  .btn-ghost:hover{color:var(--txt);border-color:var(--line-2)}
+  .btn-gold{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14.5px;color:#0a0c10;background:var(--grad);
+    border:none;border-radius:var(--r-sm);padding:10px 18px;cursor:pointer;transition:.18s ease;}
+  .btn-gold:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(232,118,45,.4)}
+  .btn-green{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14.5px;color:#06250f;background:var(--green);
+    border:none;border-radius:var(--r-sm);padding:10px 18px;cursor:pointer;transition:.18s ease;}
+  .btn-green:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(61,220,132,.4)}
+
+  .admin-keg{margin-top:14px;border-top:1px solid var(--line);padding-top:13px}
+  .keg-stat{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:9px}
+  .keg-stat .keg-big{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:19px;color:var(--amber)}
+  .keg-stat .keg-sub{color:var(--txt-2);font-size:12.5px}
+  .keg-since{color:var(--txt-2);font-size:12px;margin-bottom:10px}
+  .keg-new{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;color:#0a0c10;background:var(--grad);
+    border:none;border-radius:10px;padding:11px 16px;cursor:pointer;transition:.18s ease;width:100%;}
+  .keg-new:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(232,118,45,.4)}
+
+  .admin-ledger{margin-top:14px;border-top:1px solid var(--line);padding-top:13px;text-align:center}
+  .ledger-open{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;color:var(--amber);
+    background:rgba(245,185,66,.08);border:1px solid rgba(245,185,66,.3);border-radius:10px;padding:10px 16px;cursor:pointer;transition:.18s ease;width:100%;}
+  .ledger-open:hover{background:rgba(245,185,66,.15);transform:translateY(-1px)}
+  .pay-card{max-width:680px}
+  .pay-tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin:6px 0 12px}
+  .pay-sum{color:var(--txt-2);font-size:13px;font-weight:500}
+  .pay-sum b{color:var(--txt);font-weight:700}
+  .pay-csv{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;color:#06250f;background:var(--green);
+    border:none;border-radius:8px;padding:8px 14px;cursor:pointer;transition:.18s ease;}
+  .pay-csv:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(61,220,132,.35)}
+  .pay-scroll{max-height:52vh;overflow-y:auto;border:1px solid var(--line);border-radius:var(--r-sm)}
+  table.pay-table{width:100%;border-collapse:collapse;font-size:13.5px}
+  table.pay-table th,table.pay-table td{padding:9px 11px;text-align:left;white-space:nowrap}
+  table.pay-table thead th{position:sticky;top:0;background:rgba(28,32,40,.98);color:var(--amber);font-family:'Space Grotesk',sans-serif;
+    font-weight:600;font-size:12.5px;border-bottom:1px solid var(--line-2);z-index:1}
+  table.pay-table tbody tr{border-bottom:1px solid rgba(255,255,255,.05)}
+  table.pay-table tbody tr:nth-child(even){background:rgba(255,255,255,.02)}
+  table.pay-table td.num{text-align:right;font-variant-numeric:tabular-nums}
+  table.pay-table td.amt{text-align:right;font-weight:700;color:var(--green);font-variant-numeric:tabular-nums}
+  table.pay-table td.nm{font-weight:600;color:var(--txt)}
+  .pay-empty{padding:26px 12px;text-align:center;color:var(--txt-2);font-size:14px}
+  .pay-note{margin-top:12px;color:var(--txt-2);font-size:12px;line-height:1.5}
+  .pay-note b{color:var(--txt);font-weight:600}
+
+  ::selection{background:rgba(245,185,66,.3)}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+  <!-- globální gradient pro nalévací animaci -->
+  <svg style="position:absolute;width:0;height:0" aria-hidden="true"><defs>
+    <linearGradient id="pourGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#e8762d"/><stop offset="1" stop-color="#f5b942"/></linearGradient>
+  </defs></svg>
+
+  <div class="wrap">
+
+    <header class="hero">
+      <button class="admin-btn" id="adminBtn" title="Administrace" aria-label="Administrace">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+      <svg class="logo" viewBox="0 0 116 100" role="img" aria-label="Drobek – nakousnutá sušenka">
+        <defs>
+          <radialGradient id="ck" cx="38%" cy="32%" r="75%">
+            <stop offset="0%" stop-color="#f3cd82"/><stop offset="60%" stop-color="#e3a850"/><stop offset="100%" stop-color="#cf913a"/>
+          </radialGradient>
+          <mask id="bite"><rect width="116" height="100" fill="#fff"/>
+            <circle cx="92" cy="40" r="15" fill="#000"/><circle cx="86" cy="56" r="11" fill="#000"/><circle cx="96" cy="55" r="7" fill="#000"/></mask>
+        </defs>
+        <circle cx="48" cy="52" r="41" fill="url(#ck)" mask="url(#bite)"/>
+        <g fill="#a8631f"><circle cx="33" cy="39" r="6.5"/><circle cx="55" cy="33" r="5"/><circle cx="60" cy="60" r="6"/><circle cx="38" cy="65" r="5.5"/><circle cx="47" cy="50" r="4"/><circle cx="26" cy="56" r="4.5"/><circle cx="68" cy="44" r="4"/></g>
+        <g fill="#3a2c18"><ellipse cx="44" cy="30" rx="1.4" ry="3" transform="rotate(25 44 30)"/><ellipse cx="30" cy="47" rx="1.4" ry="3" transform="rotate(-15 30 47)"/><ellipse cx="52" cy="44" rx="1.4" ry="3" transform="rotate(40 52 44)"/><ellipse cx="42" cy="55" rx="1.4" ry="3" transform="rotate(-30 42 55)"/><ellipse cx="58" cy="52" rx="1.4" ry="3" transform="rotate(10 58 52)"/><ellipse cx="35" cy="72" rx="1.4" ry="3" transform="rotate(60 35 72)"/></g>
+        <g fill="#e9bb68"><circle cx="103" cy="38" r="3.2"/><circle cx="110" cy="50" r="2.2"/><circle cx="105" cy="61" r="2.6"/><circle cx="113" cy="42" r="1.6"/></g>
+      </svg>
+      <div class="kicker">Hospodská tabule · od léta Páně 2019</div>
+      <h1>Studovna <span class="grad">u Drobka</span></h1>
+      <div class="chips">
+        <span class="chip">📚 <b>Studium</b> chmele a sladu</span>
+        <span class="chip" id="sessChip">🍺 Každou <b>středu</b> od 18:00</span>
+      </div>
+    </header>
+
+    <section class="count">
+      <div class="lbl">Do dalšího meetingu zbývá</div>
+      <div class="clock" id="clock">…</div>
+      <div class="when" id="sessionWhen"></div>
+      <div class="keg-line" id="kegLine"></div>
+    </section>
+
+    <section class="panel">
+      <div class="poll-head">
+        <div class="head-left">
+          <h2>🍻 Rozpitá piva</h2>
+          <span class="price-badge" id="priceBadge" title="Aktuální cena piva">🍺 40 Kč</span>
+          <button class="sound-btn" id="soundBtn" title="Zvuk při čárce">🔊</button>
+        </div>
+        <span class="week" id="tabsTotal"></span>
+      </div>
+      <div class="tabs" id="tabsList"></div>
+      <div class="addform">
+        <button class="btn" id="openTabBtn" style="flex:1">🍺 Začínám pít — založit lístek</button>
+      </div>
+      <p class="note">
+        Každé pivo = <b class="price-now">40 Kč</b>. Čárkuj svoje piva tlačítkem <b>+ 🍺</b> (mínusem vrátíš poslední).<br>
+        Tlačítko <b>Platím</b> ukáže QR na přesnou částku a po zaplacení lístek smaže. Rozpitá piva vidí každý.
+      </p>
+    </section>
+
+    <section class="panel">
+      <div class="poll-head">
+        <h2>🏆 Síň slávy</h2>
+        <span class="week" id="hallTotal"></span>
+      </div>
+      <div class="hall-list" id="hallList"></div>
+    </section>
+
+    <section class="panel">
+      <div class="poll-head">
+        <h2>🍺 Jaké pivo chceme příště?</h2>
+        <span class="week" id="weekLbl"></span>
+      </div>
+
+      <div class="result" id="resultBox" style="display:none">
+        <div class="result-head" id="resultTitle">🏆 Průběžně vede</div>
+        <div class="result-winner" id="resultWinner"></div>
+      </div>
+
+      <div class="options" id="options"></div>
+
+      <div class="addform">
+        <input id="newBeer" type="text" maxlength="40" placeholder="Navrhni vlastní pivo…">
+        <button class="btn" id="addBtn">Přidat 🍺</button>
+      </div>
+
+      <p class="note">
+        Klikni na pivo a dej mu hlas — můžeš hlasovat pro <b>libovolný počet piv</b>. Když na pivo klikneš znovu, hlas zase <b>odebereš</b>.<br>
+        Najeď myší na pivo a uvidíš, <b>kdo už pro něj hlasoval</b>. Anketa se vždy v čase meetingu sama vynuluje.
+      </p>
+      <div id="dbStatus" class="dbstat"></div>
+    </section>
+
+    <section class="pay">
+      <div class="pay-head">🍺 Splať svůj dluh cti</div>
+      <p class="pay-sub">Pivo se samo nenačepuje a už vůbec ne nezaplatí. Jedno pivo = <b class="price-now">40 Kč</b>. Klikni na kartu, naskenuj QR a hoď peníze do <b>sladového fondu</b> — vyhneš se zápisu na tabuli dlužníků. Drobek děkuje, játra promíjejí. 🍻</p>
+      <div class="qr-card" id="qrCard">
+        <div class="title">Pivo</div>
+        <div id="qr"><span class="qr-fallback">Účet pro žíznivé:</span></div>
+        <div class="acct">197958465 / 0300</div>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <div class="tip" id="tip"></div>
+
+  <div class="modal" id="nameModal">
+    <div class="modal-card" style="max-width:380px">
+      <h3>👋 Jak ti říkat?</h3>
+      <p class="modal-hint">Jméno tě spojí s hlasy v anketě i s tvým lístkem. Stačí zadat jednou.</p>
+      <input id="nameInput" type="text" maxlength="30" placeholder="Tvoje jméno…" spellcheck="false">
+      <div class="modal-actions">
+        <button class="btn-ghost" id="nameCancel">Zrušit</button>
+        <button class="btn-gold" id="nameSave">Uložit</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="adminModal">
+    <div class="modal-card">
+      <h3>🔧 Administrace</h3>
+      <p class="modal-hint">Každé pivo napiš na samostatný řádek. Uložením se anketa <b>nevynuluje</b> — k tomu slouží tlačítka dole.</p>
+      <textarea id="adminText" rows="8" spellcheck="false"></textarea>
+      <div class="sess-edit">
+        <label class="sess-lbl">📅 Příští meeting</label>
+        <div class="sess-row">
+          <input type="date" id="sessDate"><input type="time" id="sessTime">
+        </div>
+        <div class="sess-actions">
+          <button class="sess-save" id="sessSaveBtn" type="button">💾 Uložit termín</button>
+        </div>
+        <p class="sess-note">Uložením termínu se anketa <b>nevynuluje</b> — hlasy i návrhy zůstanou zachované.</p>
+      </div>
+      <div class="sess-edit">
+        <label class="sess-lbl">💰 Cena piva</label>
+        <div class="sess-row">
+          <input type="number" id="priceInput" min="1" max="9999" step="1" style="max-width:140px;flex:0 1 140px;font-size:16px;font-family:'Inter',sans-serif;font-weight:500;color:var(--txt);color-scheme:dark;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 12px">
+          <span class="suffix">Kč za pivo</span>
+        </div>
+        <div class="sess-actions">
+          <button class="sess-save" id="priceSaveBtn" type="button">💾 Uložit cenu</button>
+        </div>
+        <p class="sess-note">Nová cena platí pro <b>nově</b> načárkovaná piva. Dříve načárkovaná si drží cenu z okamžiku objednání.</p>
+      </div>
+      <div class="admin-share">
+        <button class="wa-share" id="waShare">📲 Sdílet výsledek na WhatsApp</button>
+      </div>
+      <div class="admin-keg">
+        <div class="keg-stat">
+          <span class="keg-big" id="kegBig">—</span>
+          <span class="keg-sub" id="kegSub"></span>
+        </div>
+        <div class="keg-since" id="kegSince"></div>
+        <button class="keg-new" id="kegNewBtn" type="button">🛢️ Nový sud (vynulovat počítadlo)</button>
+      </div>
+
+      <div class="admin-ledger">
+        <button class="ledger-open" id="ledgerBtn" type="button">📒 Přehled plateb</button>
+      </div>
+      <div class="admin-danger">
+        <button class="linklike" id="adminResetBtn" type="button">🧽 Vynulovat anketu hned (smazat hlasy i návrhy)</button>
+        <button class="linklike" id="hallResetBtn" type="button">🏆 Vynulovat síň slávy</button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="adminCancel">Zrušit</button>
+        <button class="btn-gold" id="adminSaveBtn">💾 Uložit</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="paymentsModal">
+    <div class="modal-card pay-card">
+      <h3>📒 Přehled plateb</h3>
+      <p class="modal-hint">Neměnná evidence všech proběhlých plateb. Záznamy <b>nelze mazat</b> — slouží pro kontrolu do budoucna.</p>
+      <div class="pay-tools">
+        <span class="pay-sum" id="paySum"></span>
+        <button class="pay-csv" id="payCsvBtn" type="button">⬇️ Export CSV</button>
+      </div>
+      <div class="pay-scroll">
+        <table class="pay-table">
+          <thead><tr><th>Datum a čas</th><th>Jméno</th><th class="num">Piv</th><th class="num">Útrata</th></tr></thead>
+          <tbody id="payRows"></tbody>
+        </table>
+      </div>
+      <p class="pay-note">Sloupec „Piv" ukazuje počet kusů (z toho malá jako křížek). Útrata je skutečně zaplacená částka v Kč.</p>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="paymentsClose">Zavřít</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="payModal">
+    <div class="modal-card" style="max-width:380px;text-align:center">
+      <h3>🍺 Zaplať za pivo</h3>
+      <p class="modal-hint">Naskenuj v bankovní aplikaci. Jedno pivo = <b class="price-now">40 Kč</b>.</p>
+      <div id="qrBig" style="background:#fff;border-radius:16px;padding:16px;display:inline-flex;align-items:center;justify-content:center"></div>
+      <p style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:16px;margin-top:14px;font-variant-numeric:tabular-nums">197958465 / 0300 · <span class="price-now" style="background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">40 Kč</span></p>
+      <div class="modal-actions" style="justify-content:center">
+        <button class="btn-gold" id="payClose">Na zdraví 🍻</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="tabPayModal">
+    <div class="modal-card" style="max-width:380px;text-align:center">
+      <h3>💸 Platba za lístek</h3>
+      <p class="modal-hint"><span id="tabPayName"></span> · <b id="tabPaySum"></b></p>
+      <div id="tabQr" style="background:#fff;border-radius:16px;padding:16px;display:inline-flex;align-items:center;justify-content:center"></div>
+      <p style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;margin-top:14px;font-variant-numeric:tabular-nums;color:var(--txt-2)">197958465 / 0300</p>
+      <p class="modal-hint" style="margin-top:10px">Naskenuj QR, odešli platbu a pak potvrď. Lístek se smaže a piva se připíšou do síně slávy.</p>
+      <div class="modal-actions" style="justify-content:center">
+        <button class="btn-ghost" id="tabPayCancel">Zpět</button>
+        <button class="btn-green" id="tabPaidBtn">✓ Zaplaceno, smazat lístek</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const BASE_BEERS = ["Radegast 10","Radegast 11","Bakalář 11"];
+let PRICE = 40;
+let CUSTOM = [];
+let CUSTOM_AUTHOR = {};
+let MENU   = [...BASE_BEERS];
+const MENU_KEY    = "MENU";
+const SESSION_KEY = "__session__";
+const PRICE_KEY   = "__price__";
+
+const $ = s => document.querySelector(s);
+let memShared = {}, memMine = {};
+let WA_TEXT = "";
+
+// ====== KONFIGURACE SUPABASE ======
+const SUPABASE_URL      = "https://eizrqgpkfeixgqymorro.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_v-3SZCposiayKsQb_5mNNw_fpgjUZzK";
+// ===================================
+
+let sb = null;
+try{ if(SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase){ sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } }catch(e){ sb=null; }
+
+// ====== ČASOVÁNÍ MEETINGU ======
+let SESSION_OVERRIDE = null;
+function nextWed(){
+  const now=new Date(); const d=new Date(now);
+  let add=(3-now.getDay()+7)%7;
+  d.setDate(now.getDate()+add); d.setHours(18,0,0,0);
+  if(d<=now) d.setDate(d.getDate()+7);
+  return d;
+}
+function overrideDate(){
+  if(!SESSION_OVERRIDE) return null;
+  const d=new Date(String(SESSION_OVERRIDE).split("|")[0]);
+  return isNaN(d.getTime())?null:d;
+}
+function nextSession(){
+  const ov=overrideDate();
+  if(ov){
+    // Nastavený termín je kotva opakování: zachovej den v týdnu i čas, posouvej po 7 dnech
+    const d=new Date(ov); const now=Date.now();
+    while(d.getTime()<=now) d.setDate(d.getDate()+7);
+    return d;
+  }
+  return nextWed();
+}
+const POLL_PERIOD_KEY = "__poll_period__";
+let PERIOD, BALLOTS_KEY, CUSTOM_KEY;
+function refreshPeriod(p){ PERIOD=p||PERIOD; BALLOTS_KEY="ballots:"+PERIOD; CUSTOM_KEY="custombeers:"+PERIOD; }
+async function loadPollPeriod(){
+  let p=null;
+  if(sb){ try{ const {data,error}=await sb.from("suggestions").select("beer").eq("period",POLL_PERIOD_KEY).limit(1);
+    if(!error){ p=(data&&data.length)?data[0].beer:null; } }catch(e){} }
+  else { p=await sGet(POLL_PERIOD_KEY,true); }
+  if(!p){ p="poll_"+Date.now(); await savePollPeriod(p); }
+  refreshPeriod(p); return p;
+}
+async function savePollPeriod(p){
+  if(sb){ await sb.from("suggestions").delete().eq("period",POLL_PERIOD_KEY);
+    await sb.from("suggestions").insert({period:POLL_PERIOD_KEY,beer:p}); }
+  else { await sSet(POLL_PERIOD_KEY,p,true); }
+  refreshPeriod(p);
+}
+// Inicializace — bude přepsána v loadPollPeriod() při startu
+PERIOD="poll_init"; BALLOTS_KEY="ballots:"+PERIOD; CUSTOM_KEY="custombeers:"+PERIOD;
+
+function p2(n){ return String(n).padStart(2,"0"); }
+function toDateInput(d){ return d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate()); }
+function toTimeInput(d){ return p2(d.getHours())+":"+p2(d.getMinutes()); }
+function esc(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+const DAY_NAMES=["neděle","pondělí","úterý","středa","čtvrtek","pátek","sobota"];
+const pl=(n)=>n===1?"hlas":(n>=2&&n<=4?"hlasy":"hlasů");
+const plBeer=(n)=>n===1?"pivo":(n>=2&&n<=4?"piva":"piv");
+
+// ---- diagnostika DB ----
+function dbStatus(msg,cls){
+  const el=document.getElementById("dbStatus"); if(!el) return;
+  if(msg){ el.textContent=msg; el.className="dbstat "+(cls||"warn"); return; }
+  if(!SUPABASE_URL || !SUPABASE_ANON_KEY){ el.textContent="⚠ Lokální režim: Supabase klíče nejsou vyplněné. Data se nesdílí a po reloadu zmizí."; el.className="dbstat warn"; return; }
+  if(!window.supabase){ el.textContent="⚠ Knihovna Supabase se nenačetla – blokuje ji nejspíš síť nebo CSP."; el.className="dbstat warn"; return; }
+  el.textContent="✓ Připojeno k databázi – data se ukládají a sdílí."; el.className="dbstat ok";
+}
+function dbFail(kde,error){
+  const m=(error && (error.message||error.hint||error.details))||error||"neznámá chyba";
+  dbStatus("⚠ Chyba databáze u „"+kde+"“: "+m+" (zkontroluj SQL s tabulkami a politikami).","warn");
+}
+
+// ---- storage fallback ----
+async function sGet(key,shared){
+  const mirror = shared?memShared:memMine;
+  try{ if(window.storage){ const r=await window.storage.get(key,shared); if(r&&r.value!=null){ mirror[key]=r.value; return r.value; } } }catch(e){}
+  return mirror[key] ?? null;
+}
+async function sSet(key,val,shared){
+  const mirror = shared?memShared:memMine; mirror[key]=val;
+  try{ if(window.storage){ await window.storage.set(key,val,shared); } }catch(e){}
+}
+
+// ---- ID prohlížeče ----
+let MY_ID = null;
+function genId(){ return "u_"+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+function myId(){
+  if(MY_ID) return MY_ID;
+  try{ let id=localStorage.getItem("studovna_voter"); if(!id){ id=genId(); localStorage.setItem("studovna_voter",id); } MY_ID=id; }
+  catch(e){ MY_ID=genId(); }
+  return MY_ID;
+}
+
+// ====== ZVUK + NALÉVACÍ ANIMACE ======
+let SOUND_ON=true;
+try{ SOUND_ON = localStorage.getItem("studovna_sound")!=="0"; }catch(e){}
+let AC=null;
+function audioCtx(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ AC=null; } } return AC; }
+function playPour(){
+  if(!SOUND_ON) return; const ac=audioCtx(); if(!ac) return;
+  if(ac.state==="suspended"){ try{ac.resume();}catch(e){} }
+  const t=ac.currentTime, dur=0.34;
+  const buf=ac.createBuffer(1,Math.floor(ac.sampleRate*dur),ac.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++){ d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.4); }
+  const src=ac.createBufferSource(); src.buffer=buf;
+  const bp=ac.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=850; bp.Q.value=0.8;
+  const g=ac.createGain(); g.gain.value=0.16;
+  src.connect(bp); bp.connect(g); g.connect(ac.destination); src.start(t);
+  const o=ac.createOscillator(); o.type="sine";
+  o.frequency.setValueAtTime(300,t); o.frequency.exponentialRampToValueAtTime(540,t+0.2);
+  const g2=ac.createGain(); g2.gain.setValueAtTime(0.0001,t);
+  g2.gain.exponentialRampToValueAtTime(0.1,t+0.05); g2.gain.exponentialRampToValueAtTime(0.0001,t+0.32);
+  o.connect(g2); g2.connect(ac.destination); o.start(t); o.stop(t+0.34);
+}
+function pourEffect(ev){
+  let x=window.innerWidth/2, y=window.innerHeight*0.4;
+  if(ev && ev.clientX){ x=ev.clientX; y=ev.clientY; }
+  const d=document.createElement("div");
+  d.className="pourwrap"; d.style.left=x+"px"; d.style.top=y+"px";
+  d.innerHTML='<svg width="44" height="52" viewBox="0 0 44 52">'
+    +'<rect class="beer" x="10.5" y="10.5" width="19" height="33" rx="2.5" fill="url(#pourGrad)"/>'
+    +'<rect x="9" y="9" width="22" height="36" rx="3" fill="none" stroke="#f3efe2" stroke-width="2.4"/>'
+    +'<path d="M31 16 h5 a4 4 0 0 1 4 4 v8 a4 4 0 0 1 -4 4 h-5" fill="none" stroke="#f3efe2" stroke-width="2.4"/>'
+    +'<ellipse class="foam" cx="20" cy="10" rx="11.5" ry="3.6" fill="#fff"/></svg>';
+  document.body.appendChild(d);
+  setTimeout(()=>d.remove(),1050);
+}
+
+// ---- cena piva (sdílená) ----
+let PRICE_RENDERED=null;
+function updatePriceUI(){
+  if(PRICE_RENDERED===PRICE) return;
+  PRICE_RENDERED=PRICE;
+  const b=$("#priceBadge"); if(b) b.textContent="🍺 "+PRICE+" Kč";
+  document.querySelectorAll(".price-now").forEach(el=>{ el.textContent=PRICE+" Kč"; });
+  refreshFixedQR();
+}
+async function loadPrice(){
+  if(sb){
+    try{ const {data,error}=await sb.from("suggestions").select("beer").eq("period",PRICE_KEY).limit(1);
+      if(!error){ const v=parseInt((data&&data.length)?data[0].beer:"",10); PRICE=(v>0)?v:40; } }catch(e){}
+  } else { const v=parseInt((await sGet("beer_price",true))||"",10); PRICE=(v>0)?v:40; }
+  updatePriceUI(); return PRICE;
+}
+async function savePrice(val){
+  const v=parseInt(val,10);
+  if(!(v>0&&v<=9999)){ toast("Zadej platnou cenu v Kč 💰"); return false; }
+  PRICE=v;
+  if(sb){ await sb.from("suggestions").delete().eq("period",PRICE_KEY);
+    const {error}=await sb.from("suggestions").insert({period:PRICE_KEY,beer:String(v)}); if(error){ dbFail("uložení ceny",error); return false; } }
+  else { await sSet("beer_price",String(v),true); }
+  updatePriceUI(); return true;
+}
+
+// ---- meeting override ----
+async function loadSession(){
+  if(sb){ try{ const {data,error}=await sb.from("suggestions").select("beer").eq("period",SESSION_KEY).limit(1);
+      if(!error){ SESSION_OVERRIDE=(data&&data.length)?data[0].beer:null; } }catch(e){} }
+  else { SESSION_OVERRIDE=await sGet("session_override",true); }
+  return SESSION_OVERRIDE;
+}
+async function saveSession(iso){
+  const stored = iso || null;
+  SESSION_OVERRIDE = stored;
+  if(sb){ await sb.from("suggestions").delete().eq("period",SESSION_KEY);
+    if(stored){ const {error}=await sb.from("suggestions").insert({period:SESSION_KEY,beer:stored}); if(error){ dbFail("uložení meetingu",error); } } }
+  else { await sSet("session_override", stored||"", true); }
+}
+
+async function loadCustom(){
+  if(sb){
+    try{ const {data,error}=await sb.from("suggestions").select("beer,name").eq("period",PERIOD);
+      if(error){ dbFail("načtení návrhů",error); }
+      else { CUSTOM=data.map(r=>r.beer); CUSTOM_AUTHOR={}; data.forEach(r=>{ CUSTOM_AUTHOR[r.beer]=(r.name||"").trim(); }); return CUSTOM; } }catch(e){ dbFail("načtení návrhů",e); }
+  }
+  const raw=await sGet(CUSTOM_KEY,true); let arr=[]; try{ arr=raw?JSON.parse(raw):[]; }catch(e){ arr=[]; }
+  CUSTOM=[]; CUSTOM_AUTHOR={};
+  (Array.isArray(arr)?arr:[]).forEach(it=>{ if(typeof it==="string"){ CUSTOM.push(it); CUSTOM_AUTHOR[it]=""; }
+    else if(it&&it.beer){ CUSTOM.push(it.beer); CUSTOM_AUTHOR[it.beer]=(it.name||"").trim(); } });
+  return CUSTOM;
+}
+async function loadMenu(){
+  if(sb){
+    try{ const {data,error}=await sb.from("suggestions").select("beer").eq("period",MENU_KEY);
+      if(error){ dbFail("načtení nabídky",error); }
+      else if(data.length){ MENU=data.map(r=>r.beer); return MENU; }
+      else { const rows=BASE_BEERS.map(b=>({period:MENU_KEY,beer:b})); await sb.from("suggestions").upsert(rows,{onConflict:"period,beer",ignoreDuplicates:true}); MENU=[...BASE_BEERS]; return MENU; } }catch(e){ dbFail("načtení nabídky",e); }
+  }
+  const raw=await sGet("menu",true); let arr=[]; try{ arr=raw?JSON.parse(raw):[]; }catch(e){ arr=[]; }
+  MENU=(Array.isArray(arr)&&arr.length)?arr:[...BASE_BEERS]; return MENU;
+}
+function allBeers(){ const seen=new Set(),out=[]; MENU.concat(CUSTOM).forEach(b=>{ const k=(b||"").toLowerCase(); if(b&&!seen.has(k)){ seen.add(k); out.push(b); } }); return out; }
+
+// ---- hlasy ----
+async function loadBallots(){
+  await loadSession(); await loadPrice(); await loadMenu(); await loadCustom();
+  if(sb){
+    try{ const {data,error}=await sb.from("votes").select("voter_id,beer,name").eq("period",PERIOD);
+      if(error){ dbFail("načtení hlasů",error); }
+      else { const m={}; data.forEach(r=>{ if(!m[r.voter_id]) m[r.voter_id]={name:r.name||"",beers:[]};
+        if(r.beer && !m[r.voter_id].beers.includes(r.beer)) m[r.voter_id].beers.push(r.beer); if(r.name) m[r.voter_id].name=r.name; }); return m; } }catch(e){ dbFail("načtení hlasů",e); }
+  }
+  const raw=await sGet(BALLOTS_KEY,true); let b={}; try{ b=raw?JSON.parse(raw):{}; }catch(e){ b={}; }
+  if(!b||typeof b!=="object") return {};
+  Object.keys(b).forEach(k=>{ const r=b[k]; if(r && !Array.isArray(r.beers)){ b[k]={name:(r&&r.name)||"",beers:r&&r.beer?[r.beer]:[]}; } });
+  return b;
+}
+async function persistVote(period,id,beer,name){
+  if(sb){ const {error}=await sb.from("votes").upsert({period,voter_id:id,beer,name},{onConflict:"period,voter_id,beer"});
+    if(error){ dbFail("uložení hlasu",error); return false; } return true; }
+  const ballots=await loadBallots(); const rec=ballots[id]||{name:"",beers:[]}; rec.name=name;
+  if(!rec.beers.includes(beer)) rec.beers.push(beer); ballots[id]=rec; await sSet(BALLOTS_KEY,JSON.stringify(ballots),true); return true;
+}
+async function removeVote(period,id,beer){
+  if(sb){ const {error}=await sb.from("votes").delete().eq("period",period).eq("voter_id",id).eq("beer",beer);
+    if(error){ dbFail("odebrání hlasu",error); return false; } return true; }
+  const ballots=await loadBallots(); const rec=ballots[id]; if(rec){ rec.beers=(rec.beers||[]).filter(x=>x!==beer); if(!rec.beers.length) delete ballots[id]; }
+  await sSet(BALLOTS_KEY,JSON.stringify(ballots),true); return true;
+}
+function tallyFrom(ballots){ const t={}; allBeers().forEach(b=>t[b]=0);
+  Object.values(ballots).forEach(rec=>{ (rec&&rec.beers||[]).forEach(beer=>{ if(beer) t[beer]=(t[beer]||0)+1; }); }); return t; }
+function votersByBeer(ballots){ const m={};
+  Object.values(ballots).forEach(rec=>{ if(!rec) return; const name=(rec.name||"").trim()||"(beze jména)";
+    (rec.beers||[]).forEach(beer=>{ if(!beer) return; (m[beer]=m[beer]||[]).push(name); }); }); return m; }
+
+// ---- render ankety ----
+async function render(){
+  const ballots=await loadBallots(); const id=myId();
+  const t=tallyFrom(ballots); const voters=votersByBeer(ballots);
+  const myBeers=(ballots[id]&&ballots[id].beers)||[];
+  const total=Object.values(t).reduce((a,b)=>a+b,0); const max=Math.max(1,...Object.values(t));
+  const wrap=$("#options"); wrap.innerHTML="";
+  const sorted=[...allBeers()].sort((a,b)=>t[b]-t[a]);
+  const leader=(t[sorted[0]]>0)?sorted[0]:null;
+  sorted.forEach(b=>{
+    const v=t[b]; const isOwn=CUSTOM.includes(b); const isMine=myBeers.includes(b); const isLead=(b===leader);
+    const author=isOwn?esc(CUSTOM_AUTHOR[b]||""):"";
+    const ownLbl=isOwn?'<span class="own">návrh'+(author?" · "+author:"")+'</span>':'';
+    const el=document.createElement("div"); el.className="opt"+(isMine?" mine":"")+(isLead?" lead":"");
+    el.innerHTML=`<div class="opt-row"><div class="name">${isLead?'<span class="crown">👑</span>':""}<span>${b}</span>${ownLbl}${isMine?'<span class="star">tvůj hlas</span>':''}</div><div class="votes">${v} ${pl(v)}</div></div><div class="bar"><span style="width:${(v/max)*100}%"></span></div>`;
+    el.onclick=()=>vote(b);
+    const names=voters[b]||[];
+    el.addEventListener("mouseenter",ev=>showTip(ev,b,names));
+    el.addEventListener("mousemove",moveTip);
+    el.addEventListener("mouseleave",hideTip);
+    wrap.appendChild(el);
+  });
+  const mineCnt=myBeers.length;
+  $("#weekLbl").textContent="celkem "+total+" "+pl(total)+(mineCnt?" · ty máš "+mineCnt+" 🍺":"");
+  const ranked=sorted.map(b=>[b,t[b]]).filter(x=>x[1]>0); const box=$("#resultBox");
+  if(ranked.length){
+    const ended=nextSession().getTime()<=Date.now(); const win=ranked[0];
+    $("#resultTitle").textContent=ended?"🏆 Vítěz hlasování":"🏆 Průběžně vede";
+    $("#resultWinner").textContent=win[0]+" — "+win[1]+" "+pl(win[1]); box.style.display="block";
+    const d=nextSession(); const dateStr=DAY_NAMES[d.getDay()]+" "+d.getDate()+". "+(d.getMonth()+1)+". v "+p2(d.getHours())+":"+p2(d.getMinutes());
+    let msg="🍺 Studovna u Drobka — jaké pivo chceme příště?\n\n";
+    msg+=(ended?"🏆 Vyhrálo: ":"🏆 Vede: ")+win[0]+" ("+win[1]+" hl.)\n";
+    if(ranked.length>1){ msg+="\nPořadí:\n"+ranked.map((x,i)=>(i+1)+". "+x[0]+" — "+x[1]+" hl.").join("\n")+"\n"; }
+    msg+="\nDalší meeting: "+dateStr+" 🍻"; WA_TEXT=msg;
+  } else { box.style.display="none"; WA_TEXT=""; }
+}
+
+// ====== ROZPITÁ PIVA ======
+function smallPrice(){ return Math.round(PRICE*3/5); }
+const MARK_LARGE='<svg class="mk" viewBox="0 0 8 18" aria-label="velké"><line x1="4" y1="1" x2="4" y2="17"/></svg>';
+const MARK_SMALL='<svg class="mk mk-small" viewBox="0 0 8 18" aria-label="malé"><line x1="1.4" y1="1.6" x2="6.6" y2="16.4"/><line x1="6.6" y1="1.6" x2="1.4" y2="16.4"/></svg>';
+function tallyMarks(marks){
+  if(!marks||!marks.length) return "";
+  // | = velké, křížek = malé; seskupení po 5 pomocí mezery
+  let s="",count=0;
+  marks.forEach((m,i)=>{
+    s+=(m&&m.s==="small")?MARK_SMALL:MARK_LARGE;
+    count++;
+    if(count%5===0 && i<marks.length-1) s+='<span class="mk-gap"></span>';
+  });
+  return s;
+}
+function tabMarks(rec){
+  if(rec && Array.isArray(rec.marks)) return rec.marks;
+  const n=(rec&&rec.beers)||0; const arr=[]; for(let i=0;i<n;i++) arr.push({t:0,p:PRICE,s:"large"}); return arr;
+}
+function markPrice(m){ return (m&&m.p)||PRICE; }
+function marksTotal(marks){ return (marks||[]).reduce((s,m)=>s+markPrice(m),0); }
+// Pro síň slávy: malé pivo se počítá poměrem ceny (3/5), velké = 1
+function beerEquivalents(marks){ return (marks||[]).reduce((s,m)=>s+((m&&m.s==="small")?3/5:1),0); }
+function fmtBeers(x){ const r=Math.round(x*10)/10; return Number.isInteger(r)?String(r):r.toFixed(1).replace(".",","); }
+async function loadTabs(){
+  if(sb){
+    try{ const {data,error}=await sb.from("tabs").select("name,beers,marks");
+      if(error){ dbFail("načtení lístků",error); }
+      else { const m={}; data.forEach(r=>{ m[r.name]={beers:r.beers||0, marks:Array.isArray(r.marks)?r.marks:null}; }); return m; } }catch(e){ dbFail("načtení lístků",e); }
+  }
+  const raw=await sGet("tabs",true); let m={}; try{ m=raw?JSON.parse(raw):{}; }catch(e){ m={}; }
+  const out={}; Object.keys(m||{}).forEach(k=>{ const v=m[k]; if(typeof v==="number") out[k]={beers:v,marks:null}; else out[k]={beers:(v&&v.beers)||0,marks:(v&&Array.isArray(v.marks))?v.marks:null}; });
+  return out;
+}
+async function setTab(name,beers,marks){
+  if(sb){ const {error}=await sb.from("tabs").upsert({name,beers,marks:marks||[]},{onConflict:"name"});
+    if(error){ dbFail("uložení lístku",error); return false; } return true; }
+  const m=await loadTabs(); m[name]={beers,marks:marks||[]};
+  const plain={}; Object.keys(m).forEach(k=>{ plain[k]={beers:m[k].beers,marks:m[k].marks||[]}; });
+  await sSet("tabs",JSON.stringify(plain),true); return true;
+}
+async function deleteTab(name){
+  if(sb){ const {error}=await sb.from("tabs").delete().eq("name",name); if(error){ dbFail("smazání lístku",error); return false; } return true; }
+  const m=await loadTabs(); delete m[name];
+  const plain={}; Object.keys(m).forEach(k=>{ plain[k]={beers:m[k].beers,marks:m[k].marks||[]}; });
+  await sSet("tabs",JSON.stringify(plain),true); return true;
+}
+async function renderTabs(){
+  await loadPrice();
+  const tabs=await loadTabs(); const me=rememberedName().toLowerCase();
+  const list=$("#tabsList"); list.innerHTML="";
+  const names=Object.keys(tabs).sort((a,b)=>a.localeCompare(b,"cs"));
+  if(!names.length){ list.innerHTML='<div class="tabs-empty">Zatím nikdo nepije 🥲 Založ si lístek a buď první.</div>'; $("#tabsTotal").textContent=""; return; }
+  let totalBeers=0,totalKc=0,leaderName=null,leaderC=0;
+  names.forEach(n=>{
+    const marks=tabMarks(tabs[n]); const c=marks.length; const tot=marksTotal(marks)||c*PRICE;
+    totalBeers+=c; totalKc+=tot; if(c>leaderC){ leaderC=c; leaderName=n; }
+    const isMe=me && n.toLowerCase()===me;
+    let lastTxt=""; const ts=marks.map(m=>m&&m.t).filter(Boolean); if(ts.length){ lastTxt="poslední "+fmtLastSeen(Math.max(...ts)); }
+    const el=document.createElement("div"); el.className="tab"+(isMe?" mine":"");
+    el.innerHTML=`<div class="tab-row"><div class="tab-name"><span>🍻</span><span>${esc(n)}</span>${isMe?'<span class="star">ty</span>':''}</div><div class="tab-price">${c} ${plBeer(c)} · <b>${tot} Kč</b></div></div><div class="tab-marks">${tallyMarks(marks)||"&nbsp;"}</div>${lastTxt?'<div class="tab-last">'+lastTxt+'</div>':''}<div class="tab-actions"><button class="mini" data-act="minus" title="Vrátit poslední pivo">−</button><button class="mini plus" data-act="plus">+ 🍺 velké</button><button class="mini plus-small" data-act="plus-small">+ 🍺 malé</button><button class="mini pay" data-act="pay">Platím 💸</button></div>`;
+    el.querySelector('[data-act="plus"]').onclick=(ev)=>tabDelta(n,"large",ev);
+    el.querySelector('[data-act="plus-small"]').onclick=(ev)=>tabDelta(n,"small",ev);
+    el.querySelector('[data-act="minus"]').onclick=(ev)=>tabDelta(n,null,ev);
+    el.querySelector('[data-act="pay"]').onclick=()=>payTab(n);
+    list.appendChild(el);
+  });
+  $("#tabsTotal").textContent="rozpito "+totalBeers+" "+plBeer(totalBeers)+" · "+totalKc+" Kč"+(leaderName&&leaderC>0?" · 👑 "+leaderName:"");
+  renderKeg();
+}
+let tabBusy=false;
+async function tabDelta(name,size,ev){
+  // size: "large" | "small" | null (= remove last)
+  if(tabBusy) return; tabBusy=true;
+  try{
+    const tabs=await loadTabs();
+    if(!(name in tabs)){ toast("Lístek už neexistuje 🤷"); await renderTabs(); return; }
+    let marks=tabMarks(tabs[name]).slice();
+    if(size==="large"){ marks.push({t:Date.now(),p:PRICE,s:"large"}); }
+    else if(size==="small"){ marks.push({t:Date.now(),p:smallPrice(),s:"small"}); }
+    else { if(!marks.length){ toast("Lístek je prázdný"); return; } marks.pop(); }
+    const ok=await setTab(name,marks.length,marks);
+    if(!ok){ toast("Nepovedlo se uložit 😕"); return; }
+    await renderTabs();
+    if(size==="large"){ pourEffect(ev); playPour(); toast("Načárkováno pro "+name+" 🍺 ("+marks.length+". pivo)"); }
+    else if(size==="small"){ pourEffect(ev); playPour(); toast("Malé načárkováno pro "+name+" × ("+marks.length+". pivo)"); }
+    else toast("Poslední pivo vráceno ("+name+": "+marks.length+")");
+    if(size) await warnIfKegLow();
+  } finally { tabBusy=false; }
+}
+// Upozornění při načárkování, když v sudu zbývá méně než 10 %
+async function warnIfKegLow(){
+  try{
+    const st=await kegStats();
+    if(!st.size) return; // sud bez zadaného objemu neumíme hlídat
+    if(st.pct>=100){
+      toastWarn('🛑 <b>SUD JE DOPITÝ!</b> Je potřeba narazit nový.',5200);
+    } else if(st.pct>=90){
+      toastWarn('⚠️ <b>POZOR, dochází sud!</b> Sud je téměř dopitý.',5200);
+    }
+  }catch(e){}
+}
+async function openTab(){
+  let name=rememberedName();
+  if(!name){ name=await requestName(); if(!name){ toast("Bez jména lístek nezaložím 😉"); return; } }
+  const tabs=await loadTabs();
+  if(Object.keys(tabs).find(k=>k.toLowerCase()===name.toLowerCase())){ toast("Lístek už máš založený, čárkuj 🍺"); return; }
+  const ok=await setTab(name,0,[]);
+  if(!ok){ toast("Lístek se nepovedlo založit 😕"); return; }
+  await renderTabs(); toast("Lístek založen — na zdraví, "+name+" 🍻");
+}
+$("#openTabBtn").onclick=openTab;
+
+// ---- platba lístku ----
+let PAY_TAB=null;
+async function payTab(name){
+  await loadPrice();
+  const tabs=await loadTabs(); const marks=tabMarks(tabs[name]); const c=marks.length;
+  if(c===0){ if(confirm("Lístek je prázdný — zavřít bez placení?")){ await deleteTab(name); await renderTabs(); toast("Lístek zavřen 👋"); } return; }
+  PAY_TAB=name; const amount=marksTotal(marks)||c*PRICE;
+  $("#tabPayName").textContent=name; $("#tabPaySum").textContent=c+" "+plBeer(c)+" = "+amount+" Kč";
+  const msg=("PIVO "+name).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z0-9 ]/g,"").toUpperCase().slice(0,60);
+  const spayd="SPD*1.0*ACC:CZ7003000000000197958465*AM:"+amount.toFixed(2)+"*CC:CZK*MSG:"+msg;
+  makeQRInto(document.getElementById("tabQr"),spayd,240);
+  $("#tabPayModal").style.display="flex";
+}
+$("#tabPaidBtn").onclick=async()=>{
+  if(!PAY_TAB){ $("#tabPayModal").style.display="none"; return; }
+  const name=PAY_TAB; PAY_TAB=null;
+  const tabs=await loadTabs(); const marks=tabMarks(tabs[name]); const c=marks.length; const amount=marksTotal(marks)||c*PRICE;
+  const w=beerEquivalents(marks);
+  const small=marks.filter(m=>m&&m.s==="small").length; const large=c-small;
+  await creditHall(name,w,amount);
+  const token=await recordPayment({name,beers:c,small,large,eq:Math.round(w*10)/10,amount,ts:Date.now(),
+    mk:marks.map(m=>({t:(m&&m.t)||0,s:(m&&m.s==="small")?"small":"large"}))});
+  await deleteTab(name);
+  $("#tabPayModal").style.display="none";
+  await renderTabs(); await renderHall();
+  showUndo("Zaplaceno ✓ "+c+" "+plBeer(c)+" do síně slávy",async()=>{
+    await setTab(name,c,marks); await creditHall(name,-w,-amount); await deletePayment(token); await renderTabs(); await renderHall(); toast("Platba vrácena ↩");
+  });
+};
+$("#tabPayCancel").onclick=()=>{ PAY_TAB=null; $("#tabPayModal").style.display="none"; };
+$("#tabPayModal").addEventListener("click",e=>{ if(e.target.id==="tabPayModal"){ PAY_TAB=null; e.target.style.display="none"; } });
+
+// ====== EVIDENCE PLATEB (neměnný ledger) ======
+const PAYMENT_KEY="__payment__";
+async function recordPayment(rec){
+  const blob=JSON.stringify(rec);
+  if(sb){
+    const {error}=await sb.from("suggestions").insert({period:PAYMENT_KEY,beer:blob,name:rec.name});
+    if(error){ dbFail("zápis platby",error); return null; }
+    return blob;
+  } else {
+    const raw=await sGet("payments",true); let arr=[]; try{ arr=raw?JSON.parse(raw):[]; }catch(e){ arr=[]; }
+    arr.push(blob); await sSet("payments",JSON.stringify(arr),true); return blob;
+  }
+}
+// Pouze pro okamžité UNDO právě vytvořené platby (žádné mazání z UI ledgeru)
+async function deletePayment(token){
+  if(!token) return;
+  if(sb){ await sb.from("suggestions").delete().eq("period",PAYMENT_KEY).eq("beer",token); }
+  else { const raw=await sGet("payments",true); let arr=[]; try{ arr=raw?JSON.parse(raw):[]; }catch(e){ arr=[]; }
+    arr=arr.filter(b=>b!==token); await sSet("payments",JSON.stringify(arr),true); }
+}
+async function loadPayments(){
+  let blobs=[];
+  if(sb){
+    try{ const {data,error}=await sb.from("suggestions").select("beer").eq("period",PAYMENT_KEY).range(0,99999);
+      if(error){ dbFail("načtení plateb",error); return []; }
+      blobs=(data||[]).map(r=>r.beer); }catch(e){ dbFail("načtení plateb",e); return []; }
+  } else {
+    const raw=await sGet("payments",true); try{ blobs=raw?JSON.parse(raw):[]; }catch(e){ blobs=[]; }
+  }
+  const out=[];
+  blobs.forEach(b=>{ try{ const o=JSON.parse(b); if(o&&o.ts) out.push(o); }catch(e){} });
+  out.sort((a,b)=>b.ts-a.ts); // nejnovější nahoře
+  return out;
+}
+function fmtDateTime(ts){
+  const d=new Date(ts);
+  return p2(d.getDate())+". "+p2(d.getMonth()+1)+". "+d.getFullYear()+" "+p2(d.getHours())+":"+p2(d.getMinutes());
+}
+async function renderPayments(){
+  const rows=await loadPayments(); const body=$("#payRows"); const sum=$("#paySum");
+  if(!rows.length){ body.innerHTML='<tr><td colspan="4"><div class="pay-empty">Zatím žádné platby 🍺</div></td></tr>'; sum.textContent=""; return; }
+  let totBeers=0,totKc=0;
+  body.innerHTML=rows.map(r=>{
+    totBeers+=r.beers||0; totKc+=r.amount||0;
+    const small=r.small||0, large=(r.large!=null)?r.large:((r.beers||0)-small);
+    let breakdown=""; if(small>0){ breakdown=' <span style="color:var(--txt-2);font-size:12px">('+large+'×velké, '+small+'×malé)</span>'; }
+    return '<tr><td>'+fmtDateTime(r.ts)+'</td><td class="nm">'+esc(r.name||"?")+'</td><td class="num">'+(r.beers||0)+breakdown+'</td><td class="amt">'+(r.amount||0)+' Kč</td></tr>';
+  }).join("");
+  sum.innerHTML='Celkem <b>'+rows.length+'</b> '+(rows.length===1?"platba":(rows.length>=2&&rows.length<=4?"platby":"plateb"))+' · <b>'+totBeers+'</b> '+plBeer(totBeers)+' · <b>'+totKc+' Kč</b>';
+}
+function paymentsCSV(rows){
+  const head=["Datum a cas","Jmeno","Piv celkem","Velka","Mala","Utrata Kc"];
+  const lines=[head.join(";")];
+  rows.forEach(r=>{
+    const small=r.small||0, large=(r.large!=null)?r.large:((r.beers||0)-small);
+    const nm='"'+String(r.name||"?").replace(/"/g,'""')+'"';
+    lines.push([fmtDateTime(r.ts),nm,(r.beers||0),large,small,(r.amount||0)].join(";"));
+  });
+  return "\uFEFF"+lines.join("\r\n"); // BOM kvůli diakritice v Excelu
+}
+
+// ====== SUD (počítadlo od poslední výměny) ======
+const KEG_KEY="__keg__";
+const KEG_LOG_KEY="__keg_log__";
+const L_LARGE=0.5, L_SMALL=0.3; // litry
+let KEG_START=null, KEG_NAME="", KEG_SIZE=0;
+async function loadKegStart(){
+  let v=null, ok=false;
+  if(sb){ try{ const {data,error}=await sb.from("suggestions").select("beer").eq("period",KEG_KEY).limit(1);
+    if(!error){ ok=true; v=(data&&data.length)?data[0].beer:null; } }catch(e){} }
+  else { try{ v=await sGet("keg_start",true); ok=true; }catch(e){} }
+  let ts=NaN,nm="",sz=0;
+  if(v){
+    const s=String(v).trim();
+    if(s.charAt(0)==="{"){ try{ const o=JSON.parse(s); ts=parseInt(o.ts,10); nm=o.name||""; sz=parseFloat(o.liters)||0; }catch(e){} }
+    else { ts=parseInt(s,10); } // starší formát: jen timestamp
+  }
+  if(!ts||isNaN(ts)){
+    // POZOR: nový sud zakládáme jen když čtení opravdu prošlo a záznam neexistuje.
+    // Jinak by výpadek sítě resetoval sud (renderKeg běží každých 15 s).
+    if(!ok) return KEG_START;
+    ts=Date.now(); nm=""; sz=0; await saveKegStart(ts,nm,sz); return ts;
+  }
+  KEG_START=ts; KEG_NAME=nm; KEG_SIZE=sz; return ts;
+}
+async function saveKegStart(ts,name,liters){
+  KEG_START=ts; KEG_NAME=name||""; KEG_SIZE=parseFloat(liters)||0;
+  const blob=JSON.stringify({ts:ts,name:KEG_NAME,liters:KEG_SIZE});
+  if(sb){ await sb.from("suggestions").delete().eq("period",KEG_KEY);
+    const {error}=await sb.from("suggestions").insert({period:KEG_KEY,beer:blob}); if(error){ dbFail("uložení sudu",error); } }
+  else { await sSet("keg_start",blob,true); }
+}
+// Spočítá vypitá piva od začátku sudu: zaplacená (z ledgeru) + rozpitá (z otevřených lístků)
+async function kegStats(){
+  await loadKegStart(); // vždy znovu – jinak se výměna sudu neprojeví na ostatních zařízeních
+  const since=KEG_START||0;
+  let large=0,small=0;
+  const pays=await loadPayments();
+  pays.forEach(r=>{
+    if(Array.isArray(r.mk) && r.mk.length){
+      // přesně: každá čárka má vlastní čas, takže platba se správně rozdělí mezi dva sudy
+      r.mk.forEach(m=>{ if(m && (m.t||0)>=since){ if(m.s==="small") small++; else large++; } });
+    } else if((r.ts||0)>=since){
+      // starší záznamy bez časů čárek – počítáme podle času platby
+      const s=r.small||0, l=(r.large!=null)?r.large:((r.beers||0)-s);
+      large+=l; small+=s;
+    }
+  });
+  const tabs=await loadTabs();
+  Object.keys(tabs).forEach(n=>{ tabMarks(tabs[n]).forEach(m=>{
+    if(m&&(m.t||0)>=since){ if(m.s==="small") small++; else large++; } }); });
+  const count=large+small;
+  const liters=large*L_LARGE+small*L_SMALL;
+  const size=KEG_SIZE||0;
+  const leftL=size?Math.max(0,size-liters):0;
+  const leftBeers=size?Math.floor(leftL/L_LARGE):0; // kolik velkých se ještě vejde
+  const pct=size?Math.min(100,Math.max(0,(liters/size)*100)):0;
+  return {large,small,count,liters,since,name:KEG_NAME,size,leftL,leftBeers,pct};
+}
+async function renderKeg(){
+  const st=await kegStats();
+  const big=$("#kegBig"), sub=$("#kegSub"), since=$("#kegSince");
+  if(big){
+    big.textContent=st.count+" "+plBeer(st.count)+" · "+fmtLiters(st.liters)+" l";
+    sub.textContent=st.large+"× velké, "+st.small+"× malé";
+    since.textContent=(st.name?st.name+" · ":"")+(st.size?"sud "+fmtLiters(st.size)+" l · ":"")
+      +(st.name||st.size?"naražen ":"Sud naražen ")+(st.since?fmtLastSeen(st.since):"—")
+      +(st.size?(st.pct>=100?" · sud dopito":(st.pct>=90?" · sud je téměř dopitý":" · zbývá ≈ "+st.leftBeers+" "+plBeer(st.leftBeers)+" ("+fmtLiters(st.leftL)+" l)")):"");
+  }
+  const line=$("#kegLine");
+  if(line){
+    if(!st.since){ line.innerHTML=""; return; }
+    let head='🛢️ ';
+    if(st.name) head+='<b>'+esc(st.name)+'</b> · ';
+    head+= st.size ? 'sud '+fmtLiters(st.size)+' l · naražen ' : (st.name?'naražen ':'Sud naražen ');
+    head+='<span class="keg-when">'+fmtLastSeen(st.since)+'</span>';
+    let bar="";
+    if(st.size){
+      const cls=st.pct>=100?" full":(st.pct>=80?" low":"");
+      head+= st.pct>=100 ? ' · <b class="keg-empty">sud dopito</b>'
+        : (st.pct>=90 ? ' · <b class="keg-empty">sud je téměř dopitý</b>'
+        : ' · zbývá <b>≈ '+st.leftBeers+' '+plBeer(st.leftBeers)+'</b> ('+fmtLiters(st.leftL)+' l)');
+      bar='<div class="keg-bar'+cls+'"><span style="width:'+st.pct.toFixed(1)+'%"></span></div>';
+    }
+    const foot='<div class="keg-foot">vytočeno <b>'+st.count+' '+plBeer(st.count)+'</b> ('
+      +st.large+'× velké, '+st.small+'× malé) · <b>'+fmtLiters(st.liters)+' l</b></div>';
+    let alert="";
+    if(st.size){
+      if(st.pct>=100) alert='<div class="keg-alert done">🛑 SUD JE DOPITÝ — je potřeba narazit nový</div>';
+      else if(st.pct>=90) alert='<div class="keg-alert">⚠️ POZOR, sud je téměř dopitý!</div>';
+    }
+    line.innerHTML=head+bar+foot+alert;
+  }
+}
+function fmtLiters(x){ const r=Math.round(x*10)/10; return Number.isInteger(r)?String(r):r.toFixed(1).replace(".",","); }
+// Uzavření sudu se zapíše do historie (neměnné, jako platby)
+async function logKeg(st){
+  const blob=JSON.stringify({from:st.since,to:Date.now(),name:st.name||"",size:st.size||0,large:st.large,small:st.small,count:st.count,liters:Math.round(st.liters*10)/10});
+  if(sb){ await sb.from("suggestions").insert({period:KEG_LOG_KEY,beer:blob}); }
+  else { const raw=await sGet("keg_log",true); let a=[]; try{ a=raw?JSON.parse(raw):[]; }catch(e){ a=[]; }
+    a.push(blob); await sSet("keg_log",JSON.stringify(a),true); }
+}
+
+// ====== SÍŇ SLÁVY ======
+async function loadHall(){
+  if(sb){
+    try{ const {data,error}=await sb.from("hall").select("name,beers,paid").order("paid",{ascending:false}).range(0,9999);
+      if(error){ dbFail("načtení síně slávy",error); }
+      else { const m={}; data.forEach(r=>{ m[r.name]={beers:r.beers||0,paid:r.paid||0}; }); return m; } }catch(e){ dbFail("načtení síně slávy",e); }
+  }
+  const raw=await sGet("hall",true); let m={}; try{ m=raw?JSON.parse(raw):{}; }catch(e){ m={}; }
+  return (m&&typeof m==="object")?m:{};
+}
+async function creditHall(name,dBeers,dPaid){
+  if(sb){
+    // Atomický přírůstek na straně DB (žádná ztráta při souběžných platbách).
+    // Vyžaduje funkci hall_credit v Supabase – viz SQL v dokumentaci/chatu.
+    try{
+      const {error}=await sb.rpc("hall_credit",{p_name:name,p_beers:dBeers,p_paid:dPaid});
+      if(!error) return;
+      console.warn("hall_credit RPC nedostupná, používám fallback:",error.message||error);
+    }catch(e){ console.warn("hall_credit RPC selhala, fallback:",e); }
+  }
+  // Fallback (NEatomické – při souběhu dvou plateb může jedna přepsat druhou)
+  const h=await loadHall(); const cur=h[name]||{beers:0,paid:0};
+  const beers=Math.max(0,(cur.beers||0)+dBeers); const paid=Math.max(0,(cur.paid||0)+dPaid);
+  if(sb){
+    if(beers===0&&paid===0){ await sb.from("hall").delete().eq("name",name); }
+    else { const {error}=await sb.from("hall").upsert({name,beers,paid},{onConflict:"name"}); if(error){ dbFail("zápis do síně slávy",error); } }
+  } else { const m=await loadHall(); if(beers===0&&paid===0) delete m[name]; else m[name]={beers,paid}; await sSet("hall",JSON.stringify(m),true); }
+}
+async function resetHall(){
+  if(sb){ await sb.from("hall").delete().gte("beers",0); }
+  else { await sSet("hall","{}",true); }
+}
+async function renderHall(){
+  const h=await loadHall(); const list=$("#hallList");
+  const names=Object.keys(h).sort((a,b)=>(h[b].paid-h[a].paid)||(h[b].beers-h[a].beers)||a.localeCompare(b,"cs"));
+  if(!names.length){ list.innerHTML='<div class="tabs-empty">Síň slávy zatím zeje prázdnotou. Zaplať lístek a zapiš se do dějin. 🏆</div>'; $("#hallTotal").textContent=""; return; }
+  const medals=["🥇","🥈","🥉"]; let tb=0,tk=0; list.innerHTML="";
+  names.forEach((n,i)=>{ const r=h[n]; tb+=r.beers; tk+=r.paid;
+    const el=document.createElement("div"); el.className="hall-row"+(i<3?" top":"");
+    el.innerHTML=`<span class="hall-rank">${medals[i]||(i+1+".")}</span><span class="hall-name">${esc(n)}</span><span class="hall-stat">${fmtBeers(r.beers)} 🍺 · <b>${r.paid} Kč</b></span>`;
+    list.appendChild(el); });
+  $("#hallTotal").textContent="celkem "+fmtBeers(tb)+" "+plBeer(Math.round(tb))+" · "+tk+" Kč";
+}
+
+// ---- tooltip ----
+function showTip(ev,beer,names){
+  const tip=$("#tip"); const list=names.length?names.map(n=>"• "+esc(n)).join("<br>"):"<em>zatím nikdo</em>";
+  tip.innerHTML=`<strong>${esc(beer)}</strong>${list}`; tip.style.display="block"; moveTip(ev);
+}
+function moveTip(ev){ const tip=$("#tip"); if(tip.style.display!=="block") return;
+  const pad=14,r=tip.getBoundingClientRect(); let x=ev.clientX+pad,y=ev.clientY+pad;
+  if(x+r.width>window.innerWidth) x=ev.clientX-r.width-pad; if(y+r.height>window.innerHeight) y=ev.clientY-r.height-pad;
+  tip.style.left=Math.max(6,x)+"px"; tip.style.top=Math.max(6,y)+"px"; }
+function hideTip(){ $("#tip").style.display="none"; }
+
+// ---- jméno ----
+function rememberedName(){ try{ return (localStorage.getItem("studovna_name")||"").trim(); }catch(e){ return ""; } }
+let nameResolve=null;
+function requestName(){
+  return new Promise(res=>{ nameResolve=res; const inp=$("#nameInput"); inp.value=rememberedName();
+    $("#nameModal").style.display="flex"; setTimeout(()=>inp.focus(),60); });
+}
+function resolveName(val){ $("#nameModal").style.display="none"; const r=nameResolve; nameResolve=null; if(r) r(val); }
+$("#nameSave").onclick=()=>{ const v=$("#nameInput").value.trim().slice(0,30); if(!v){ toast("Napiš nějaké jméno 🙂"); return; }
+  try{ localStorage.setItem("studovna_name",v); }catch(e){} resolveName(v); };
+$("#nameCancel").onclick=()=>resolveName(null);
+$("#nameModal").addEventListener("click",e=>{ if(e.target.id==="nameModal") resolveName(null); });
+$("#nameInput").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#nameSave").click(); });
+
+// ---- hlasování ----
+let busy=false;
+async function vote(beer){
+  if(busy) return; busy=true;
+  try{
+    const id=myId(); const ballots=await loadBallots(); const myBeers=(ballots[id]&&ballots[id].beers)||[];
+    if(myBeers.includes(beer)){ const ok=await removeVote(PERIOD,id,beer); if(!ok){ toast("Hlas se nepovedlo odebrat 😕"); return; }
+      await render(); toast("Hlas pro "+beer+" odebrán 🧽"); return; }
+    let name=rememberedName(); if(!name){ name=await requestName(); if(!name){ toast("Hlasování zrušeno"); return; } }
+    const ok=await persistVote(PERIOD,id,beer,name); if(!ok){ toast("Hlas se nepovedlo uložit 😕"); return; }
+    await render(); toast("Hlasováno pro "+beer+" 🍻");
+  } finally { busy=false; }
+}
+async function addBeer(name){
+  name=(name||"").trim().replace(/\s+/g," ");
+  if(!name){ toast("Napiš nejdřív název piva 🍺"); return; }
+  if(name.length>40) name=name.slice(0,40);
+  await loadCustom();
+  const hit=allBeers().find(b=>b.toLowerCase()===name.toLowerCase());
+  if(hit){ $("#newBeer").value=""; const id=myId(); const ballots=await loadBallots(); const myBeers=(ballots[id]&&ballots[id].beers)||[];
+    if(myBeers.includes(hit)){ toast("Pro tohle už hlasuješ 😉"); return; } await vote(hit); return; }
+  let author=rememberedName(); if(!author){ author=await requestName(); if(!author){ toast("Návrh zrušen"); return; } }
+  if(sb){ const {error}=await sb.from("suggestions").insert({period:PERIOD,beer:name,name:author}); if(error){ toast("Návrh se nepovedlo přidat 😕"); return; } }
+  else { const arr=CUSTOM.map(b=>({beer:b,name:CUSTOM_AUTHOR[b]||""})); arr.push({beer:name,name:author}); await sSet(CUSTOM_KEY,JSON.stringify(arr),true); }
+  if(!CUSTOM.includes(name)) CUSTOM.push(name); CUSTOM_AUTHOR[name]=author;
+  $("#newBeer").value=""; await vote(name); toast("Přidáno na tabuli: "+name+" 🍻");
+}
+
+// ---- toast ----
+let toastT;
+function toast(msg){ const el=$("#toast"); el.classList.remove("has-action","warn"); el.textContent=msg; el.classList.add("show");
+  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove("show"),2200); }
+function toastWarn(html,ms){ const el=$("#toast"); el.classList.remove("has-action"); el.innerHTML=html;
+  el.classList.add("show","warn");
+  clearTimeout(toastT); toastT=setTimeout(()=>{ el.classList.remove("show"); setTimeout(()=>el.classList.remove("warn"),300); }, ms||4200); }
+function showUndo(msg,fn){
+  const el=$("#toast"); el.innerHTML=esc(msg)+' <button class="toast-undo" id="toastUndo">Vrátit zpět</button>';
+  el.classList.add("show","has-action");
+  $("#toastUndo").onclick=async()=>{ clearTimeout(toastT); el.classList.remove("show","has-action"); setTimeout(()=>{el.textContent="";},250); await fn(); };
+  clearTimeout(toastT); toastT=setTimeout(()=>{ el.classList.remove("show","has-action"); setTimeout(()=>{el.textContent="";},250); },6000);
+}
+
+// ---- odpočet ----
+// "dnes / včera / v pátek 24.7." podle odstupu ode dneška
+const DAY_IN=["v neděli","v pondělí","v úterý","ve středu","ve čtvrtek","v pátek","v sobotu"];
+function fmtLastSeen(ts){
+  const d=new Date(ts), now=new Date();
+  const sod=x=>{ const c=new Date(x); c.setHours(0,0,0,0); return c.getTime(); };
+  const diffDays=Math.round((sod(now)-sod(d))/86400000);
+  const time=p2(d.getHours())+":"+p2(d.getMinutes());
+  if(diffDays===0) return "dnes v "+time;
+  if(diffDays===1) return "včera v "+time;
+  return DAY_IN[d.getDay()]+" "+d.getDate()+"."+(d.getMonth()+1)+". v "+time;
+}
+const DAY_CADENCE=[
+  {pre:"Každou",day:"neděli"},
+  {pre:"Každé",day:"pondělí"},
+  {pre:"Každé",day:"úterý"},
+  {pre:"Každou",day:"středu"},
+  {pre:"Každý",day:"čtvrtek"},
+  {pre:"Každý",day:"pátek"},
+  {pre:"Každou",day:"sobotu"},
+];
+function tick(){
+  const target=nextSession(); const whenEl=document.getElementById("sessionWhen");
+  if(whenEl){ const rest=target.getDate()+". "+(target.getMonth()+1)+". "+target.getFullYear()+" · "+p2(target.getHours())+":"+p2(target.getMinutes());
+    whenEl.innerHTML='📅 <span class="sess-day">'+DAY_NAMES[target.getDay()]+'</span> '+rest; }
+  const chip=document.getElementById("sessChip");
+  if(chip){ const c=DAY_CADENCE[target.getDay()]; const t=target.getHours()+":"+p2(target.getMinutes());
+    chip.innerHTML='🍺 '+c.pre+' <b>'+c.day+'</b> od '+t; }
+  const diff=target-new Date();
+  if(diff<=0){ $("#clock").textContent="Je čas! 🍺"; return; }
+  const dd=Math.floor(diff/86400000),hh=Math.floor(diff%86400000/3600000),mm=Math.floor(diff%3600000/60000),ss=Math.floor(diff%60000/1000);
+  $("#clock").textContent=`${dd} d ${hh} h ${mm} m ${ss} s`;
+}
+
+$("#addBtn").onclick=()=>addBeer($("#newBeer").value);
+$("#newBeer").addEventListener("keydown",e=>{ if(e.key==="Enter") addBeer($("#newBeer").value); });
+$("#waShare").onclick=()=>{ if(!WA_TEXT){ toast("Zatím není co sdílet — chybí hlasy 🍺"); return; } window.open("https://wa.me/?text="+encodeURIComponent(WA_TEXT),"_blank"); };
+$("#soundBtn").onclick=()=>{ SOUND_ON=!SOUND_ON; try{ localStorage.setItem("studovna_sound",SOUND_ON?"1":"0"); }catch(e){}
+  $("#soundBtn").textContent=SOUND_ON?"🔊":"🔇"; if(SOUND_ON) playPour(); };
+$("#soundBtn").textContent=SOUND_ON?"🔊":"🔇";
+
+// ---- reset / admin ----
+async function resetPoll(){
+  const newP="poll_"+Date.now();
+  await savePollPeriod(newP);
+  CUSTOM=[]; CUSTOM_AUTHOR={};
+}
+async function saveMenu(lines){
+  const seen=new Set(),clean=[]; lines.forEach(s=>{ s=(s||"").trim().replace(/\s+/g," ").slice(0,40); const k=s.toLowerCase(); if(s&&!seen.has(k)){ seen.add(k); clean.push(s); } });
+  if(!clean.length){ toast("Nech aspoň jedno pivo 🍺"); return false; }
+  if(sb){ const del=await sb.from("suggestions").delete().eq("period",MENU_KEY); if(del.error){ dbFail("uložení nabídky",del.error); return false; }
+    const ins=await sb.from("suggestions").insert(clean.map(b=>({period:MENU_KEY,beer:b}))); if(ins.error){ dbFail("uložení nabídky",ins.error); return false; } }
+  else { await sSet("menu",JSON.stringify(clean),true); }
+  MENU=clean; return true;
+}
+async function applySessionFromInputs(){
+  const dv=$("#sessDate").value, tv=$("#sessTime").value; let target=null;
+  if(dv&&tv){ const [Y,M,D]=dv.split("-").map(Number); const [h,m]=tv.split(":").map(Number);
+    const d=new Date(Y,(M||1)-1,(D||1),(h||0),(m||0),0,0);
+    if(!isNaN(d.getTime())){ if(d.getTime()<=Date.now()){ toast("Datum je v minulosti – beru běžnou středu 18:00"); } else target=d; } }
+  if(target && target.getTime()!==nextWed().getTime()){ await saveSession(target.toISOString()); } else { await saveSession(null); }
+}
+$("#adminBtn").onclick=async()=>{
+  const pw=window.prompt("Heslo administrátora:"); if(pw===null) return;
+  if(pw!=="drobek"){ toast("Špatné heslo 🔒"); return; }
+  await loadMenu(); await loadSession(); await loadPrice();
+  $("#adminText").value=MENU.join("\n");
+  const base=nextSession(); $("#sessDate").value=toDateInput(base); $("#sessTime").value=toTimeInput(base); $("#priceInput").value=PRICE;
+  $("#adminModal").style.display="flex"; $("#adminText").focus();
+  await loadKegStart(); await renderKeg();
+};
+$("#kegNewBtn").onclick=async()=>{
+  const st=await kegStats();
+  const nameDef=st.name||(MENU&&MENU.length?MENU[0]:"");
+  const beer=window.prompt("Jaké pivo je v novém sudu?",nameDef);
+  if(beer===null) return;
+  const nm=beer.trim();
+  if(!nm){ toast("Název piva nesmí být prázdný 🍺"); return; }
+  const sizeDef=st.size?String(st.size):"50";
+  const sizeRaw=window.prompt("Velikost sudu v litrech:",sizeDef);
+  if(sizeRaw===null) return;
+  const sz=parseFloat(String(sizeRaw).replace(",","."));
+  if(!sz||isNaN(sz)||sz<=0||sz>1000){ toast("Zadej platný objem v litrech 🛢️"); return; }
+  const summary=st.count+" "+plBeer(st.count)+" ("+st.large+"× velké, "+st.small+"× malé, "+fmtLiters(st.liters)+" l)";
+  if(!confirm("Narazit nový sud?\n\n"+nm+" · "+fmtLiters(sz)+" l\n\nNa předchozím sudu se vypilo: "+summary+"\nPočítadlo se vynuluje a začne počítat od teď.")) return;
+  await logKeg(st);
+  await saveKegStart(Date.now(),nm,sz);
+  await renderKeg();
+  toast("Naražen nový sud: "+nm+" "+fmtLiters(sz)+" l 🛢️");
+};
+$("#sessSaveBtn").onclick=async()=>{ const btn=$("#sessSaveBtn"); btn.disabled=true; await applySessionFromInputs(); btn.disabled=false;
+  await render(); tick(); $("#adminModal").style.display="none"; toast("Termín meetingu uložen, anketa zachována 📅"); };
+$("#priceSaveBtn").onclick=async()=>{ const btn=$("#priceSaveBtn"); btn.disabled=true; const ok=await savePrice($("#priceInput").value); btn.disabled=false;
+  if(ok){ await renderTabs(); $("#adminModal").style.display="none"; toast("Cena piva nastavena na "+PRICE+" Kč 💰"); } };
+$("#adminResetBtn").onclick=async()=>{ if(!confirm("Opravdu smazat všechny hlasy i návrhy tohoto okna?"))return; await resetPoll(); await render(); toast("Tabule setřena ✨"); };
+$("#hallResetBtn").onclick=async()=>{ if(!confirm("Vynulovat síň slávy? Smaže se celá historie útrat."))return; await resetHall(); await renderHall(); toast("Síň slávy vynulována ✨"); };
+$("#adminCancel").onclick=()=>{ $("#adminModal").style.display="none"; };
+$("#adminModal").addEventListener("click",e=>{ if(e.target.id==="adminModal") $("#adminModal").style.display="none"; });
+$("#ledgerBtn").onclick=async()=>{ $("#payRows").innerHTML='<tr><td colspan="4"><div class="pay-empty">Načítám…</div></td></tr>'; $("#paymentsModal").style.display="flex"; await renderPayments(); };
+$("#paymentsClose").onclick=()=>{ $("#paymentsModal").style.display="none"; };
+$("#paymentsModal").addEventListener("click",e=>{ if(e.target.id==="paymentsModal") $("#paymentsModal").style.display="none"; });
+$("#payCsvBtn").onclick=async()=>{
+  const rows=await loadPayments();
+  if(!rows.length){ toast("Žádné platby k exportu"); return; }
+  const csv=paymentsCSV(rows);
+  const d=new Date(); const stamp=d.getFullYear()+p2(d.getMonth()+1)+p2(d.getDate());
+  const fname="platby_studovna_"+stamp+".csv";
+  // iOS Safari: a.download u blobu nefunguje spolehlivě → zkus nativní share sheet (Uložit do souborů)
+  try{
+    if(navigator.canShare){
+      const file=new File([csv],fname,{type:"text/csv"});
+      if(navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:"Platby Studovna"}); toast("Sdíleno / uloženo ⬇️"); return; }
+    }
+  }catch(e){ if(e&&e.name==="AbortError") return; /* jinak padáme do fallbacku */ }
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob); const a=document.createElement("a");
+  a.href=url; a.download=fname; a.target="_blank"; a.rel="noopener";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000); toast("CSV staženo ⬇️");
+};
+$("#adminSaveBtn").onclick=async()=>{
+  const btn=$("#adminSaveBtn"); btn.disabled=true;
+  await applySessionFromInputs(); await savePrice($("#priceInput").value);
+  const ok=await saveMenu($("#adminText").value.split("\n")); btn.disabled=false;
+  if(ok){ $("#adminModal").style.display="none"; await render(); await renderTabs(); tick(); toast("Uloženo ✨"); }
+};
+
+// ---- QR ----
+function makeQRInto(target,text,size){
+  if(!target) return; target.innerHTML="";
+  if(!window.QRCode){ target.innerHTML='<span class="qr-fallback">Účet pro žíznivé:</span>'; return; }
+  try{ new QRCode(target,{text,width:size,height:size,colorDark:"#0a0c10",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M}); }
+  catch(e){ target.innerHTML='<span class="qr-fallback">Účet pro žíznivé:</span>'; }
+}
+function fixedSpayd(){ return "SPD*1.0*ACC:CZ7003000000000197958465*AM:"+Number(PRICE).toFixed(2)+"*CC:CZK*MSG:PIVO"; }
+function refreshFixedQR(){ const el=document.getElementById("qr"); if(el) makeQRInto(el,fixedSpayd(),200); }
+
+// ---- PWA (manifest + ikony za běhu) ----
+(function setupPWA(){
+  try{
+    function icon(size){ const c=document.createElement("canvas"); c.width=c.height=size; const x=c.getContext("2d");
+      x.fillStyle="#0a0c10"; x.fillRect(0,0,size,size); x.font=Math.floor(size*0.62)+"px serif"; x.textAlign="center"; x.textBaseline="middle";
+      x.fillText("🍺",size/2,size*0.55); return c.toDataURL("image/png"); }
+    const i192=icon(192), i512=icon(512);
+    const at=document.createElement("link"); at.rel="apple-touch-icon"; at.href=i192; document.head.appendChild(at);
+    const manifest={ name:"Studovna u Drobka", short_name:"U Drobka", start_url:".", scope:".", display:"standalone",
+      background_color:"#0a0c10", theme_color:"#0a0c10", icons:[{src:i192,sizes:"192x192",type:"image/png"},{src:i512,sizes:"512x512",type:"image/png"}] };
+    const blob=new Blob([JSON.stringify(manifest)],{type:"application/manifest+json"});
+    const ml=document.createElement("link"); ml.rel="manifest"; ml.href=URL.createObjectURL(blob); document.head.appendChild(ml);
+  }catch(e){}
+})();
+
+// ---- start ----
+(async()=>{
+  await loadSession(); await loadPrice(); await loadPollPeriod();
+  if(sb){
+    try{ const {error}=await sb.from("votes").select("voter_id").eq("period",PERIOD).limit(1);
+      if(error){ dbFail("test připojení",error); } else { dbStatus("✓ Připojeno k databázi – data se ukládají a sdílí.","ok"); } }catch(e){ dbFail("test připojení",e); }
+  } else { dbStatus(); }
+  await render(); await renderTabs(); await renderHall(); tick();
+})();
+tick(); setInterval(tick,1000);
+setInterval(()=>{ if(!busy && !tabBusy){ render(); renderTabs(); renderHall(); } }, 15000);
+
+// ---- pevný QR „jedno pivo" + zvětšení ----
+(function(){
+  refreshFixedQR();
+  const card=document.getElementById("qrCard"), modal=document.getElementById("payModal");
+  if(card&&modal){ card.title="Klikni pro zvětšení";
+    card.addEventListener("click",()=>{ makeQRInto(document.getElementById("qrBig"),fixedSpayd(),300); modal.style.display="flex"; });
+    document.getElementById("payClose").onclick=()=>{ modal.style.display="none"; };
+    modal.addEventListener("click",e=>{ if(e.target.id==="payModal") modal.style.display="none"; }); }
+})();
+</script>
+</body>
+</html>
