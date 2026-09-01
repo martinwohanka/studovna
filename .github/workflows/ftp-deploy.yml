@@ -17,8 +17,9 @@ jobs:
 
       - name: Vygenerovat seznam změn z historie commitů
         run: |
-          git log --pretty=format:'%h%x1f%ad%x1f%s' --date=format:'%d. %m. %Y' -n 30 \
-            | jq -R -s -c 'split("\n") | map(select(length>0) | split("")) | map({sha:.[0], date:.[1], message:.[2]})' \
+          SEP=$'\x1f'
+          git log --pretty=format:"%h${SEP}%ad${SEP}%s" --date=format:'%d. %m. %Y' -n 30 \
+            | jq -R -s -c --arg sep "$SEP" 'split("\n") | map(select(length>0) | split($sep)) | map({sha:.[0], date:.[1], message:.[2]})' \
             > changelog.json
 
       - name: Nahrát soubory přes FTP
