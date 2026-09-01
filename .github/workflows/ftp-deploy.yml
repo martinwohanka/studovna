@@ -12,6 +12,14 @@ jobs:
     steps:
       - name: Checkout repozitáře
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Vygenerovat seznam změn z historie commitů
+        run: |
+          git log --pretty=format:'%h%x1f%ad%x1f%s' --date=format:'%d. %m. %Y' -n 30 \
+            | jq -R -s -c 'split("\n") | map(select(length>0) | split("")) | map({sha:.[0], date:.[1], message:.[2]})' \
+            > changelog.json
 
       - name: Nahrát soubory přes FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5

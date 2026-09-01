@@ -338,6 +338,21 @@
   .pay-note{margin-top:12px;color:var(--txt-2);font-size:12px;line-height:1.5}
   .pay-note b{color:var(--txt);font-weight:600}
 
+  /* ===== patička / seznam změn ===== */
+  .site-footer{text-align:center;margin-top:22px;padding:6px 0 4px;
+    font-family:'Space Grotesk',sans-serif;font-size:13px;color:var(--txt-2)}
+  .site-footer .ver{cursor:pointer;color:var(--txt-2);text-decoration:underline;text-underline-offset:3px;transition:.15s ease}
+  .site-footer .ver:hover{color:var(--amber)}
+  .chg-card{max-width:480px}
+  .chg-list{max-height:52vh;overflow-y:auto;margin-top:2px}
+  .chg-item{padding:10px 0;border-bottom:1px solid var(--line)}
+  .chg-item:last-child{border-bottom:none}
+  .chg-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;color:var(--amber)}
+  .chg-head .chg-date{color:var(--txt-2);font-weight:500;font-size:12px}
+  .chg-msg{margin-top:3px;color:var(--txt);font-size:13.5px;line-height:1.5}
+  .chg-empty{text-align:center;color:var(--txt-2);padding:20px 12px;font-size:14px}
+
   ::selection{background:rgba(245,185,66,.3)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -447,6 +462,10 @@
         <div class="acct">197958465 / 0300</div>
       </div>
     </section>
+
+    <footer class="site-footer">
+      🍺 Studovna u Drobka · <span class="ver" id="footVer">seznam změn…</span>
+    </footer>
 
   </div>
 
@@ -560,6 +579,17 @@
       <div class="modal-actions" style="justify-content:center">
         <button class="btn-ghost" id="tabPayCancel">Zpět</button>
         <button class="btn-green" id="tabPaidBtn">✓ Zaplaceno, smazat lístek</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="changelogModal">
+    <div class="modal-card chg-card">
+      <h3>📝 Seznam změn</h3>
+      <p class="modal-hint">Automaticky generováno z historie GitHub commitů při každém nasazení.</p>
+      <div class="chg-list" id="changelogBody"></div>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="changelogClose">Zavřít</button>
       </div>
     </div>
   </div>
@@ -1413,6 +1443,37 @@ function refreshFixedQR(){ const el=document.getElementById("qr"); if(el) makeQR
   }catch(e){}
 })();
 
+// ====== SEZNAM ZMĚN (generováno z git historie při deployi) ======
+const CHANGELOG_URL = "changelog.json";
+let CHANGELOG = [];
+async function loadChangelog(){
+  try{
+    const r = await fetch(CHANGELOG_URL, {cache:"no-store"});
+    if(!r.ok) throw new Error("changelog nedostupný");
+    const data = await r.json();
+    CHANGELOG = Array.isArray(data) ? data : [];
+  }catch(e){ CHANGELOG = []; }
+  return CHANGELOG;
+}
+function renderChangelog(){
+  const body = $("#changelogBody");
+  if(!body) return;
+  if(!CHANGELOG.length){ body.innerHTML = '<div class="chg-empty">Seznam změn se nepodařilo načíst.</div>'; return; }
+  body.innerHTML = CHANGELOG.map(c=>`
+    <div class="chg-item">
+      <div class="chg-head"><span>${esc(c.sha||"")}</span><span class="chg-date">${esc(c.date||"")}</span></div>
+      <div class="chg-msg">${esc(c.message||"")}</div>
+    </div>`).join("");
+}
+async function initChangelog(){
+  await loadChangelog();
+  const el = $("#footVer");
+  if(el) el.textContent = CHANGELOG.length ? ("poslední změna " + CHANGELOG[0].date) : "seznam změn";
+}
+$("#footVer").addEventListener("click", ()=>{ renderChangelog(); $("#changelogModal").style.display="flex"; });
+$("#changelogClose").onclick = ()=>{ $("#changelogModal").style.display="none"; };
+$("#changelogModal").addEventListener("click", e=>{ if(e.target.id==="changelogModal") $("#changelogModal").style.display="none"; });
+
 // ---- start ----
 (async()=>{
   await loadSession(); await loadPrice(); await loadPollPeriod();
@@ -1420,7 +1481,7 @@ function refreshFixedQR(){ const el=document.getElementById("qr"); if(el) makeQR
     try{ const {error}=await sb.from("votes").select("voter_id").eq("period",PERIOD).limit(1);
       if(error){ dbFail("test připojení",error); } else { dbStatus("✓ Připojeno k databázi – data se ukládají a sdílí.","ok"); } }catch(e){ dbFail("test připojení",e); }
   } else { dbStatus(); }
-  await render(); await renderTabs(); await renderHall(); tick();
+  await render(); await renderTabs(); await renderHall(); tick(); initChangelog();
 })();
 tick(); setInterval(tick,1000);
 setInterval(()=>{ if(!busy && !tabBusy){ render(); renderTabs(); renderHall(); } }, 15000);
