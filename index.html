@@ -194,6 +194,12 @@
   .mini.plus-small:hover{box-shadow:0 6px 18px rgba(74,155,190,.4)}
   .mini.pay{color:#06250f;background:var(--green);border:none;flex:1 1 100%}
   .mini.pay:hover{box-shadow:0 6px 18px rgba(61,220,132,.4)}
+  @media (max-width:480px){
+    .tab-actions{flex-wrap:nowrap;gap:5px}
+    .tab-actions .mini{padding:9px 4px;font-size:11.5px;min-width:0}
+    .tab-actions .mini[data-act="minus"]{flex:0 0 32px;padding:9px 0}
+    .tab-actions .mini.plus,.tab-actions .mini.plus-small,.tab-actions .mini.pay{flex:1 1 0}
+  }
   .tabs-empty{text-align:center;color:var(--txt-2);font-size:14px;border:1px dashed var(--line-2);border-radius:var(--r-md);padding:20px 16px;margin-top:14px;}
 
   /* ===== síň slávy ===== */
