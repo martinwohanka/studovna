@@ -997,9 +997,9 @@ async function warnIfKegLow(){
   try{
     const st=await kegStats();
     if(!st.size) return; // sud bez zadaného objemu neumíme hlídat
-    if(st.pct>=100){
-      toastWarn('🛑 <b>SUD JE DOPITÝ!</b> Je potřeba narazit nový.',5200);
-    } else if(st.pct>=90){
+    if(st.pct>=90){
+      toastWarn('🛑 <b>DROBEK asi zapomněl narazit nový sud !!!</b> 😡',5200);
+    } else if(st.pct>=80){
       toastWarn('⚠️ <b>POZOR, dochází sud!</b> Sud je téměř dopitý.',5200);
     }
   }catch(e){}
@@ -1164,7 +1164,10 @@ async function kegStats(){
   const leftL=size?Math.max(0,size-liters):0;
   const leftBeers=size?Math.floor(leftL/L_LARGE):0; // kolik velkých se ještě vejde
   const pct=size?Math.min(100,Math.max(0,(liters/size)*100)):0;
-  return {large,small,count,liters,since,name:KEG_NAME,size,leftL,leftBeers,pct};
+  // přetažený sud: vypilo se víc, než se do něj vejde (tolerance kvůli zaokrouhlení)
+  const overL=size?Math.max(0,liters-size):0;
+  const over=size?(liters-size)>0.05:false;
+  return {large,small,count,liters,since,name:KEG_NAME,size,leftL,leftBeers,pct,over,overL};
 }
 async function renderKeg(){
   const st=await kegStats();
@@ -1174,7 +1177,7 @@ async function renderKeg(){
     sub.textContent=st.large+"× velké, "+st.small+"× malé";
     since.textContent=(st.name?st.name+" · ":"")+(st.size?"sud "+fmtLiters(st.size)+" l · ":"")
       +(st.name||st.size?"naražen ":"Sud naražen ")+(st.since?fmtLastSeen(st.since):"—")
-      +(st.size?(st.pct>=100?" · sud dopito":(st.pct>=90?" · sud je téměř dopitý":" · zbývá ≈ "+st.leftBeers+" "+plBeer(st.leftBeers)+" ("+fmtLiters(st.leftL)+" l)")):"");
+      +(st.size?(st.over?" · dopito, +"+fmtLiters(st.overL)+" l nad objem sudu":(st.pct>=100?" · sud dopito":(st.pct>=80?" · sud je téměř dopitý":" · zbývá ≈ "+st.leftBeers+" "+plBeer(st.leftBeers)+" ("+fmtLiters(st.leftL)+" l)"))):"");
   }
   const line=$("#kegLine");
   if(line){
@@ -1186,17 +1189,18 @@ async function renderKeg(){
     let bar="";
     if(st.size){
       const cls=st.pct>=100?" full":(st.pct>=80?" low":"");
-      head+= st.pct>=100 ? ' · <b class="keg-empty">sud dopito</b>'
-        : (st.pct>=90 ? ' · <b class="keg-empty">sud je téměř dopitý</b>'
-        : ' · zbývá <b>≈ '+st.leftBeers+' '+plBeer(st.leftBeers)+'</b> ('+fmtLiters(st.leftL)+' l)');
+      head+= st.over ? ' · <b class="keg-empty">dopito, +'+fmtLiters(st.overL)+' l nad objem sudu</b>'
+        : (st.pct>=100 ? ' · <b class="keg-empty">sud dopito</b>'
+        : (st.pct>=80 ? ' · <b class="keg-empty">sud je téměř dopitý</b>'
+        : ' · zbývá <b>≈ '+st.leftBeers+' '+plBeer(st.leftBeers)+'</b> ('+fmtLiters(st.leftL)+' l)'));
       bar='<div class="keg-bar'+cls+'"><span style="width:'+st.pct.toFixed(1)+'%"></span></div>';
     }
     const foot='<div class="keg-foot">vytočeno <b>'+st.count+' '+plBeer(st.count)+'</b> ('
       +st.large+'× velké, '+st.small+'× malé) · <b>'+fmtLiters(st.liters)+' l</b></div>';
     let alert="";
     if(st.size){
-      if(st.pct>=100) alert='<div class="keg-alert done">🛑 SUD JE DOPITÝ — je potřeba narazit nový</div>';
-      else if(st.pct>=90) alert='<div class="keg-alert">⚠️ POZOR, sud je téměř dopitý!</div>';
+      if(st.pct>=90) alert='<div class="keg-alert">🛑 DROBEK asi zapomněl narazit nový sud !!! 😡</div>';
+      else if(st.pct>=80) alert='<div class="keg-alert">⚠️ POZOR, sud je téměř dopitý!</div>';
     }
     line.innerHTML=head+bar+foot+alert;
   }
