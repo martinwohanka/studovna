@@ -71,17 +71,20 @@
   }
   @keyframes bubDrift{from{transform:translateX(-6px)}to{transform:translateX(6px)}}
 
-  .beer-foam{position:fixed;top:0;left:0;right:0;height:clamp(84px,14vh,144px);
+  /* hustá krémová pěna: plný krém nahoře, dolů řídne a teple se barví od piva */
+  .beer-foam{position:fixed;top:0;left:0;right:0;height:clamp(70px,11vh,118px);
     z-index:-1;pointer-events:none;overflow:hidden;
     background:linear-gradient(180deg,
-      rgba(255,252,244,.28) 0%,
-      rgba(255,249,235,.23) 32%,
-      rgba(255,243,219,.15) 60%,
-      rgba(252,219,157,.06) 84%,
+      rgba(255,252,243,.44) 0%,
+      rgba(253,247,232,.40) 45%,
+      rgba(250,239,215,.33) 70%,
+      rgba(240,209,152,.17) 87%,
+      rgba(226,181,111,.06) 96%,
       transparent 100%);}
+  .beer-foam .foam-tex{position:absolute;inset:0;width:100%;height:100%;display:block}
+  /* pár větších bublin na rozhraní pěny a piva — nízký kontrast, žádné mýdlové odlesky */
   .beer-foam .fb{position:absolute;border-radius:50%;
-    background:radial-gradient(circle at 34% 28%, rgba(255,253,247,.95), rgba(255,248,233,.5) 52%, rgba(255,241,214,.18) 76%, transparent 82%);
-    box-shadow:inset 0 -1px 2px rgba(255,255,255,.32)}
+    background:radial-gradient(circle at 42% 36%, rgba(255,252,243,.5), rgba(253,246,230,.3) 60%, rgba(248,236,208,.12) 86%, transparent 92%);}
   @media (prefers-reduced-motion:reduce){
     .beer-bg{display:none}
   }
@@ -387,7 +390,32 @@
 
   <!-- pozadí: stoupající bublinky a pivní pěna nahoře -->
   <div class="beer-bg" id="beerBg" aria-hidden="true"></div>
-  <div class="beer-foam" id="beerFoam" aria-hidden="true"></div>
+  <div class="beer-foam" id="beerFoam" aria-hidden="true">
+    <svg class="foam-tex" viewBox="0 0 400 120" preserveAspectRatio="none">
+      <defs>
+        <filter id="foamTex" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.07 0.11" numOctaves="2" seed="11" result="n"/>
+          <feColorMatrix in="n" type="luminanceToAlpha" result="a"/>
+          <feComponentTransfer in="a" result="a2">
+            <feFuncA type="table" tableValues="0 0 0.45 0.95 1"/>
+          </feComponentTransfer>
+          <feFlood flood-color="#fffdf5" result="c"/>
+          <feComposite in="c" in2="a2" operator="in" result="cells"/>
+          <feGaussianBlur in="cells" stdDeviation="0.7"/>
+        </filter>
+        <linearGradient id="foamFade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="1"/>
+          <stop offset=".62" stop-color="#fff" stop-opacity=".95"/>
+          <stop offset=".8" stop-color="#fff" stop-opacity=".55"/>
+          <stop offset=".93" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <mask id="foamMask"><rect width="400" height="120" fill="url(#foamFade)"/></mask>
+      </defs>
+      <g mask="url(#foamMask)" opacity=".55">
+        <rect width="400" height="120" filter="url(#foamTex)"/>
+      </g>
+    </svg>
+  </div>
 
   <div class="wrap">
 
@@ -1464,19 +1492,20 @@ function makeQRInto(target,text,size){
       b.style.opacity=op.toFixed(2);
       frag.appendChild(b);
     }
-    // velké bubliny na spodní hraně — vytvářejí nepravidelný okraj pěny
-    for(let x=-3; x<105; x+=4.5+Math.random()*4){
-      add(x, h*(0.63+Math.random()*0.17), h*(0.26+Math.random()*0.24), 0.26+Math.random()*0.22);
+    // rozhraní pěny a piva — nepravidelný spodní okraj z mělkých bublin
+    for(let x=-3; x<105; x+=3.5+Math.random()*3.5){
+      add(x, h*(0.72+Math.random()*0.1), h*(0.12+Math.random()*0.13), 0.3+Math.random()*0.25);
     }
-    // střední bubliny v těle pěny
-    for(let i=0;i<46;i++){
-      add(Math.random()*104-2, h*(0.12+Math.random()*0.6), h*(0.10+Math.random()*0.14), 0.18+Math.random()*0.24);
+    // pár větších bublin, které se v pěně tvoří a praskají
+    for(let i=0;i<12;i++){
+      add(Math.random()*104-2, h*(0.4+Math.random()*0.35), h*(0.1+Math.random()*0.1), 0.16+Math.random()*0.16);
     }
-    // drobná jemná pěna nahoře
-    for(let i=0;i<60;i++){
-      add(Math.random()*104-2, h*(Math.random()*0.5), h*(0.035+Math.random()*0.06), 0.16+Math.random()*0.26);
+    // ojedinělé bublinky, které se drží těsně pod pěnou
+    for(let i=0;i<9;i++){
+      add(Math.random()*104-2, h*(0.87+Math.random()*0.12), h*(0.045+Math.random()*0.05), 0.18+Math.random()*0.2);
     }
-    foam.innerHTML=""; foam.appendChild(frag);
+    foam.querySelectorAll(".fb").forEach(el=>el.remove());
+    foam.appendChild(frag);
   }
   build();
   let t=null, w=window.innerWidth;
