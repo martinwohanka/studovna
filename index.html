@@ -775,6 +775,43 @@ function playCheer(){
   const ag=ac.createGain(); ag.gain.value=0.045;
   air.connect(hp); hp.connect(ag); ag.connect(ac.destination); air.start(t);
 }
+
+// ====== HLASOVÁ HLÁŠKA „Jsi nejlepší!" ======
+// Mluví hlasem, který má zařízení nainstalovaný. Když český hlas chybí,
+// ozve se místo toho písknutí — nikdy nezůstane ticho.
+const PRAISE_TEXT = "Jsi nejlepší!";
+let VOICES = [];
+function refreshVoices(){ try{ VOICES=window.speechSynthesis.getVoices()||[]; }catch(e){ VOICES=[]; } }
+if("speechSynthesis" in window){
+  refreshVoices();
+  try{ window.speechSynthesis.addEventListener("voiceschanged",refreshVoices); }catch(e){}
+}
+function czechVoice(){ return VOICES.find(v=>/^cs([-_]|$)/i.test(v.lang||"")) || null; }
+// iOS pustí řeč až po dotyku, tak ji odemkneme prvním kliknutím kdekoliv
+let SPEECH_READY=false;
+function unlockSpeech(){
+  if(SPEECH_READY || !("speechSynthesis" in window)) return;
+  try{ const u=new SpeechSynthesisUtterance(" "); u.volume=0; window.speechSynthesis.speak(u); SPEECH_READY=true; }catch(e){}
+}
+try{ document.addEventListener("pointerdown",unlockSpeech,{capture:true,once:true}); }catch(e){}
+function speakPraise(){
+  if(!("speechSynthesis" in window)) return false;
+  try{
+    const v=czechVoice();
+    if(VOICES.length && !v) return false;   // hlasy načtené, ale český mezi nimi není
+    const u=new SpeechSynthesisUtterance(PRAISE_TEXT);
+    u.lang="cs-CZ"; u.rate=1.05; u.pitch=1.2;
+    if(v){ try{ u.voice=v; }catch(e){} }    // když se hlas přiřadit nedá, mluvíme aspoň česky podle lang
+    window.speechSynthesis.cancel();        // ať se hlášky při rychlém čárkování nehromadí
+    window.speechSynthesis.speak(u);
+    return true;
+  }catch(e){ return false; }
+}
+function playPraise(){
+  if(!SOUND_ON) return;
+  if(!speakPraise()) playCheer();
+}
+
 function pourEffect(ev){
   let x=window.innerWidth/2, y=window.innerHeight*0.4;
   if(ev && ev.clientX){ x=ev.clientX; y=ev.clientY; }
@@ -1006,8 +1043,8 @@ async function tabDelta(name,size,ev){
     const ok=await setTab(name,marks.length,marks);
     if(!ok){ toast("Nepovedlo se uložit 😕"); return; }
     await renderTabs();
-    if(size==="large"){ pourEffect(ev); playCheer(); toast("Načárkováno pro "+name+" 🍺 ("+marks.length+". pivo)"); }
-    else if(size==="small"){ pourEffect(ev); playCheer(); toast("Malé načárkováno pro "+name+" × ("+marks.length+". pivo)"); }
+    if(size==="large"){ pourEffect(ev); playPraise(); toast("Načárkováno pro "+name+" 🍺 ("+marks.length+". pivo)"); }
+    else if(size==="small"){ pourEffect(ev); playPraise(); toast("Malé načárkováno pro "+name+" × ("+marks.length+". pivo)"); }
     else toast("Poslední pivo vráceno ("+name+": "+marks.length+")");
     if(size) await warnIfKegLow();
   } finally { tabBusy=false; }
@@ -1383,7 +1420,7 @@ $("#addBtn").onclick=()=>addBeer($("#newBeer").value);
 $("#newBeer").addEventListener("keydown",e=>{ if(e.key==="Enter") addBeer($("#newBeer").value); });
 $("#waShare").onclick=()=>{ if(!WA_TEXT){ toast("Zatím není co sdílet — chybí hlasy 🍺"); return; } window.open("https://wa.me/?text="+encodeURIComponent(WA_TEXT),"_blank"); };
 $("#soundBtn").onclick=()=>{ SOUND_ON=!SOUND_ON; try{ localStorage.setItem("studovna_sound",SOUND_ON?"1":"0"); }catch(e){}
-  $("#soundBtn").textContent=SOUND_ON?"🔊":"🔇"; if(SOUND_ON) playCheer(); };
+  $("#soundBtn").textContent=SOUND_ON?"🔊":"🔇"; if(SOUND_ON){ unlockSpeech(); playPraise(); } };
 $("#soundBtn").textContent=SOUND_ON?"🔊":"🔇";
 
 // ---- reset / admin ----
