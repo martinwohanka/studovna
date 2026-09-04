@@ -71,9 +71,17 @@
   }
   @keyframes bubDrift{from{transform:translateX(-6px)}to{transform:translateX(6px)}}
 
-  .beer-foam{position:fixed;top:0;left:0;right:0;height:clamp(46px,8vh,80px);
-    z-index:-1;pointer-events:none}
-  .beer-foam svg{display:block;width:100%;height:100%}
+  .beer-foam{position:fixed;top:0;left:0;right:0;height:clamp(84px,14vh,144px);
+    z-index:-1;pointer-events:none;overflow:hidden;
+    background:linear-gradient(180deg,
+      rgba(255,252,244,.28) 0%,
+      rgba(255,249,235,.23) 32%,
+      rgba(255,243,219,.15) 60%,
+      rgba(252,219,157,.06) 84%,
+      transparent 100%);}
+  .beer-foam .fb{position:absolute;border-radius:50%;
+    background:radial-gradient(circle at 34% 28%, rgba(255,253,247,.95), rgba(255,248,233,.5) 52%, rgba(255,241,214,.18) 76%, transparent 82%);
+    box-shadow:inset 0 -1px 2px rgba(255,255,255,.32)}
   @media (prefers-reduced-motion:reduce){
     .beer-bg{display:none}
   }
@@ -379,33 +387,7 @@
 
   <!-- pozadí: stoupající bublinky a pivní pěna nahoře -->
   <div class="beer-bg" id="beerBg" aria-hidden="true"></div>
-  <div class="beer-foam" aria-hidden="true">
-    <svg viewBox="0 0 600 46" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="foamGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#fffaf0" stop-opacity=".22"/>
-          <stop offset=".6" stop-color="#fff4dc" stop-opacity=".15"/>
-          <stop offset="1" stop-color="#ffeecd" stop-opacity=".12"/>
-        </linearGradient>
-      </defs>
-      <rect x="0" y="0" width="600" height="16" fill="url(#foamGrad)"/>
-      <g fill="#fff6e0" opacity=".13">
-        <ellipse cx="10" cy="16" rx="30" ry="11"/><ellipse cx="52" cy="15" rx="22" ry="8"/>
-        <ellipse cx="96" cy="17" rx="27" ry="10"/><ellipse cx="140" cy="15" rx="20" ry="7"/>
-        <ellipse cx="182" cy="18" rx="32" ry="12"/><ellipse cx="231" cy="15" rx="23" ry="8"/>
-        <ellipse cx="276" cy="17" rx="29" ry="10"/><ellipse cx="322" cy="15" rx="19" ry="7"/>
-        <ellipse cx="366" cy="18" rx="31" ry="11"/><ellipse cx="414" cy="16" rx="24" ry="9"/>
-        <ellipse cx="458" cy="15" rx="21" ry="7"/><ellipse cx="500" cy="17" rx="30" ry="11"/>
-        <ellipse cx="548" cy="15" rx="22" ry="8"/><ellipse cx="590" cy="17" rx="27" ry="10"/>
-      </g>
-      <g fill="#fff6e0" opacity=".07">
-        <ellipse cx="34" cy="27" rx="14" ry="5"/><ellipse cx="112" cy="29" rx="10" ry="4"/>
-        <ellipse cx="196" cy="28" rx="16" ry="6"/><ellipse cx="262" cy="30" rx="9" ry="3.5"/>
-        <ellipse cx="344" cy="28" rx="13" ry="5"/><ellipse cx="424" cy="30" rx="11" ry="4"/>
-        <ellipse cx="492" cy="27" rx="15" ry="6"/><ellipse cx="566" cy="29" rx="10" ry="4"/>
-      </g>
-    </svg>
-  </div>
+  <div class="beer-foam" id="beerFoam" aria-hidden="true"></div>
 
   <div class="wrap">
 
@@ -1449,7 +1431,7 @@ function makeQRInto(target,text,size){
 (function beerBubbles(){
   const wrap=document.getElementById("beerBg"); if(!wrap) return;
   try{ if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return; }catch(e){}
-  const n = window.innerWidth < 520 ? 18 : 28;
+  const n = window.innerWidth < 520 ? 34 : 52;
   const frag=document.createDocumentFragment();
   for(let i=0;i<n;i++){
     const size = 5 + Math.random()*11;                // 5–16 px
@@ -1466,6 +1448,42 @@ function makeQRInto(target,text,size){
     b.appendChild(inner); frag.appendChild(b);
   }
   wrap.appendChild(frag);
+})();
+
+// ---- pozadí: pivní pěna nahoře ----
+(function beerFoam(){
+  const foam=document.getElementById("beerFoam"); if(!foam) return;
+  function build(){
+    const h=foam.getBoundingClientRect().height; if(!h) return;
+    const frag=document.createDocumentFragment();
+    function add(xPct,yPx,d,op){
+      const b=document.createElement("span"); b.className="fb";
+      b.style.left=xPct.toFixed(2)+"%"; b.style.top=yPx.toFixed(1)+"px";
+      b.style.width=b.style.height=d.toFixed(1)+"px";
+      b.style.marginLeft=(-d/2).toFixed(1)+"px"; b.style.marginTop=(-d/2).toFixed(1)+"px";
+      b.style.opacity=op.toFixed(2);
+      frag.appendChild(b);
+    }
+    // velké bubliny na spodní hraně — vytvářejí nepravidelný okraj pěny
+    for(let x=-3; x<105; x+=4.5+Math.random()*4){
+      add(x, h*(0.63+Math.random()*0.17), h*(0.26+Math.random()*0.24), 0.26+Math.random()*0.22);
+    }
+    // střední bubliny v těle pěny
+    for(let i=0;i<46;i++){
+      add(Math.random()*104-2, h*(0.12+Math.random()*0.6), h*(0.10+Math.random()*0.14), 0.18+Math.random()*0.24);
+    }
+    // drobná jemná pěna nahoře
+    for(let i=0;i<60;i++){
+      add(Math.random()*104-2, h*(Math.random()*0.5), h*(0.035+Math.random()*0.06), 0.16+Math.random()*0.26);
+    }
+    foam.innerHTML=""; foam.appendChild(frag);
+  }
+  build();
+  let t=null, w=window.innerWidth;
+  window.addEventListener("resize",()=>{                 // přegenerovat jen při reálné změně šířky
+    if(Math.abs(window.innerWidth-w)<40) return; w=window.innerWidth;
+    clearTimeout(t); t=setTimeout(build,250);
+  });
 })();
 
 // ---- PWA (manifest + ikony za běhu) ----
