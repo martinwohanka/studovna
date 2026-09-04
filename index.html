@@ -776,28 +776,32 @@ function playCheer(){
   air.connect(hp); hp.connect(ag); ag.connect(ac.destination); air.start(t);
 }
 
-// ====== HLASOVÁ HLÁŠKA „Čauviny!" ======
-// Pořadí: nahrávka hlaska.mp3 → hlas prohlížeče → písknutí.
-// Smazáním hlaska.mp3 se appka vrátí k hlasu prohlížeče, nahrazením
-// souboru (třeba vlastní nahrávkou) se začne přehrávat ta.
-const PRAISE_TEXT = "Čauviny!";
-const PRAISE_FILE = "hlaska.mp3";
-let PRAISE_AUDIO=null, PRAISE_FILE_OK=false, AUDIO_UNLOCKING=false;
-(function preloadPraise(){
+// ====== HLASOVÉ HLÁŠKY ======
+// Velké pivo má vlastní nahrávku, malé svoji.
+// Pořadí: nahrávka → hlas prohlížeče → písknutí. Smazáním nahrávky se
+// appka vrátí k hlasu prohlížeče, nahrazením souboru se přehraje nová.
+const PRAISE_TEXT = "Čauviny!";     // záloha pro hlas prohlížeče
+let AUDIO_UNLOCKING=false;
+function makeClip(url){
+  const c={el:null, ok:false};
   try{
-    const a=new Audio(PRAISE_FILE); a.preload="auto";
-    a.addEventListener("canplaythrough",()=>{ PRAISE_FILE_OK=true; },{once:true});
-    a.addEventListener("error",()=>{ PRAISE_FILE_OK=false; },{once:true});
-    PRAISE_AUDIO=a;
-  }catch(e){ PRAISE_AUDIO=null; }
-})();
-function playPraiseFile(){
-  if(!PRAISE_FILE_OK || !PRAISE_AUDIO) return false;
+    const a=new Audio(url); a.preload="auto";
+    a.addEventListener("canplaythrough",()=>{ c.ok=true; },{once:true});
+    a.addEventListener("error",()=>{ c.ok=false; },{once:true});
+    c.el=a;
+  }catch(e){}
+  return c;
+}
+const CLIP_LARGE = makeClip("hlaska.mp3");
+const CLIP_SMALL = makeClip("hlaska-male.mp3");
+const ALL_CLIPS = [CLIP_LARGE, CLIP_SMALL];
+function playClip(c){
+  if(!c || !c.ok || !c.el) return false;
   try{
-    AUDIO_UNLOCKING=false;                              // doběhlé odemykání už ať do přehrávání nesahá
-    PRAISE_AUDIO.muted=false;
-    PRAISE_AUDIO.pause(); PRAISE_AUDIO.currentTime=0;   // rychlé čárkování hlášky nehromadí
-    const p=PRAISE_AUDIO.play();
+    AUDIO_UNLOCKING=false;                 // doběhlé odemykání už ať do přehrávání nesahá
+    ALL_CLIPS.forEach(o=>{ try{ if(o.el){ o.el.pause(); o.el.currentTime=0; } }catch(e){} });
+    c.el.muted=false;                      // hlášky se při rychlém čárkování nehromadí
+    const p=c.el.play();
     if(p&&p.catch) p.catch(()=>{});
     return true;
   }catch(e){ return false; }
@@ -815,19 +819,21 @@ function unlockSpeech(){
   if(!SPEECH_READY && ("speechSynthesis" in window)){
     try{ const u=new SpeechSynthesisUtterance(" "); u.volume=0; window.speechSynthesis.speak(u); SPEECH_READY=true; }catch(e){}
   }
-  try{
-    if(PRAISE_AUDIO && PRAISE_AUDIO.paused){
+  ALL_CLIPS.forEach(c=>{
+    try{
+      if(!c.el || !c.el.paused) return;
       AUDIO_UNLOCKING=true;
-      PRAISE_AUDIO.muted=true;
-      const p=PRAISE_AUDIO.play();
+      c.el.muted=true;
+      const p=c.el.play();
       // Odemknutí doběhne asynchronně — nesmí zastavit hlášku, která se mezitím spustila
       const reset=()=>{
-        if(AUDIO_UNLOCKING){ try{ PRAISE_AUDIO.pause(); PRAISE_AUDIO.currentTime=0; }catch(e){} AUDIO_UNLOCKING=false; }
-        try{ PRAISE_AUDIO.muted=false; }catch(e){}
+        if(AUDIO_UNLOCKING){ try{ c.el.pause(); c.el.currentTime=0; }catch(e){} }
+        try{ c.el.muted=false; }catch(e){}
       };
       if(p&&p.then) p.then(reset).catch(reset); else reset();
-    }
-  }catch(e){}
+    }catch(e){}
+  });
+  setTimeout(()=>{ AUDIO_UNLOCKING=false; },1500);
 }
 try{ document.addEventListener("pointerdown",unlockSpeech,{capture:true,once:true}); }catch(e){}
 function speakPraise(){
@@ -843,9 +849,9 @@ function speakPraise(){
     return true;
   }catch(e){ return false; }
 }
-function playPraise(){
+function playPraise(size){
   if(!SOUND_ON) return;
-  if(playPraiseFile()) return;
+  if(playClip(size==="small" ? CLIP_SMALL : CLIP_LARGE)) return;
   if(!speakPraise()) playCheer();
 }
 
@@ -1080,8 +1086,8 @@ async function tabDelta(name,size,ev){
     const ok=await setTab(name,marks.length,marks);
     if(!ok){ toast("Nepovedlo se uložit 😕"); return; }
     await renderTabs();
-    if(size==="large"){ pourEffect(ev); playPraise(); toast("Načárkováno pro "+name+" 🍺 ("+marks.length+". pivo)"); }
-    else if(size==="small"){ pourEffect(ev); playPraise(); toast("Malé načárkováno pro "+name+" × ("+marks.length+". pivo)"); }
+    if(size==="large"){ pourEffect(ev); playPraise("large"); toast("Načárkováno pro "+name+" 🍺 ("+marks.length+". pivo)"); }
+    else if(size==="small"){ pourEffect(ev); playPraise("small"); toast("Malé načárkováno pro "+name+" × ("+marks.length+". pivo)"); }
     else toast("Poslední pivo vráceno ("+name+": "+marks.length+")");
     if(size) await warnIfKegLow();
   } finally { tabBusy=false; }
@@ -1457,7 +1463,7 @@ $("#addBtn").onclick=()=>addBeer($("#newBeer").value);
 $("#newBeer").addEventListener("keydown",e=>{ if(e.key==="Enter") addBeer($("#newBeer").value); });
 $("#waShare").onclick=()=>{ if(!WA_TEXT){ toast("Zatím není co sdílet — chybí hlasy 🍺"); return; } window.open("https://wa.me/?text="+encodeURIComponent(WA_TEXT),"_blank"); };
 $("#soundBtn").onclick=()=>{ SOUND_ON=!SOUND_ON; try{ localStorage.setItem("studovna_sound",SOUND_ON?"1":"0"); }catch(e){}
-  $("#soundBtn").textContent=SOUND_ON?"🔊":"🔇"; if(SOUND_ON){ unlockSpeech(); playPraise(); } };
+  $("#soundBtn").textContent=SOUND_ON?"🔊":"🔇"; if(SOUND_ON){ unlockSpeech(); playPraise("large"); } };
 $("#soundBtn").textContent=SOUND_ON?"🔊":"🔇";
 
 // ---- reset / admin ----
