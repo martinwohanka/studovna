@@ -777,9 +777,31 @@ function playCheer(){
 }
 
 // ====== HLASOVÁ HLÁŠKA „Jsi nejlepší!" ======
-// Mluví hlasem, který má zařízení nainstalovaný. Když český hlas chybí,
-// ozve se místo toho písknutí — nikdy nezůstane ticho.
+// Pořadí: nahrávka hlaska.wav → hlas prohlížeče → písknutí.
+// Smazáním hlaska.wav se appka vrátí k hlasu prohlížeče, nahrazením
+// souboru (třeba vlastní nahrávkou) se začne přehrávat ta.
 const PRAISE_TEXT = "Jsi nejlepší!";
+const PRAISE_FILE = "hlaska.wav";
+let PRAISE_AUDIO=null, PRAISE_FILE_OK=false, AUDIO_UNLOCKING=false;
+(function preloadPraise(){
+  try{
+    const a=new Audio(PRAISE_FILE); a.preload="auto";
+    a.addEventListener("canplaythrough",()=>{ PRAISE_FILE_OK=true; },{once:true});
+    a.addEventListener("error",()=>{ PRAISE_FILE_OK=false; },{once:true});
+    PRAISE_AUDIO=a;
+  }catch(e){ PRAISE_AUDIO=null; }
+})();
+function playPraiseFile(){
+  if(!PRAISE_FILE_OK || !PRAISE_AUDIO) return false;
+  try{
+    AUDIO_UNLOCKING=false;                              // doběhlé odemykání už ať do přehrávání nesahá
+    PRAISE_AUDIO.muted=false;
+    PRAISE_AUDIO.pause(); PRAISE_AUDIO.currentTime=0;   // rychlé čárkování hlášky nehromadí
+    const p=PRAISE_AUDIO.play();
+    if(p&&p.catch) p.catch(()=>{});
+    return true;
+  }catch(e){ return false; }
+}
 let VOICES = [];
 function refreshVoices(){ try{ VOICES=window.speechSynthesis.getVoices()||[]; }catch(e){ VOICES=[]; } }
 if("speechSynthesis" in window){
@@ -787,11 +809,25 @@ if("speechSynthesis" in window){
   try{ window.speechSynthesis.addEventListener("voiceschanged",refreshVoices); }catch(e){}
 }
 function czechVoice(){ return VOICES.find(v=>/^cs([-_]|$)/i.test(v.lang||"")) || null; }
-// iOS pustí řeč až po dotyku, tak ji odemkneme prvním kliknutím kdekoliv
+// iOS pustí zvuk až po dotyku, tak ho odemkneme prvním kliknutím kdekoliv
 let SPEECH_READY=false;
 function unlockSpeech(){
-  if(SPEECH_READY || !("speechSynthesis" in window)) return;
-  try{ const u=new SpeechSynthesisUtterance(" "); u.volume=0; window.speechSynthesis.speak(u); SPEECH_READY=true; }catch(e){}
+  if(!SPEECH_READY && ("speechSynthesis" in window)){
+    try{ const u=new SpeechSynthesisUtterance(" "); u.volume=0; window.speechSynthesis.speak(u); SPEECH_READY=true; }catch(e){}
+  }
+  try{
+    if(PRAISE_AUDIO && PRAISE_AUDIO.paused){
+      AUDIO_UNLOCKING=true;
+      PRAISE_AUDIO.muted=true;
+      const p=PRAISE_AUDIO.play();
+      // Odemknutí doběhne asynchronně — nesmí zastavit hlášku, která se mezitím spustila
+      const reset=()=>{
+        if(AUDIO_UNLOCKING){ try{ PRAISE_AUDIO.pause(); PRAISE_AUDIO.currentTime=0; }catch(e){} AUDIO_UNLOCKING=false; }
+        try{ PRAISE_AUDIO.muted=false; }catch(e){}
+      };
+      if(p&&p.then) p.then(reset).catch(reset); else reset();
+    }
+  }catch(e){}
 }
 try{ document.addEventListener("pointerdown",unlockSpeech,{capture:true,once:true}); }catch(e){}
 function speakPraise(){
@@ -809,6 +845,7 @@ function speakPraise(){
 }
 function playPraise(){
   if(!SOUND_ON) return;
+  if(playPraiseFile()) return;
   if(!speakPraise()) playCheer();
 }
 
