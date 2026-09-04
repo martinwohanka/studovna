@@ -738,22 +738,42 @@ let SOUND_ON=true;
 try{ SOUND_ON = localStorage.getItem("studovna_sound")!=="0"; }catch(e){}
 let AC=null;
 function audioCtx(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ AC=null; } } return AC; }
-function playPour(){
+// Šťastné písknutí: čistý sinus (píšťala nemá skoro žádné harmonické),
+// výška vyskočí nahoru a na konci ještě vesele škubne.
+function playCheer(){
   if(!SOUND_ON) return; const ac=audioCtx(); if(!ac) return;
-  if(ac.state==="suspended"){ try{ac.resume();}catch(e){} }
-  const t=ac.currentTime, dur=0.34;
-  const buf=ac.createBuffer(1,Math.floor(ac.sampleRate*dur),ac.sampleRate);
-  const d=buf.getChannelData(0);
-  for(let i=0;i<d.length;i++){ d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.4); }
-  const src=ac.createBufferSource(); src.buffer=buf;
-  const bp=ac.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=850; bp.Q.value=0.8;
-  const g=ac.createGain(); g.gain.value=0.16;
-  src.connect(bp); bp.connect(g); g.connect(ac.destination); src.start(t);
+  if(ac.state==="suspended"){ try{ const p=ac.resume(); if(p&&p.catch) p.catch(()=>{}); }catch(e){} }
+  const t=ac.currentTime, end=t+0.5;
+
   const o=ac.createOscillator(); o.type="sine";
-  o.frequency.setValueAtTime(300,t); o.frequency.exponentialRampToValueAtTime(540,t+0.2);
-  const g2=ac.createGain(); g2.gain.setValueAtTime(0.0001,t);
-  g2.gain.exponentialRampToValueAtTime(0.1,t+0.05); g2.gain.exponentialRampToValueAtTime(0.0001,t+0.32);
-  o.connect(g2); g2.connect(ac.destination); o.start(t); o.stop(t+0.34);
+  o.frequency.setValueAtTime(640,t);
+  o.frequency.exponentialRampToValueAtTime(1180,t+0.10);
+  o.frequency.exponentialRampToValueAtTime(1460,t+0.24);
+  o.frequency.exponentialRampToValueAtTime(1720,t+0.34);   // radostné škubnutí nahoru
+  o.frequency.exponentialRampToValueAtTime(1620,t+0.46);
+
+  // vibrato, ať to zní jako člověk a ne jako pípák z mikrovlnky
+  const lfo=ac.createOscillator(); lfo.type="sine"; lfo.frequency.value=6.5;
+  const lfoAmt=ac.createGain();
+  lfoAmt.gain.setValueAtTime(0,t); lfoAmt.gain.linearRampToValueAtTime(30,t+0.16);
+  lfo.connect(lfoAmt); lfoAmt.connect(o.frequency);
+
+  const g=ac.createGain();
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.exponentialRampToValueAtTime(0.15,t+0.03);        // svižný nádech
+  g.gain.setValueAtTime(0.15,t+0.33);
+  g.gain.exponentialRampToValueAtTime(0.0001,end);         // měkké doznění
+  o.connect(g); g.connect(ac.destination);
+  o.start(t); o.stop(end); lfo.start(t); lfo.stop(end);
+
+  // špetka dechu na začátku, aby to bylo písknutí a ne holý tón
+  const bl=0.12, buf=ac.createBuffer(1,Math.floor(ac.sampleRate*bl),ac.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++){ d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2.2); }
+  const air=ac.createBufferSource(); air.buffer=buf;
+  const hp=ac.createBiquadFilter(); hp.type="highpass"; hp.frequency.value=1800;
+  const ag=ac.createGain(); ag.gain.value=0.045;
+  air.connect(hp); hp.connect(ag); ag.connect(ac.destination); air.start(t);
 }
 function pourEffect(ev){
   let x=window.innerWidth/2, y=window.innerHeight*0.4;
@@ -986,8 +1006,8 @@ async function tabDelta(name,size,ev){
     const ok=await setTab(name,marks.length,marks);
     if(!ok){ toast("Nepovedlo se uložit 😕"); return; }
     await renderTabs();
-    if(size==="large"){ pourEffect(ev); playPour(); toast("Načárkováno pro "+name+" 🍺 ("+marks.length+". pivo)"); }
-    else if(size==="small"){ pourEffect(ev); playPour(); toast("Malé načárkováno pro "+name+" × ("+marks.length+". pivo)"); }
+    if(size==="large"){ pourEffect(ev); playCheer(); toast("Načárkováno pro "+name+" 🍺 ("+marks.length+". pivo)"); }
+    else if(size==="small"){ pourEffect(ev); playCheer(); toast("Malé načárkováno pro "+name+" × ("+marks.length+". pivo)"); }
     else toast("Poslední pivo vráceno ("+name+": "+marks.length+")");
     if(size) await warnIfKegLow();
   } finally { tabBusy=false; }
@@ -1363,7 +1383,7 @@ $("#addBtn").onclick=()=>addBeer($("#newBeer").value);
 $("#newBeer").addEventListener("keydown",e=>{ if(e.key==="Enter") addBeer($("#newBeer").value); });
 $("#waShare").onclick=()=>{ if(!WA_TEXT){ toast("Zatím není co sdílet — chybí hlasy 🍺"); return; } window.open("https://wa.me/?text="+encodeURIComponent(WA_TEXT),"_blank"); };
 $("#soundBtn").onclick=()=>{ SOUND_ON=!SOUND_ON; try{ localStorage.setItem("studovna_sound",SOUND_ON?"1":"0"); }catch(e){}
-  $("#soundBtn").textContent=SOUND_ON?"🔊":"🔇"; if(SOUND_ON) playPour(); };
+  $("#soundBtn").textContent=SOUND_ON?"🔊":"🔇"; if(SOUND_ON) playCheer(); };
 $("#soundBtn").textContent=SOUND_ON?"🔊":"🔇";
 
 // ---- reset / admin ----
