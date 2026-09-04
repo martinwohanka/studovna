@@ -776,11 +776,11 @@ function playCheer(){
   air.connect(hp); hp.connect(ag); ag.connect(ac.destination); air.start(t);
 }
 
-// ====== HLASOVÁ HLÁŠKA „Jsi nejlepší!" ======
+// ====== HLASOVÁ HLÁŠKA „Čauviny!" ======
 // Pořadí: nahrávka hlaska.wav → hlas prohlížeče → písknutí.
 // Smazáním hlaska.wav se appka vrátí k hlasu prohlížeče, nahrazením
 // souboru (třeba vlastní nahrávkou) se začne přehrávat ta.
-const PRAISE_TEXT = "Jsi nejlepší!";
+const PRAISE_TEXT = "Čauviny!";
 const PRAISE_FILE = "hlaska.wav";
 let PRAISE_AUDIO=null, PRAISE_FILE_OK=false, AUDIO_UNLOCKING=false;
 (function preloadPraise(){
