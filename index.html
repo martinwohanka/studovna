@@ -56,6 +56,28 @@
   }
   .wrap{width:100%;max-width:760px}
 
+  /* ===== pozadí: točené pivo (stoupající bublinky + pěna) ===== */
+  .beer-bg{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+  .bub{position:absolute;bottom:-10vh;animation:bubRise linear infinite}
+  .bub i{display:block;width:100%;height:100%;border-radius:50%;
+    background:radial-gradient(circle at 32% 28%, rgba(255,240,200,.75), rgba(245,185,66,.28) 55%, rgba(245,185,66,.06) 78%, transparent 82%);
+    box-shadow:inset 0 -1px 3px rgba(255,246,214,.4);
+    animation:bubDrift ease-in-out infinite alternate}
+  @keyframes bubRise{
+    0%{transform:translateY(0) scale(.85);opacity:0}
+    9%{opacity:1}
+    86%{opacity:.85}
+    100%{transform:translateY(-118vh) scale(1.18);opacity:0}
+  }
+  @keyframes bubDrift{from{transform:translateX(-6px)}to{transform:translateX(6px)}}
+
+  .beer-foam{position:fixed;top:0;left:0;right:0;height:clamp(46px,8vh,80px);
+    z-index:-1;pointer-events:none}
+  .beer-foam svg{display:block;width:100%;height:100%}
+  @media (prefers-reduced-motion:reduce){
+    .beer-bg{display:none}
+  }
+
   /* ===== hlavička ===== */
   .hero{
     position:relative;text-align:center;
@@ -354,6 +376,36 @@
   <svg style="position:absolute;width:0;height:0" aria-hidden="true"><defs>
     <linearGradient id="pourGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#e8762d"/><stop offset="1" stop-color="#f5b942"/></linearGradient>
   </defs></svg>
+
+  <!-- pozadí: stoupající bublinky a pivní pěna nahoře -->
+  <div class="beer-bg" id="beerBg" aria-hidden="true"></div>
+  <div class="beer-foam" aria-hidden="true">
+    <svg viewBox="0 0 600 46" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="foamGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fffaf0" stop-opacity=".22"/>
+          <stop offset=".6" stop-color="#fff4dc" stop-opacity=".15"/>
+          <stop offset="1" stop-color="#ffeecd" stop-opacity=".12"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width="600" height="16" fill="url(#foamGrad)"/>
+      <g fill="#fff6e0" opacity=".13">
+        <ellipse cx="10" cy="16" rx="30" ry="11"/><ellipse cx="52" cy="15" rx="22" ry="8"/>
+        <ellipse cx="96" cy="17" rx="27" ry="10"/><ellipse cx="140" cy="15" rx="20" ry="7"/>
+        <ellipse cx="182" cy="18" rx="32" ry="12"/><ellipse cx="231" cy="15" rx="23" ry="8"/>
+        <ellipse cx="276" cy="17" rx="29" ry="10"/><ellipse cx="322" cy="15" rx="19" ry="7"/>
+        <ellipse cx="366" cy="18" rx="31" ry="11"/><ellipse cx="414" cy="16" rx="24" ry="9"/>
+        <ellipse cx="458" cy="15" rx="21" ry="7"/><ellipse cx="500" cy="17" rx="30" ry="11"/>
+        <ellipse cx="548" cy="15" rx="22" ry="8"/><ellipse cx="590" cy="17" rx="27" ry="10"/>
+      </g>
+      <g fill="#fff6e0" opacity=".07">
+        <ellipse cx="34" cy="27" rx="14" ry="5"/><ellipse cx="112" cy="29" rx="10" ry="4"/>
+        <ellipse cx="196" cy="28" rx="16" ry="6"/><ellipse cx="262" cy="30" rx="9" ry="3.5"/>
+        <ellipse cx="344" cy="28" rx="13" ry="5"/><ellipse cx="424" cy="30" rx="11" ry="4"/>
+        <ellipse cx="492" cy="27" rx="15" ry="6"/><ellipse cx="566" cy="29" rx="10" ry="4"/>
+      </g>
+    </svg>
+  </div>
 
   <div class="wrap">
 
@@ -1393,6 +1445,29 @@ function makeQRInto(target,text,size){
   try{ new QRCode(target,{text,width:size,height:size,colorDark:"#0a0c10",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M}); }
   catch(e){ target.innerHTML='<span class="qr-fallback">Účet pro žíznivé:</span>'; }
 }
+// ---- pozadí: stoupající bublinky ----
+(function beerBubbles(){
+  const wrap=document.getElementById("beerBg"); if(!wrap) return;
+  try{ if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return; }catch(e){}
+  const n = window.innerWidth < 520 ? 18 : 28;
+  const frag=document.createDocumentFragment();
+  for(let i=0;i<n;i++){
+    const size = 5 + Math.random()*11;                // 5–16 px
+    const dur  = 21 - size*0.55 + Math.random()*5;    // větší bublina stoupá rychleji
+    const b=document.createElement("div"); b.className="bub";
+    b.style.left=(Math.random()*100).toFixed(2)+"%";
+    b.style.width=b.style.height=size.toFixed(1)+"px";
+    b.style.animationDuration=dur.toFixed(1)+"s";
+    b.style.animationDelay=(-Math.random()*dur).toFixed(1)+"s";  // ať jsou hned rozprostřené
+    const inner=document.createElement("i");
+    inner.style.opacity=(0.45+Math.random()*0.5).toFixed(2);
+    inner.style.animationDuration=(3+Math.random()*3).toFixed(1)+"s";
+    inner.style.animationDelay=(-Math.random()*4).toFixed(1)+"s";
+    b.appendChild(inner); frag.appendChild(b);
+  }
+  wrap.appendChild(frag);
+})();
+
 // ---- PWA (manifest + ikony za běhu) ----
 (function setupPWA(){
   try{
