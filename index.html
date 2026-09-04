@@ -777,11 +777,11 @@ function playCheer(){
 }
 
 // ====== HLASOVÁ HLÁŠKA „Čauviny!" ======
-// Pořadí: nahrávka hlaska.wav → hlas prohlížeče → písknutí.
-// Smazáním hlaska.wav se appka vrátí k hlasu prohlížeče, nahrazením
+// Pořadí: nahrávka hlaska.mp3 → hlas prohlížeče → písknutí.
+// Smazáním hlaska.mp3 se appka vrátí k hlasu prohlížeče, nahrazením
 // souboru (třeba vlastní nahrávkou) se začne přehrávat ta.
 const PRAISE_TEXT = "Čauviny!";
-const PRAISE_FILE = "hlaska.wav";
+const PRAISE_FILE = "hlaska.mp3";
 let PRAISE_AUDIO=null, PRAISE_FILE_OK=false, AUDIO_UNLOCKING=false;
 (function preloadPraise(){
   try{
