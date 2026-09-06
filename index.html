@@ -701,6 +701,7 @@ function esc(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
 const DAY_NAMES=["neděle","pondělí","úterý","středa","čtvrtek","pátek","sobota"];
 const pl=(n)=>n===1?"hlas":(n>=2&&n<=4?"hlasy":"hlasů");
 const plBeer=(n)=>n===1?"pivo":(n>=2&&n<=4?"piva":"piv");
+const plDay=(n)=>n===1?"den":(n>=2&&n<=4?"dny":"dní");
 
 // ---- diagnostika DB ----
 function dbStatus(msg,cls){
@@ -1189,6 +1190,12 @@ function fmtDateTime(ts){
   return p2(d.getDate())+". "+p2(d.getMonth()+1)+". "+d.getFullYear()+" "+p2(d.getHours())+":"+p2(d.getMinutes());
 }
 function fmtDate(ts){ const d=new Date(ts); return d.getDate()+". "+(d.getMonth()+1)+". "+d.getFullYear(); }
+// Počítáme kalendářní dny, ne násobky 24 hodin — od včerejška je to 1 den, ne 0
+function hallDuration(ts){
+  const sod=x=>{ const c=new Date(x); c.setHours(0,0,0,0); return c.getTime(); };
+  const n=Math.max(0,Math.round((sod(Date.now())-sod(ts))/86400000));
+  return n===0 ? "dnes" : n+" "+plDay(n);
+}
 async function renderPayments(){
   const rows=await loadPayments(); const body=$("#payRows"); const sum=$("#paySum");
   if(!rows.length){ body.innerHTML='<tr><td colspan="4"><div class="pay-empty">Zatím žádné platby 🍺</div></td></tr>'; sum.textContent=""; return; }
@@ -1382,7 +1389,7 @@ async function renderHall(){
   const h=await loadHall(); const list=$("#hallList");
   await loadHallSince();
   const since=$("#hallSince");
-  if(since) since.textContent = HALL_SINCE ? "🗓️ vedeno od "+fmtDate(HALL_SINCE) : "";
+  if(since) since.textContent = HALL_SINCE ? "🗓️ vedeno od "+fmtDate(HALL_SINCE)+" · "+hallDuration(HALL_SINCE) : "";
   const names=Object.keys(h).sort((a,b)=>(h[b].paid-h[a].paid)||(h[b].beers-h[a].beers)||a.localeCompare(b,"cs"));
   if(!names.length){ list.innerHTML='<div class="tabs-empty">Síň slávy zatím zeje prázdnotou. Zaplať lístek a zapiš se do dějin. 🏆</div>'; $("#hallTotal").textContent=""; return; }
   const medals=["🥇","🥈","🥉"]; let tb=0,tk=0; list.innerHTML="";
