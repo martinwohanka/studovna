@@ -376,6 +376,7 @@
   .chg-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
     font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;color:var(--amber)}
   .chg-head .chg-date{color:var(--txt-2);font-weight:500;font-size:12px}
+  .chg-head .chg-sha{margin-left:auto;color:var(--txt-2);opacity:.5;font-weight:500;font-size:11px}
   .chg-msg{margin-top:3px;color:var(--txt);font-size:13.5px;line-height:1.5}
   .chg-empty{text-align:center;color:var(--txt-2);padding:20px 12px;font-size:14px}
 
@@ -1696,11 +1697,14 @@ function renderChangelog(){
   if(head) head.textContent = APP_VERSION ? " · verze "+APP_VERSION : "";
   if(!body) return;
   if(!CHANGELOG.length){ body.innerHTML = '<div class="chg-empty">Seznam změn se nepodařilo načíst.</div>'; return; }
-  body.innerHTML = CHANGELOG.map(c=>`
+  body.innerHTML = CHANGELOG.map(c=>{
+    const v = esc(c.version||""), sha = esc(c.sha||"");
+    return `
     <div class="chg-item">
-      <div class="chg-head"><span>${esc(c.sha||"")}</span><span class="chg-date">${esc(c.date||"")}</span></div>
+      <div class="chg-head"><span>${v||sha}</span><span class="chg-date">${esc(c.date||"")}</span>${v&&sha?'<span class="chg-sha">'+sha+'</span>':''}</div>
       <div class="chg-msg">${esc(c.message||"")}</div>
-    </div>`).join("");
+    </div>`;
+  }).join("");
 }
 async function initChangelog(){
   await loadChangelog();

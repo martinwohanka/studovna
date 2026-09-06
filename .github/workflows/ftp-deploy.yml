@@ -17,9 +17,21 @@ jobs:
 
       - name: Vygenerovat seznam změn z historie commitů
         run: |
+          # Verze se počítá z počtu commitů, ať se nezapomene zvýšit.
+          # Setinky po 99 přetečou do další desítky: 99 commitů = v1.99, 100 = v2.00
+          N=$(git rev-list --count HEAD)
+          VERZE=$(printf 'v%d.%02d' $((1 + N/100)) $((N%100)))
+          echo "verze: $VERZE (commitů: $N)"
+
+          # Nejnovější commit je verze N, každý starší o jednu níž
           SEP=$'\x1f'
           git log --pretty=format:"%h${SEP}%ad${SEP}%s" --date=format:'%d. %m. %Y' -n 30 \
-            | jq -R -s -c --arg sep "$SEP" 'split("\n") | map(select(length>0) | split($sep)) | map({sha:.[0], date:.[1], message:.[2]})' \
+            | jq -R -s -c --arg sep "$SEP" --argjson n "$N" '
+                split("\n") | map(select(length>0) | split($sep)) | to_entries
+                | map(($n - .key) as $k | {
+                    sha: .value[0], date: .value[1], message: .value[2],
+                    version: ("v" + ((1 + ($k/100|floor))|tostring) + "." + (("0" + (($k%100)|tostring))[-2:]))
+                  })' \
             > changelog.json
 
           if [ -f changelog-cs.json ]; then
@@ -29,11 +41,6 @@ jobs:
             mv changelog.tmp.json changelog.json
           fi
 
-          # Verze se počítá z počtu commitů, ať se nezapomene zvýšit.
-          # Setinky po 99 přeteču do další desítky: 99 commitů = v1.99, 100 = v2.00
-          N=$(git rev-list --count HEAD)
-          VERZE=$(printf 'v%d.%02d' $((1 + N/100)) $((N%100)))
-          echo "verze: $VERZE (commitů: $N)"
           jq -c --arg v "$VERZE" '{version:$v, entries:.}' changelog.json > changelog.tmp.json
           mv changelog.tmp.json changelog.json
 
