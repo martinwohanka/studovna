@@ -311,7 +311,8 @@
   .linklike{background:none;border:none;color:var(--txt-2);text-decoration:underline;text-underline-offset:3px;
     cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;transition:.15s ease;}
   .linklike:hover{color:var(--txt)}
-  .admin-share{margin-top:16px;border-top:1px solid var(--line);padding-top:14px;text-align:center}
+  .admin-share{margin-top:16px;border-top:1px solid var(--line);padding-top:14px;
+    display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
   .wa-share{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;color:#06250f;background:var(--wa);
     border:none;border-radius:var(--r-sm);padding:11px 20px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:.18s ease;}
   .wa-share:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(37,211,102,.4)}
@@ -558,7 +559,8 @@
         <p class="sess-note">Nová cena platí pro <b>nově</b> načárkovaná piva. Dříve načárkovaná si drží cenu z okamžiku objednání.</p>
       </div>
       <div class="admin-share">
-        <button class="wa-share" id="waShare">📲 Sdílet výsledek na WhatsApp</button>
+        <button class="wa-share" id="waShare">📲 Sdílet anketu na WhatsApp</button>
+        <button class="wa-share" id="waShareHall">🏆 Sdílet síň slávy na WhatsApp</button>
       </div>
       <div class="admin-keg">
         <div class="keg-stat">
@@ -641,7 +643,7 @@ const PRICE_KEY   = "__price__";
 
 const $ = s => document.querySelector(s);
 let memShared = {}, memMine = {};
-let WA_TEXT = "";
+let WA_TEXT = "", WA_HALL = "";
 
 // ====== KONFIGURACE SUPABASE ======
 const SUPABASE_URL      = "https://eizrqgpkfeixgqymorro.supabase.co";
@@ -1392,13 +1394,19 @@ async function renderHall(){
   const since=$("#hallSince");
   if(since) since.textContent = HALL_SINCE ? "🗓️ vedeno od "+fmtDate(HALL_SINCE)+" · "+hallDuration(HALL_SINCE) : "";
   const names=Object.keys(h).sort((a,b)=>(h[b].paid-h[a].paid)||(h[b].beers-h[a].beers)||a.localeCompare(b,"cs"));
-  if(!names.length){ list.innerHTML='<div class="tabs-empty">Síň slávy zatím zeje prázdnotou. Zaplať lístek a zapiš se do dějin. 🏆</div>'; $("#hallTotal").textContent=""; return; }
+  if(!names.length){ list.innerHTML='<div class="tabs-empty">Síň slávy zatím zeje prázdnotou. Zaplať lístek a zapiš se do dějin. 🏆</div>'; $("#hallTotal").textContent=""; WA_HALL=""; return; }
   const medals=["🥇","🥈","🥉"]; let tb=0,tk=0; list.innerHTML="";
   names.forEach((n,i)=>{ const r=h[n]; tb+=r.beers; tk+=r.paid;
     const el=document.createElement("div"); el.className="hall-row"+(i<3?" top":"");
     el.innerHTML=`<span class="hall-rank">${medals[i]||(i+1+".")}</span><span class="hall-name">${esc(n)}</span><span class="hall-stat">${fmtBeers(r.beers)} 🍺 · <b>${r.paid} Kč</b></span>`;
     list.appendChild(el); });
   $("#hallTotal").textContent="celkem "+fmtBeers(tb)+" "+plBeer(Math.round(tb))+" · "+tk+" Kč";
+
+  let msg="🏆 Síň slávy — Studovna u Drobka\n";
+  if(HALL_SINCE) msg+="🗓️ vedeno od "+fmtDate(HALL_SINCE)+" ("+hallDuration(HALL_SINCE)+")\n";
+  msg+="\n"+names.map((n,i)=>(medals[i]||(i+1)+".")+" "+n+" — "+fmtBeers(h[n].beers)+" 🍺 · "+h[n].paid+" Kč").join("\n");
+  msg+="\n\nCelkem "+fmtBeers(tb)+" "+plBeer(Math.round(tb))+" · "+tk+" Kč 🍻";
+  WA_HALL=msg;
 }
 
 // ---- tooltip ----
@@ -1505,6 +1513,11 @@ function tick(){
 $("#addBtn").onclick=()=>addBeer($("#newBeer").value);
 $("#newBeer").addEventListener("keydown",e=>{ if(e.key==="Enter") addBeer($("#newBeer").value); });
 $("#waShare").onclick=()=>{ if(!WA_TEXT){ toast("Zatím není co sdílet — chybí hlasy 🍺"); return; } window.open("https://wa.me/?text="+encodeURIComponent(WA_TEXT),"_blank"); };
+$("#waShareHall").onclick=async()=>{
+  await renderHall();                    // ať sdílíme aktuální pořadí, ne to z posledního obnovení
+  if(!WA_HALL){ toast("Síň slávy je zatím prázdná 🏆"); return; }
+  window.open("https://wa.me/?text="+encodeURIComponent(WA_HALL),"_blank");
+};
 $("#soundBtn").onclick=()=>{ SOUND_ON=!SOUND_ON; try{ localStorage.setItem("studovna_sound",SOUND_ON?"1":"0"); }catch(e){}
   $("#soundBtn").textContent=SOUND_ON?"🔊":"🔇"; if(SOUND_ON){ unlockSpeech(); playPraise("large"); } };
 $("#soundBtn").textContent=SOUND_ON?"🔊":"🔇";
