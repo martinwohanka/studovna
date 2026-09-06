@@ -29,6 +29,14 @@ jobs:
             mv changelog.tmp.json changelog.json
           fi
 
+          # Verze se počítá z počtu commitů, ať se nezapomene zvýšit.
+          # Setinky po 99 přeteču do další desítky: 99 commitů = v1.99, 100 = v2.00
+          N=$(git rev-list --count HEAD)
+          VERZE=$(printf 'v%d.%02d' $((1 + N/100)) $((N%100)))
+          echo "verze: $VERZE (commitů: $N)"
+          jq -c --arg v "$VERZE" '{version:$v, entries:.}' changelog.json > changelog.tmp.json
+          mv changelog.tmp.json changelog.json
+
       - name: Nahrát soubory přes FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:

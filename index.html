@@ -236,6 +236,8 @@
   .tabs-empty{text-align:center;color:var(--txt-2);font-size:14px;border:1px dashed var(--line-2);border-radius:var(--r-md);padding:20px 16px;margin-top:14px;}
 
   /* ===== síň slávy ===== */
+  .hall-since{color:var(--txt-2);font-size:12.5px;margin-top:2px}
+  .hall-since:empty{display:none}
   .hall-list{margin-top:6px}
   .hall-row{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--card);margin-top:10px}
   .hall-row.top{border-color:rgba(245,185,66,.4)}
@@ -478,6 +480,7 @@
         <h2>🏆 Síň slávy</h2>
         <span class="week" id="hallTotal"></span>
       </div>
+      <div class="hall-since" id="hallSince"></div>
       <div class="hall-list" id="hallList"></div>
     </section>
 
@@ -616,7 +619,7 @@
 
   <div class="modal" id="changelogModal">
     <div class="modal-card chg-card">
-      <h3>📝 Seznam změn</h3>
+      <h3>📝 Seznam změn<span id="changelogVer" style="font-family:'Inter',sans-serif;font-weight:500;font-size:14px;color:var(--txt-2)"></span></h3>
       <p class="modal-hint">Automaticky generováno z historie GitHub commitů při každém nasazení.</p>
       <div class="chg-list" id="changelogBody"></div>
       <div class="modal-actions">
@@ -1185,6 +1188,7 @@ function fmtDateTime(ts){
   const d=new Date(ts);
   return p2(d.getDate())+". "+p2(d.getMonth()+1)+". "+d.getFullYear()+" "+p2(d.getHours())+":"+p2(d.getMinutes());
 }
+function fmtDate(ts){ const d=new Date(ts); return d.getDate()+". "+(d.getMonth()+1)+". "+d.getFullYear(); }
 async function renderPayments(){
   const rows=await loadPayments(); const body=$("#payRows"); const sum=$("#paySum");
   if(!rows.length){ body.innerHTML='<tr><td colspan="4"><div class="pay-empty">Zatím žádné platby 🍺</div></td></tr>'; sum.textContent=""; return; }
@@ -1342,12 +1346,43 @@ async function creditHall(name,dBeers,dPaid){
     else { const {error}=await sb.from("hall").upsert({name,beers,paid},{onConflict:"name"}); if(error){ dbFail("zápis do síně slávy",error); } }
   } else { const m=await loadHall(); if(beers===0&&paid===0) delete m[name]; else m[name]={beers,paid}; await sSet("hall",JSON.stringify(m),true); }
 }
+// ---- odkdy se síň slávy počítá (datum poslední obnovy) ----
+const HALL_SINCE_KEY="__hall_since__";
+let HALL_SINCE=null;
+async function loadHallSince(){
+  let v=null, ok=false;
+  if(sb){ try{ const {data,error}=await sb.from("suggestions").select("beer").eq("period",HALL_SINCE_KEY).limit(1);
+    if(!error){ ok=true; v=(data&&data.length)?data[0].beer:null; } }catch(e){} }
+  else { try{ v=await sGet("hall_since",true); ok=true; }catch(e){} }
+  let ts=parseInt(v,10);
+  if(!ts||isNaN(ts)){
+    // POZOR: zakládáme jen když čtení opravdu prošlo, jinak by výpadek sítě datum přepsal
+    if(!ok) return HALL_SINCE;
+    // Poprvé: odhadneme podle nejstarší platby, jinak bereme dnešek
+    let first=0;
+    try{ const p=await loadPayments(); if(p.length) first=Math.min(...p.map(r=>r.ts||0)); }catch(e){}
+    ts=first||Date.now();
+    await saveHallSince(ts);
+  }
+  HALL_SINCE=ts; return ts;
+}
+async function saveHallSince(ts){
+  HALL_SINCE=ts;
+  if(sb){ await sb.from("suggestions").delete().eq("period",HALL_SINCE_KEY);
+    const {error}=await sb.from("suggestions").insert({period:HALL_SINCE_KEY,beer:String(ts)});
+    if(error){ dbFail("uložení data síně slávy",error); } }
+  else { await sSet("hall_since",String(ts),true); }
+}
 async function resetHall(){
   if(sb){ await sb.from("hall").delete().gte("beers",0); }
   else { await sSet("hall","{}",true); }
+  await saveHallSince(Date.now());
 }
 async function renderHall(){
   const h=await loadHall(); const list=$("#hallList");
+  await loadHallSince();
+  const since=$("#hallSince");
+  if(since) since.textContent = HALL_SINCE ? "🗓️ vedeno od "+fmtDate(HALL_SINCE) : "";
   const names=Object.keys(h).sort((a,b)=>(h[b].paid-h[a].paid)||(h[b].beers-h[a].beers)||a.localeCompare(b,"cs"));
   if(!names.length){ list.innerHTML='<div class="tabs-empty">Síň slávy zatím zeje prázdnotou. Zaplať lístek a zapiš se do dějin. 🏆</div>'; $("#hallTotal").textContent=""; return; }
   const medals=["🥇","🥈","🥉"]; let tb=0,tk=0; list.innerHTML="";
@@ -1636,18 +1671,22 @@ function makeQRInto(target,text,size){
 
 // ====== SEZNAM ZMĚN (generováno z git historie při deployi) ======
 const CHANGELOG_URL = "changelog.json";
-let CHANGELOG = [];
+let CHANGELOG = [], APP_VERSION = "";
 async function loadChangelog(){
   try{
     const r = await fetch(CHANGELOG_URL, {cache:"no-store"});
     if(!r.ok) throw new Error("changelog nedostupný");
     const data = await r.json();
-    CHANGELOG = Array.isArray(data) ? data : [];
-  }catch(e){ CHANGELOG = []; }
+    // starší tvar souboru byl holé pole, novější má i číslo verze
+    if(Array.isArray(data)){ CHANGELOG=data; APP_VERSION=""; }
+    else { CHANGELOG=Array.isArray(data.entries)?data.entries:[]; APP_VERSION=data.version||""; }
+  }catch(e){ CHANGELOG=[]; APP_VERSION=""; }
   return CHANGELOG;
 }
 function renderChangelog(){
   const body = $("#changelogBody");
+  const head = $("#changelogVer");
+  if(head) head.textContent = APP_VERSION ? " · verze "+APP_VERSION : "";
   if(!body) return;
   if(!CHANGELOG.length){ body.innerHTML = '<div class="chg-empty">Seznam změn se nepodařilo načíst.</div>'; return; }
   body.innerHTML = CHANGELOG.map(c=>`
@@ -1659,7 +1698,9 @@ function renderChangelog(){
 async function initChangelog(){
   await loadChangelog();
   const el = $("#footVer");
-  if(el) el.textContent = CHANGELOG.length ? ("poslední změna " + CHANGELOG[0].date) : "seznam změn";
+  if(!el) return;
+  if(!CHANGELOG.length){ el.textContent="seznam změn"; return; }
+  el.textContent = (APP_VERSION ? APP_VERSION+" · " : "poslední změna ") + CHANGELOG[0].date;
 }
 $("#footVer").addEventListener("click", ()=>{ renderChangelog(); $("#changelogModal").style.display="flex"; });
 $("#changelogClose").onclick = ()=>{ $("#changelogModal").style.display="none"; };
