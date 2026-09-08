@@ -623,7 +623,7 @@
           <tbody id="payRows"></tbody>
         </table>
       </div>
-      <p class="pay-note">Sloupec „Piv" ukazuje počet kusů (z toho malá jako křížek). Útrata je skutečně zaplacená částka v Kč. Křížkem vpravo platbu smažeš — <b>odečte se i ze síně slávy</b>.</p>
+      <p class="pay-note">Sloupec „Piv" ukazuje počet kusů (z toho malá jako křížek). Útrata je skutečně zaplacená částka v Kč. Křížkem vpravo platbu smažeš — <b>odečte se i ze síně slávy</b> a z počítadla sudu.</p>
       <div class="modal-actions">
         <button class="btn-ghost" id="paymentsClose">Zavřít</button>
       </div>
@@ -1270,7 +1270,7 @@ async function askDeletePayment(rec){
   if(!confirm("Smazat tuto platbu?\n\n"+co+"\n\n"
       +(vSini ? "Piva i útrata se odečtou ze síně slávy."
               : "Síň slávy zůstane beze změny — platba je starší než její poslední obnova.")
-      +"\nPočítadla sudu se to netýká. Tohle se nedá vrátit.")) return;
+      +"\nZ počítadla sudu zmizí čárky udělané po jeho naražení. Tohle se nedá vrátit.")) return;
   if(!(await deletePaymentRecord(rec))){ toast("Platbu se nepovedlo smazat 😕"); return; }
   if(vSini){
     const eq = (rec.eq!=null) ? rec.eq
@@ -1322,12 +1322,21 @@ async function saveKegStart(ts,name,liters){
     const {error}=await sb.from("suggestions").insert({period:KEG_KEY,beer:blob}); if(error){ dbFail("uložení sudu",error); } }
   else { await sSet("keg_start",blob,true); }
 }
-// Spočítá vypitá piva od začátku sudu – jen čárky na otevřených lístcích.
-// Platby se do sudu nezapočítávají vůbec, s rozpitým sudem nemají nic společného.
+// Spočítá vypitá piva od naražení sudu. Rozhoduje výhradně čas udělání čárky,
+// ne to, jestli je pivo zaplacené – zaplacením se přesune do síně slávy,
+// ze sudu ale vypité zůstává. Čárky sbíráme z otevřených lístků i ze zaplacených.
 async function kegStats(){
   await loadKegStart(); // vždy znovu – jinak se výměna sudu neprojeví na ostatních zařízeních
   const since=KEG_START||0;
   let large=0,small=0;
+  const pays=await loadPayments();
+  pays.forEach(r=>{
+    // Jen záznamy s rozpisem čárek: každá má vlastní čas, takže se platba
+    // správně rozdělí mezi dva sudy. Starší platby bez časů čárek se do sudu
+    // nepočítají – nejde u nich určit, ke kterému sudu piva patřila.
+    if(Array.isArray(r.mk)) r.mk.forEach(m=>{
+      if(m && (m.t||0)>=since){ if(m.s==="small") small++; else large++; } });
+  });
   const tabs=await loadTabs();
   Object.keys(tabs).forEach(n=>{ tabMarks(tabs[n]).forEach(m=>{
     if(m&&(m.t||0)>=since){ if(m.s==="small") small++; else large++; } }); });
