@@ -1085,7 +1085,9 @@ async function renderTabs(){
   const tabs=await loadTabs(); const me=rememberedName().toLowerCase();
   const list=$("#tabsList"); list.innerHTML="";
   const names=Object.keys(tabs).sort((a,b)=>a.localeCompare(b,"cs"));
-  if(!names.length){ list.innerHTML='<div class="tabs-empty">Zatím nikdo nepije 🥲 Založ si lístek a buď první.</div>'; $("#tabsTotal").textContent=""; return; }
+  // Sud se vykresluje i bez otevřených lístků — jinak by po zaplacení všech
+  // zmizel z hlavní obrazovky včetně upozornění, že dochází
+  if(!names.length){ list.innerHTML='<div class="tabs-empty">Zatím nikdo nepije 🥲 Založ si lístek a buď první.</div>'; $("#tabsTotal").textContent=""; await renderKeg(); return; }
   let totalBeers=0,totalKc=0,leaderName=null,leaderC=0;
   names.forEach(n=>{
     const marks=tabMarks(tabs[n]); const c=marks.length; const tot=marksTotal(marks)||c*PRICE;
@@ -1101,7 +1103,7 @@ async function renderTabs(){
     list.appendChild(el);
   });
   $("#tabsTotal").textContent="rozpito "+totalBeers+" "+plBeer(totalBeers)+" · "+totalKc+" Kč"+(leaderName&&leaderC>0?" · 👑 "+leaderName:"");
-  renderKeg();
+  await renderKeg();
 }
 let tabBusy=false;
 async function tabDelta(name,size,ev){
