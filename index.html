@@ -1123,12 +1123,15 @@ async function openTab(){
 $("#openTabBtn").onclick=openTab;
 
 // ---- platba lístku ----
-let PAY_TAB=null;
+// Účtuje se přesně to, na co byl vystaven QR kód. Když někdo mezitím
+// načárkuje další pivo, zůstane nezaplacené na lístku.
+let PAY_TAB=null, PAY_MARKS=[], PAY_AMOUNT=0;
 async function payTab(name){
   await loadPrice();
   const tabs=await loadTabs(); const marks=tabMarks(tabs[name]); const c=marks.length;
   if(c===0){ if(confirm("Lístek je prázdný — zavřít bez placení?")){ await deleteTab(name); await renderTabs(); toast("Lístek zavřen 👋"); } return; }
-  PAY_TAB=name; const amount=marksTotal(marks)||c*PRICE;
+  const amount=marksTotal(marks)||c*PRICE;
+  PAY_TAB=name; PAY_MARKS=marks.slice(); PAY_AMOUNT=amount;
   $("#tabPayName").textContent=name; $("#tabPaySum").textContent=c+" "+plBeer(c)+" = "+amount+" Kč";
   const msg=("PIVO "+name).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z0-9 ]/g,"").toUpperCase().slice(0,60);
   const spayd="SPD*1.0*ACC:CZ7003000000000197958465*AM:"+amount.toFixed(2)+"*CC:CZK*MSG:"+msg;
@@ -1137,25 +1140,34 @@ async function payTab(name){
 }
 $("#tabPaidBtn").onclick=async()=>{
   if(!PAY_TAB){ $("#tabPayModal").style.display="none"; return; }
-  const name=PAY_TAB; PAY_TAB=null;
-  const tabs=await loadTabs(); const marks=tabMarks(tabs[name]); const c=marks.length; const amount=marksTotal(marks)||c*PRICE;
+  const name=PAY_TAB, marks=PAY_MARKS, amount=PAY_AMOUNT, c=marks.length;
+  PAY_TAB=null; PAY_MARKS=[]; PAY_AMOUNT=0;
   // Lístek mohl mezitím zmizet (zaplacený na jiném zařízení) — ať se do
-  // neměnné evidence nezapíše platba na 0 piv a 0 Kč
-  if(!c){ $("#tabPayModal").style.display="none"; await renderTabs(); await renderHall(); toast("Lístek už neexistuje 🤷"); return; }
+  // neměnné evidence nezapíše platba a piva se nepřipsala dvakrát
+  const tabs=await loadTabs();
+  if(!c || !(name in tabs)){ $("#tabPayModal").style.display="none"; await renderTabs(); await renderHall(); toast("Lístek už neexistuje 🤷"); return; }
+  // Čárky přibylé, když už byl QR na obrazovce, zůstanou nezaplacené na lístku.
+  // Přidávají se vždy na konec, takže zaplacené jsou ty na začátku.
+  const nyni=tabMarks(tabs[name]);
+  const zbytek=nyni.length>c ? nyni.slice(c) : [];
+
   const w=beerEquivalents(marks);
   const small=marks.filter(m=>m&&m.s==="small").length; const large=c-small;
   await creditHall(name,w,amount);
   const token=await recordPayment({name,beers:c,small,large,eq:Math.round(w*10)/10,amount,ts:Date.now(),
     mk:marks.map(m=>({t:(m&&m.t)||0,s:(m&&m.s==="small")?"small":"large"}))});
-  await deleteTab(name);
+  if(zbytek.length) await setTab(name,zbytek.length,zbytek); else await deleteTab(name);
   $("#tabPayModal").style.display="none";
   await renderTabs(); await renderHall();
-  showUndo("Zaplaceno ✓ "+c+" "+plBeer(c)+" do síně slávy",async()=>{
-    await setTab(name,c,marks); await creditHall(name,-w,-amount); await deletePayment(token); await renderTabs(); await renderHall(); toast("Platba vrácena ↩");
-  });
+  showUndo("Zaplaceno ✓ "+c+" "+plBeer(c)+" do síně slávy"
+      +(zbytek.length?" · "+zbytek.length+" "+plBeer(zbytek.length)+" zůstalo na lístku":""),
+    async()=>{
+      await setTab(name,nyni.length,nyni); await creditHall(name,-w,-amount);
+      await deletePayment(token); await renderTabs(); await renderHall(); toast("Platba vrácena ↩");
+    });
 };
-$("#tabPayCancel").onclick=()=>{ PAY_TAB=null; $("#tabPayModal").style.display="none"; };
-$("#tabPayModal").addEventListener("click",e=>{ if(e.target.id==="tabPayModal"){ PAY_TAB=null; e.target.style.display="none"; } });
+$("#tabPayCancel").onclick=()=>{ PAY_TAB=null; PAY_MARKS=[]; PAY_AMOUNT=0; $("#tabPayModal").style.display="none"; };
+$("#tabPayModal").addEventListener("click",e=>{ if(e.target.id==="tabPayModal"){ PAY_TAB=null; PAY_MARKS=[]; PAY_AMOUNT=0; e.target.style.display="none"; } });
 
 // ====== EVIDENCE PLATEB (neměnný ledger) ======
 const PAYMENT_KEY="__payment__";
