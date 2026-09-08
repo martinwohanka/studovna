@@ -252,7 +252,6 @@
     padding:13px 22px;border-radius:999px;font-size:14px;font-weight:500;opacity:0;pointer-events:none;transition:.3s ease;z-index:150;
     -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 14px 40px rgba(0,0,0,.55);max-width:92vw;}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-  .toast.has-action{pointer-events:auto}
   .toast.warn{background:rgba(60,20,20,.96);border-color:rgba(224,71,71,.65);color:#ffd9d9;
     box-shadow:0 14px 40px rgba(224,71,71,.3)}
   .toast.warn b{color:#ff8a80;font-weight:700}
@@ -263,9 +262,6 @@
   .count .keg-alert.done{background:rgba(224,71,71,.2);animation:none}
   @keyframes kegPulse{0%,100%{opacity:1}50%{opacity:.62}}
   @media (prefers-reduced-motion:reduce){.count .keg-alert{animation:none}}
-  .toast-undo{margin-left:10px;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;color:var(--amber);
-    background:none;border:1px solid var(--line-2);border-radius:999px;padding:4px 12px;cursor:pointer;transition:.15s ease}
-  .toast-undo:hover{color:#0a0c10;background:var(--amber);border-color:var(--amber)}
   .tip{position:fixed;display:none;z-index:60;max-width:250px;pointer-events:none;
     background:rgba(20,23,29,.95);color:var(--txt);border:1px solid var(--line-2);border-radius:var(--r-sm);padding:11px 14px;font-size:13.5px;line-height:1.5;
     -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 14px 36px rgba(0,0,0,.55);}
@@ -1154,17 +1150,13 @@ $("#tabPaidBtn").onclick=async()=>{
   const w=beerEquivalents(marks);
   const small=marks.filter(m=>m&&m.s==="small").length; const large=c-small;
   await creditHall(name,w,amount);
-  const token=await recordPayment({name,beers:c,small,large,eq:Math.round(w*10)/10,amount,ts:Date.now(),
+  await recordPayment({name,beers:c,small,large,eq:Math.round(w*10)/10,amount,ts:Date.now(),
     mk:marks.map(m=>({t:(m&&m.t)||0,s:(m&&m.s==="small")?"small":"large"}))});
   if(zbytek.length) await setTab(name,zbytek.length,zbytek); else await deleteTab(name);
   $("#tabPayModal").style.display="none";
   await renderTabs(); await renderHall();
-  showUndo("Zaplaceno ✓ "+c+" "+plBeer(c)+" do síně slávy"
-      +(zbytek.length?" · "+zbytek.length+" "+plBeer(zbytek.length)+" zůstalo na lístku":""),
-    async()=>{
-      await setTab(name,nyni.length,nyni); await creditHall(name,-w,-amount);
-      await deletePayment(token); await renderTabs(); await renderHall(); toast("Platba vrácena ↩");
-    });
+  toast("Zaplaceno ✓ "+c+" "+plBeer(c)+" do síně slávy"
+    +(zbytek.length?" · "+zbytek.length+" "+plBeer(zbytek.length)+" zůstalo na lístku":""));
 };
 $("#tabPayCancel").onclick=()=>{ PAY_TAB=null; PAY_MARKS=[]; PAY_AMOUNT=0; $("#tabPayModal").style.display="none"; };
 $("#tabPayModal").addEventListener("click",e=>{ if(e.target.id==="tabPayModal"){ PAY_TAB=null; PAY_MARKS=[]; PAY_AMOUNT=0; e.target.style.display="none"; } });
@@ -1181,13 +1173,6 @@ async function recordPayment(rec){
     const raw=await sGet("payments",true); let arr=[]; try{ arr=raw?JSON.parse(raw):[]; }catch(e){ arr=[]; }
     arr.push(blob); await sSet("payments",JSON.stringify(arr),true); return blob;
   }
-}
-// Pouze pro okamžité UNDO právě vytvořené platby (žádné mazání z UI ledgeru)
-async function deletePayment(token){
-  if(!token) return;
-  if(sb){ await sb.from("suggestions").delete().eq("period",PAYMENT_KEY).eq("beer",token); }
-  else { const raw=await sGet("payments",true); let arr=[]; try{ arr=raw?JSON.parse(raw):[]; }catch(e){ arr=[]; }
-    arr=arr.filter(b=>b!==token); await sSet("payments",JSON.stringify(arr),true); }
 }
 async function loadPayments(){
   let blobs=[];
@@ -1484,17 +1469,11 @@ async function addBeer(name){
 
 // ---- toast ----
 let toastT;
-function toast(msg){ const el=$("#toast"); el.classList.remove("has-action","warn"); el.textContent=msg; el.classList.add("show");
+function toast(msg){ const el=$("#toast"); el.classList.remove("warn"); el.textContent=msg; el.classList.add("show");
   clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove("show"),2200); }
-function toastWarn(html,ms){ const el=$("#toast"); el.classList.remove("has-action"); el.innerHTML=html;
+function toastWarn(html,ms){ const el=$("#toast"); el.innerHTML=html;
   el.classList.add("show","warn");
   clearTimeout(toastT); toastT=setTimeout(()=>{ el.classList.remove("show"); setTimeout(()=>el.classList.remove("warn"),300); }, ms||4200); }
-function showUndo(msg,fn){
-  const el=$("#toast"); el.innerHTML=esc(msg)+' <button class="toast-undo" id="toastUndo">Vrátit zpět</button>';
-  el.classList.add("show","has-action");
-  $("#toastUndo").onclick=async()=>{ clearTimeout(toastT); el.classList.remove("show","has-action"); setTimeout(()=>{el.textContent="";},250); await fn(); };
-  clearTimeout(toastT); toastT=setTimeout(()=>{ el.classList.remove("show","has-action"); setTimeout(()=>{el.textContent="";},250); },6000);
-}
 
 // ---- odpočet ----
 // "dnes / včera / v pátek 24.7." podle odstupu ode dneška
