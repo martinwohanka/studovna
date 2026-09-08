@@ -357,6 +357,34 @@
   table.pay-table td.amt{text-align:right;font-weight:700;color:var(--green);font-variant-numeric:tabular-nums}
   table.pay-table td.nm{font-weight:600;color:var(--txt)}
   .pay-empty{padding:26px 12px;text-align:center;color:var(--txt-2);font-size:14px}
+  /* Křížek drží u pravého okraje, i když tabulku roztáhne dlouhé jméno */
+  table.pay-table td.del{text-align:right;padding-left:0;width:1%;
+    position:sticky;right:0;background:#12151b;box-shadow:-7px 0 9px -7px rgba(0,0,0,.7)}
+  table.pay-table tbody tr:nth-child(even) td.del{background:#171a20}
+  table.pay-table thead th:last-child{position:sticky;right:0;z-index:2;
+    box-shadow:-7px 0 9px -7px rgba(0,0,0,.7)}
+  .pay-del{font-family:inherit;font-size:12.5px;line-height:1;color:var(--red);
+    background:rgba(255,107,94,.1);border:1px solid rgba(255,107,94,.32);border-radius:8px;
+    padding:5px 9px;cursor:pointer;transition:.15s ease}
+  .pay-del:hover{color:#fff;background:var(--red);border-color:var(--red)}
+  .pay-brk{color:var(--txt-2);font-size:12px}
+  /* na mobilu se tabulka nevejde, tak datum a rozpis zalomíme pod sebe */
+  /* Pět sloupců se na telefon nevejde, tak z každé platby uděláme kartu */
+  @media (max-width:480px){
+    table.pay-table,table.pay-table tbody{display:block}
+    table.pay-table thead{display:none}
+    table.pay-table tbody tr{display:grid;grid-template-columns:1fr auto auto;
+      align-items:center;column-gap:10px;padding:9px 11px}
+    table.pay-table td{display:block;padding:0;white-space:normal;font-size:13px}
+    table.pay-table td.dt{grid-column:1;grid-row:1;font-size:11.5px;color:var(--txt-2)}
+    table.pay-table td.dt .pay-t{color:var(--txt-2)}
+    table.pay-table td.nm{grid-column:1;grid-row:2;font-size:14.5px}
+    table.pay-table td.num{grid-column:2;grid-row:1;text-align:right;color:var(--txt-2)}
+    table.pay-table td.amt{grid-column:2;grid-row:2;text-align:right;font-size:14.5px}
+    table.pay-table td.del{grid-column:3;grid-row:1/3;position:static;
+      background:none;box-shadow:none;width:auto;padding-left:4px}
+    .pay-brk{font-size:11px}
+  }
   .pay-note{margin-top:12px;color:var(--txt-2);font-size:12px;line-height:1.5}
   .pay-note b{color:var(--txt);font-weight:600}
 
@@ -584,18 +612,18 @@
   <div class="modal" id="paymentsModal">
     <div class="modal-card pay-card">
       <h3>📒 Přehled plateb</h3>
-      <p class="modal-hint">Neměnná evidence všech proběhlých plateb. Záznamy <b>nelze mazat</b> — slouží pro kontrolu do budoucna.</p>
+      <p class="modal-hint">Evidence všech proběhlých plateb. Mazat záznamy jde <b>jen tady v administraci</b> — běžní uživatelé je nikde neodstraní.</p>
       <div class="pay-tools">
         <span class="pay-sum" id="paySum"></span>
         <button class="pay-csv" id="payCsvBtn" type="button">⬇️ Export CSV</button>
       </div>
       <div class="pay-scroll">
         <table class="pay-table">
-          <thead><tr><th>Datum a čas</th><th>Jméno</th><th class="num">Piv</th><th class="num">Útrata</th></tr></thead>
+          <thead><tr><th>Datum a čas</th><th>Jméno</th><th class="num">Piv</th><th class="num">Útrata</th><th></th></tr></thead>
           <tbody id="payRows"></tbody>
         </table>
       </div>
-      <p class="pay-note">Sloupec „Piv" ukazuje počet kusů (z toho malá jako křížek). Útrata je skutečně zaplacená částka v Kč.</p>
+      <p class="pay-note">Sloupec „Piv" ukazuje počet kusů (z toho malá jako křížek). Útrata je skutečně zaplacená částka v Kč. Křížkem vpravo platbu smažeš — <b>odečte se i ze síně slávy</b> a z počítadla sudu.</p>
       <div class="modal-actions">
         <button class="btn-ghost" id="paymentsClose">Zavřít</button>
       </div>
@@ -1184,14 +1212,30 @@ async function loadPayments(){
     const raw=await sGet("payments",true); try{ blobs=raw?JSON.parse(raw):[]; }catch(e){ blobs=[]; }
   }
   const out=[];
-  blobs.forEach(b=>{ try{ const o=JSON.parse(b); if(o&&o.ts) out.push(o); }catch(e){} });
+  // _raw si neseme kvůli mazání konkrétní platby v administraci
+  blobs.forEach(b=>{ try{ const o=JSON.parse(b); if(o&&o.ts){ o._raw=b; out.push(o); } }catch(e){} });
   out.sort((a,b)=>b.ts-a.ts); // nejnovější nahoře
   return out;
 }
-function fmtDateTime(ts){
-  const d=new Date(ts);
-  return p2(d.getDate())+". "+p2(d.getMonth()+1)+". "+d.getFullYear()+" "+p2(d.getHours())+":"+p2(d.getMinutes());
+// Mazání jednotlivé platby — dostupné jen z administrace.
+// Shodné záznamy prakticky nevzniknou (čas v ms + časy jednotlivých čárek).
+async function deletePaymentRecord(rec){
+  if(!rec || !rec._raw) return false;
+  if(sb){
+    const {error}=await sb.from("suggestions").delete().eq("period",PAYMENT_KEY).eq("beer",rec._raw);
+    if(error){ dbFail("smazání platby",error); return false; }
+    return true;
+  }
+  const raw=await sGet("payments",true); let arr=[]; try{ arr=raw?JSON.parse(raw):[]; }catch(e){ arr=[]; }
+  const i=arr.indexOf(rec._raw); if(i<0) return false;
+  arr.splice(i,1);                       // jen jeden výskyt, ne všechny shodné
+  await sSet("payments",JSON.stringify(arr),true); return true;
 }
+function fmtDateParts(ts){
+  const d=new Date(ts);
+  return { d:p2(d.getDate())+". "+p2(d.getMonth()+1)+". "+d.getFullYear(), t:p2(d.getHours())+":"+p2(d.getMinutes()) };
+}
+function fmtDateTime(ts){ const p=fmtDateParts(ts); return p.d+" "+p.t; }
 function fmtDate(ts){ const d=new Date(ts); return d.getDate()+". "+(d.getMonth()+1)+". "+d.getFullYear(); }
 // Počítáme kalendářní dny, ne násobky 24 hodin — od včerejška je to 1 den, ne 0
 function hallDuration(ts){
@@ -1201,15 +1245,38 @@ function hallDuration(ts){
 }
 async function renderPayments(){
   const rows=await loadPayments(); const body=$("#payRows"); const sum=$("#paySum");
-  if(!rows.length){ body.innerHTML='<tr><td colspan="4"><div class="pay-empty">Zatím žádné platby 🍺</div></td></tr>'; sum.textContent=""; return; }
+  if(!rows.length){ body.innerHTML='<tr><td colspan="5"><div class="pay-empty">Zatím žádné platby 🍺</div></td></tr>'; sum.textContent=""; return; }
   let totBeers=0,totKc=0;
-  body.innerHTML=rows.map(r=>{
+  body.innerHTML=rows.map((r,i)=>{
     totBeers+=r.beers||0; totKc+=r.amount||0;
     const small=r.small||0, large=(r.large!=null)?r.large:((r.beers||0)-small);
-    let breakdown=""; if(small>0){ breakdown=' <span style="color:var(--txt-2);font-size:12px">('+large+'×velké, '+small+'×malé)</span>'; }
-    return '<tr><td>'+fmtDateTime(r.ts)+'</td><td class="nm">'+esc(r.name||"?")+'</td><td class="num">'+(r.beers||0)+breakdown+'</td><td class="amt">'+(r.amount||0)+' Kč</td></tr>';
+    let breakdown=""; if(small>0){ breakdown=' <span class="pay-brk">('+large+'×velké, '+small+'×malé)</span>'; }
+    const dt=fmtDateParts(r.ts);
+    return '<tr><td class="dt">'+dt.d+' <span class="pay-t">'+dt.t+'</span></td><td class="nm">'+esc(r.name||"?")+'</td><td class="num">'+(r.beers||0)+breakdown+'</td><td class="amt">'+(r.amount||0)+' Kč</td>'
+      +'<td class="del"><button class="pay-del" data-i="'+i+'" title="Smazat platbu" aria-label="Smazat platbu">✕</button></td></tr>';
   }).join("");
+  body.querySelectorAll(".pay-del").forEach(b=>{ b.onclick=()=>askDeletePayment(rows[+b.dataset.i]); });
   sum.innerHTML='Celkem <b>'+rows.length+'</b> '+(rows.length===1?"platba":(rows.length>=2&&rows.length<=4?"platby":"plateb"))+' · <b>'+totBeers+'</b> '+plBeer(totBeers)+' · <b>'+totKc+' Kč</b>';
+}
+async function askDeletePayment(rec){
+  if(!rec) return;
+  await loadHallSince();
+  // Platba starší než poslední obnova síně slávy už v současném pořadí není,
+  // takže by odečet sebral piva, která tam za ni nikdy nebyla připsaná
+  const vSini = HALL_SINCE ? (rec.ts||0) >= HALL_SINCE : true;
+  const co = fmtDateTime(rec.ts)+" · "+(rec.name||"?")+"\n"+(rec.beers||0)+" "+plBeer(rec.beers||0)+" · "+(rec.amount||0)+" Kč";
+  if(!confirm("Smazat tuto platbu?\n\n"+co+"\n\n"
+      +(vSini ? "Piva i útrata se odečtou ze síně slávy."
+              : "Síň slávy zůstane beze změny — platba je starší než její poslední obnova.")
+      +"\nZáznam zmizí i z počítadla sudu. Tohle se nedá vrátit.")) return;
+  if(!(await deletePaymentRecord(rec))){ toast("Platbu se nepovedlo smazat 😕"); return; }
+  if(vSini){
+    const eq = (rec.eq!=null) ? rec.eq
+      : (Array.isArray(rec.mk) && rec.mk.length ? beerEquivalents(rec.mk) : (rec.beers||0));
+    await creditHall(rec.name, -eq, -(rec.amount||0));
+  }
+  await renderPayments(); await renderHall(); await renderTabs();
+  toast("Platba smazána 🗑️");
 }
 function paymentsCSV(rows){
   const head=["Datum a cas","Jmeno","Piv celkem","Velka","Mala","Utrata Kc"];
@@ -1578,7 +1645,7 @@ $("#adminResetBtn").onclick=async()=>{ if(!confirm("Opravdu smazat všechny hlas
 $("#hallResetBtn").onclick=async()=>{ if(!confirm("Vynulovat síň slávy? Smaže se celá historie útrat."))return; await resetHall(); await renderHall(); toast("Síň slávy vynulována ✨"); };
 $("#adminCancel").onclick=()=>{ $("#adminModal").style.display="none"; };
 $("#adminModal").addEventListener("click",e=>{ if(e.target.id==="adminModal") $("#adminModal").style.display="none"; });
-$("#ledgerBtn").onclick=async()=>{ $("#payRows").innerHTML='<tr><td colspan="4"><div class="pay-empty">Načítám…</div></td></tr>'; $("#paymentsModal").style.display="flex"; await renderPayments(); };
+$("#ledgerBtn").onclick=async()=>{ $("#payRows").innerHTML='<tr><td colspan="5"><div class="pay-empty">Načítám…</div></td></tr>'; $("#paymentsModal").style.display="flex"; await renderPayments(); };
 $("#paymentsClose").onclick=()=>{ $("#paymentsModal").style.display="none"; };
 $("#paymentsModal").addEventListener("click",e=>{ if(e.target.id==="paymentsModal") $("#paymentsModal").style.display="none"; });
 $("#payCsvBtn").onclick=async()=>{
