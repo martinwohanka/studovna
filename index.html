@@ -1139,6 +1139,9 @@ $("#tabPaidBtn").onclick=async()=>{
   if(!PAY_TAB){ $("#tabPayModal").style.display="none"; return; }
   const name=PAY_TAB; PAY_TAB=null;
   const tabs=await loadTabs(); const marks=tabMarks(tabs[name]); const c=marks.length; const amount=marksTotal(marks)||c*PRICE;
+  // Lístek mohl mezitím zmizet (zaplacený na jiném zařízení) — ať se do
+  // neměnné evidence nezapíše platba na 0 piv a 0 Kč
+  if(!c){ $("#tabPayModal").style.display="none"; await renderTabs(); await renderHall(); toast("Lístek už neexistuje 🤷"); return; }
   const w=beerEquivalents(marks);
   const small=marks.filter(m=>m&&m.s==="small").length; const large=c-small;
   await creditHall(name,w,amount);
@@ -1339,6 +1342,10 @@ async function loadHall(){
   return (m&&typeof m==="object")?m:{};
 }
 async function creditHall(name,dBeers,dPaid){
+  // Malé pivo je 3/5 piva a to se v plovoucí čárce nedá zapsat přesně,
+  // takže se přírůstek i výsledek zaokrouhlují — jinak by se z 10 malých
+  // stalo 5,999999999999999 piva.
+  dBeers=Math.round(dBeers*10)/10; dPaid=Math.round(dPaid);
   if(sb){
     // Atomický přírůstek na straně DB (žádná ztráta při souběžných platbách).
     // Vyžaduje funkci hall_credit v Supabase – viz SQL v dokumentaci/chatu.
@@ -1350,7 +1357,8 @@ async function creditHall(name,dBeers,dPaid){
   }
   // Fallback (NEatomické – při souběhu dvou plateb může jedna přepsat druhou)
   const h=await loadHall(); const cur=h[name]||{beers:0,paid:0};
-  const beers=Math.max(0,(cur.beers||0)+dBeers); const paid=Math.max(0,(cur.paid||0)+dPaid);
+  const beers=Math.max(0,Math.round(((cur.beers||0)+dBeers)*10)/10);
+  const paid=Math.max(0,Math.round((cur.paid||0)+dPaid));
   if(sb){
     if(beers===0&&paid===0){ await sb.from("hall").delete().eq("name",name); }
     else { const {error}=await sb.from("hall").upsert({name,beers,paid},{onConflict:"name"}); if(error){ dbFail("zápis do síně slávy",error); } }
