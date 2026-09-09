@@ -333,6 +333,9 @@
   .keg-since{color:var(--txt-2);font-size:12px;margin-bottom:10px}
   .keg-new{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;color:#0a0c10;background:var(--grad);
     border:none;border-radius:10px;padding:11px 16px;cursor:pointer;transition:.18s ease;width:100%;}
+  .keg-edit{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;color:var(--txt);background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:10px 16px;cursor:pointer;transition:.18s ease;width:100%;margin-top:8px;}
+  .keg-edit:hover{background:rgba(255,255,255,.11)}
   .keg-new:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(232,118,45,.4)}
 
   .admin-ledger{margin-top:14px;border-top:1px solid var(--line);padding-top:13px;text-align:center}
@@ -593,6 +596,7 @@
         </div>
         <div class="keg-since" id="kegSince"></div>
         <button class="keg-new" id="kegNewBtn" type="button">🛢️ Nový sud (vynulovat počítadlo)</button>
+        <button class="keg-edit" id="kegEditBtn" type="button">✏️ Upravit údaje o sudu (počítadlo zůstane)</button>
       </div>
 
       <div class="admin-ledger">
@@ -1311,6 +1315,11 @@ async function loadKegStart(){
     // POZOR: nový sud zakládáme jen když čtení opravdu prošlo a záznam neexistuje.
     // Jinak by výpadek sítě resetoval sud (renderKeg běží každých 15 s).
     if(!ok) return KEG_START;
+    if(KEG_START) return KEG_START; // sud jsme už jednou načtli – prázdné čtení je chyba, ne nový sud
+    if(sb){ // druhé čtení pro jistotu, ať prázdný sud nezaložíme kvůli souběhu se zápisem
+      try{ const {data,error}=await sb.from("suggestions").select("beer").eq("period",KEG_KEY).limit(1);
+        if(error || (data&&data.length)) return KEG_START; }catch(e){ return KEG_START; }
+    }
     ts=Date.now(); nm=""; sz=0; await saveKegStart(ts,nm,sz); return ts;
   }
   KEG_START=ts; KEG_NAME=nm; KEG_SIZE=sz; return ts;
@@ -1318,8 +1327,16 @@ async function loadKegStart(){
 async function saveKegStart(ts,name,liters){
   KEG_START=ts; KEG_NAME=name||""; KEG_SIZE=parseFloat(liters)||0;
   const blob=JSON.stringify({ts:ts,name:KEG_NAME,liters:KEG_SIZE});
-  if(sb){ await sb.from("suggestions").delete().eq("period",KEG_KEY);
-    const {error}=await sb.from("suggestions").insert({period:KEG_KEY,beer:blob}); if(error){ dbFail("uložení sudu",error); } }
+  if(sb){
+    // POZOR na pořadí: nejdřív vložit nový záznam, teprve pak smazat staré.
+    // Kdyby se mazalo první, vznikne okno (jedno kolo po síti), ve kterém sud
+    // v databázi vůbec není – a jiné zařízení, které si zrovna načítá stav,
+    // by ho považovalo za nezaložený a přepsalo prázdným. Přesně tak zmizel
+    // název a objem sudu 8. 9. 2026 půl vteřiny po naražení.
+    const {error}=await sb.from("suggestions").insert({period:KEG_KEY,beer:blob});
+    if(error){ dbFail("uložení sudu",error); return; }
+    await sb.from("suggestions").delete().eq("period",KEG_KEY).neq("beer",blob);
+  }
   else { await sSet("keg_start",blob,true); }
 }
 // Spočítá vypitá piva od naražení sudu. Rozhoduje výhradně čas udělání čárky,
@@ -1359,6 +1376,7 @@ async function renderKeg(){
     sub.textContent=st.large+"× velké, "+st.small+"× malé";
     since.textContent=(st.name?st.name+" · ":"")+(st.size?"sud "+fmtLiters(st.size)+" l · ":"")
       +(st.name||st.size?"naražen ":"Sud naražen ")+(st.since?fmtLastSeen(st.since):"—")
+      +(st.size?"":" · chybí název a objem")
       +(st.size?(st.over?" · dopito, +"+fmtLiters(st.overL)+" l nad objem sudu":(st.pct>=100?" · sud dopito":(st.pct>=80?" · sud je téměř dopitý":" · zbývá ≈ "+st.leftBeers+" "+plBeer(st.leftBeers)+" ("+fmtLiters(st.leftL)+" l)"))):"");
   }
   const line=$("#kegLine");
@@ -1383,6 +1401,9 @@ async function renderKeg(){
     if(st.size){
       if(st.pct>=90) alert='<div class="keg-alert">🛑 DROBEK asi zapomněl narazit nový sud !!! 😡</div>';
       else if(st.pct>=80) alert='<div class="keg-alert">⚠️ POZOR, sud je téměř dopitý!</div>';
+    } else {
+      // Bez objemu se nedá spočítat, kolik zbývá, ani upozornit, že sud dochází
+      alert='<div class="keg-alert">✏️ U sudu chybí název a objem — doplň je v adminu (Upravit údaje o sudu).</div>';
     }
     line.innerHTML=head+bar+foot+alert;
   }
@@ -1637,6 +1658,22 @@ $("#kegNewBtn").onclick=async()=>{
   await saveKegStart(Date.now(),nm,sz);
   await renderKeg();
   toast("Naražen nový sud: "+nm+" "+fmtLiters(sz)+" l 🛢️");
+};
+$("#kegEditBtn").onclick=async()=>{
+  // Oprava názvu a objemu už naraženého sudu – čas naražení i počítadlo zůstávají.
+  await loadKegStart();
+  if(!KEG_START){ toast("Sud zatím není naražený 🛢️"); return; }
+  const beer=window.prompt("Jaké pivo je v sudu?",KEG_NAME||(MENU&&MENU.length?MENU[0]:""));
+  if(beer===null) return;
+  const nm=beer.trim();
+  if(!nm){ toast("Název piva nesmí být prázdný 🍺"); return; }
+  const sizeRaw=window.prompt("Velikost sudu v litrech:",KEG_SIZE?String(KEG_SIZE):"30");
+  if(sizeRaw===null) return;
+  const sz=parseFloat(String(sizeRaw).replace(",","."));
+  if(!sz||isNaN(sz)||sz<=0||sz>1000){ toast("Zadej platný objem v litrech 🛢️"); return; }
+  await saveKegStart(KEG_START,nm,sz);
+  await renderKeg();
+  toast("Údaje o sudu upraveny: "+nm+" "+fmtLiters(sz)+" l ✏️");
 };
 $("#sessSaveBtn").onclick=async()=>{ const btn=$("#sessSaveBtn"); btn.disabled=true; await applySessionFromInputs(); btn.disabled=false;
   await render(); tick(); $("#adminModal").style.display="none"; toast("Termín meetingu uložen, anketa zachována 📅"); };
