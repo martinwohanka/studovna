@@ -1,6 +1,6 @@
 # Studovna u Drobka
 
-Jednostránková webová appka (hlasování o pivu, rozpitá piva, síň slávy, sud, platby přes QR) — statický `index.html` napojený na Supabase.
+Jednostránková webová appka (rozpitá piva, síň slávy, sud, platby přes QR) — statický `index.html` napojený na Supabase.
 
 ## Automatický deploy na FTP
 
