@@ -2,6 +2,14 @@
 
 Jednostránková webová appka (rozpitá piva, síň slávy, sud, platby přes QR) — statický `index.html` napojený na Supabase.
 
+## Verze
+
+Číslo verze je v `index.html` v konstantě `APP_VERSION_CODE` (např. `"v1.36"`). **Při vydání změny ji zvyš ručně** – deploy si ji odtud přečte do `changelog.json` a patička i okno „Co je nového“ ji ukážou. Commity bez změny verze se v seznamu změn zařadí k nejbližší novější verzi. Česká znění položek seznamu změn jdou přepsat v `changelog-cs.json` (klíčem je krátký hash commitu).
+
+## Databáze (Supabase)
+
+Schéma, funkce a oprávnění jsou v `migrace_v136.sql` – spouští se ručně v Supabase → SQL Editor. Heslo administrace je v databázi jen jako bcrypt hash; nastavení/změna hesla je popsaná na konci téhož souboru. Všechny admin operace jdou přes RPC funkce, které heslo ověřují; anon klíč smí jen číst a čárkovat.
+
 ## Automatický deploy na FTP
 
 Při každém pushi do větve `main` se soubory automaticky nahrají na FTP server pomocí GitHub Actions (`.github/workflows/ftp-deploy.yml`).

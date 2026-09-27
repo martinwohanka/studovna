@@ -258,7 +258,8 @@
   .toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);
     background:rgba(20,23,29,.92);border:1px solid var(--line-2);color:var(--txt);
     padding:13px 22px;border-radius:999px;font-size:14px;font-weight:500;opacity:0;pointer-events:none;transition:.3s ease;z-index:150;
-    -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 14px 40px rgba(0,0,0,.55);max-width:92vw;}
+    -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 14px 40px rgba(0,0,0,.55);
+    width:max-content;max-width:min(92vw,560px);}   /* bez width by left:50 % zúžilo toast na půl displeje */
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .toast.act.show{pointer-events:auto;display:flex;align-items:center;gap:12px;padding:6px 6px 6px 20px}
   .toast-act{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:#0a0c10;background:var(--grad);
@@ -2063,17 +2064,20 @@ function makeQRInto(target,text,size){
 })();
 
 // ====== SEZNAM ZMĚN (generováno z git historie při deployi) ======
+// Verze aplikace – JEDINÝ zdroj pravdy. Při vydání změny ji zvyš ručně;
+// deploy (.github/workflows/ftp-deploy.yml) si ji odsud přečte do changelog.json.
+// Dřív se verze počítala z počtu commitů, takže neodpovídala kódu (v1.33 vs. „v1.35“).
+const APP_VERSION_CODE = "v1.36";
 const CHANGELOG_URL = "changelog.json";
-let CHANGELOG = [], APP_VERSION = "";
+let CHANGELOG = [], APP_VERSION = APP_VERSION_CODE;
 async function loadChangelog(){
   try{
     const r = await fetch(CHANGELOG_URL, {cache:"no-store"});
     if(!r.ok) throw new Error("changelog nedostupný");
     const data = await r.json();
-    // starší tvar souboru byl holé pole, novější má i číslo verze
-    if(Array.isArray(data)){ CHANGELOG=data; APP_VERSION=""; }
-    else { CHANGELOG=Array.isArray(data.entries)?data.entries:[]; APP_VERSION=data.version||""; }
-  }catch(e){ CHANGELOG=[]; APP_VERSION=""; }
+    // starší tvar souboru byl holé pole, novější má i číslo verze (to ale bereme z kódu)
+    CHANGELOG = Array.isArray(data) ? data : (Array.isArray(data.entries) ? data.entries : []);
+  }catch(e){ CHANGELOG=[]; }
   return CHANGELOG;
 }
 function renderChangelog(){
@@ -2095,8 +2099,7 @@ async function initChangelog(){
   await loadChangelog();
   const el = $("#footVer");
   if(el){
-    if(!CHANGELOG.length) el.textContent="seznam změn";
-    else el.textContent = (APP_VERSION ? APP_VERSION+" · " : "poslední změna ") + CHANGELOG[0].date;
+    el.textContent = APP_VERSION + (CHANGELOG.length ? " · "+CHANGELOG[0].date : " · seznam změn");
   }
   showNews();
 }
@@ -2106,7 +2109,7 @@ async function initChangelog(){
 // Co už bylo viděno, si pamatuje localStorage – nic se neukládá do databáze.
 const NEWS_KEY = "studovna_seen_ver";
 const NEWS_MAX = 6; // víc než tolik novinek najednou nikdo nečte
-// "v1.35" -> 135, ať se dají verze porovnat číslem
+// "v1.36" -> 136, ať se dají verze porovnat číslem
 function verNum(v){ const m=/^v(\d+)\.(\d+)$/.exec(String(v||"").trim()); return m?parseInt(m[1],10)*100+parseInt(m[2],10):0; }
 function newsSeen(){ try{ return localStorage.getItem(NEWS_KEY)||""; }catch(e){ return "__nelze__"; } }
 function markNewsSeen(v){ try{ localStorage.setItem(NEWS_KEY,v); }catch(e){} }
