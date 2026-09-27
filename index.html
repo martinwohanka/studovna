@@ -21,7 +21,7 @@
     --line:rgba(255,255,255,.09);
     --line-2:rgba(255,255,255,.16);
     --txt:#f2f3f5;
-    --txt-2:#9aa3ad;
+    --txt-2:#b0b8c2;   /* šedé texty: ≥ 7:1 na kartách (WCAG AA chce 4,5:1) */
     --amber:#f5b942;
     --amber-2:#e8762d;
     --grad:linear-gradient(135deg,#f5b942,#e8762d);
@@ -72,7 +72,8 @@
   @keyframes bubDrift{from{transform:translateX(-6px)}to{transform:translateX(6px)}}
 
   /* hustá krémová pěna: plný krém nahoře, dolů řídne a teple se barví od piva */
-  .beer-foam{position:fixed;top:0;left:0;right:0;height:clamp(70px,11vh,118px);
+  /* pěna je jen nahoře na stránce a odjede se scrollem – nepřekrývá obsah */
+  .beer-foam{position:absolute;top:0;left:0;right:0;height:clamp(48px,8vh,84px);
     z-index:-1;pointer-events:none;overflow:hidden;
     background:linear-gradient(180deg,
       rgba(255,252,243,.44) 0%,
@@ -105,6 +106,8 @@
     font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--txt-2);
     border:1px solid var(--line);border-radius:999px;padding:6px 14px;margin-bottom:14px;
     background:rgba(255,255,255,.03);position:relative;}
+  .kicker{flex-wrap:wrap;justify-content:center;column-gap:6px;row-gap:2px;max-width:100%}
+  .kicker .nw{white-space:nowrap}   /* „2019“ nesmí zůstat sám na řádku */
   .kicker::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
   h1{font-family:'Space Grotesk',sans-serif;font-weight:700;
     font-size:clamp(34px,8.5vw,62px);line-height:1.02;letter-spacing:-.02em;margin:2px 0 14px;position:relative;}
@@ -133,7 +136,7 @@
   .count .keg-line{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);
     font-size:clamp(13px,3.2vw,14.5px);color:var(--txt-2);line-height:1.55}
   .count .keg-line b{color:var(--amber);font-weight:700}
-  .count .keg-line .keg-when{color:var(--txt);font-weight:600}
+  .count .keg-line .keg-when{color:var(--txt);font-weight:600;white-space:nowrap}
   .count .keg-line .keg-empty{color:var(--red)}
   .count .keg-bar{margin:9px auto 7px;max-width:420px;height:7px;border-radius:999px;
     background:rgba(255,255,255,.07);overflow:hidden}
@@ -184,11 +187,12 @@
   .tab-name{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:clamp(16px,4.2vw,19px);font-weight:600;letter-spacing:-.005em;}
   .tab-price{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(14.5px,3.8vw,17px);color:var(--txt-2);white-space:nowrap;font-variant-numeric:tabular-nums;}
   .tab-price b{font-weight:700;font-size:1.12em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;}
-  .tab-marks{margin-top:8px;min-height:18px;line-height:1.3;word-break:break-all;display:flex;flex-wrap:wrap;align-items:center;gap:3px;}
-  .tab-marks .mk{height:17px;width:8px;flex:0 0 auto;overflow:visible}
-  .tab-marks .mk line{stroke:var(--amber);stroke-width:2.2;stroke-linecap:round;filter:drop-shadow(0 0 6px rgba(245,185,66,.5))}
-  .tab-marks .mk-small line{stroke:#7ec8e3;filter:drop-shadow(0 0 6px rgba(126,200,227,.5))}
-  .tab-marks .mk-gap{flex:0 0 auto;width:7px}
+  .tab-marks{margin-top:8px;min-height:18px;line-height:1.3;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;}
+  .tab-marks .mk{height:18px;flex:0 0 auto;overflow:visible}
+  .tab-marks .mk line{stroke-width:2.2;stroke-linecap:round}
+  .tab-marks .mk line.l{stroke:var(--amber);filter:drop-shadow(0 0 5px rgba(245,185,66,.5))}
+  .tab-marks .mk line.s{stroke:#7ec8e3;filter:drop-shadow(0 0 5px rgba(126,200,227,.5))}
+  .tab-marks .mk line.strike{stroke-width:2.4}
   .tab-last{color:var(--txt-2);font-size:12px;margin-top:4px}
   .tab-actions{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
   .mini{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;color:var(--txt);background:rgba(255,255,255,.05);
@@ -203,11 +207,34 @@
   .tab-actions .mini{min-height:44px}
   /* mínus je malý cíl hned vedle „+ velké“ – aspoň 44×44 px, ať se trefí i prst */
   .mini[data-act="minus"]{min-width:44px;padding:0 12px;font-size:22px;line-height:1}
+  /* Mobil: [−] [+ velké] [+ malé] v řadě, Platím samostatně pod nimi přes celou
+     šířku – dřív bylo hned vedle „+ malé“ a snadno se na něj překliklo. */
   @media (max-width:480px){
-    .tab-actions{flex-wrap:nowrap;gap:5px}
-    .tab-actions .mini{padding:9px 4px;font-size:11.5px;min-width:0}
+    .tab-actions{flex-wrap:wrap;gap:8px}
+    .tab-actions .mini{padding:9px 6px;font-size:14px;min-width:0}
     .tab-actions .mini[data-act="minus"]{flex:0 0 44px;padding:0;font-size:22px}
-    .tab-actions .mini.plus,.tab-actions .mini.plus-small,.tab-actions .mini.pay{flex:1 1 0}
+    .tab-actions .mini.plus,.tab-actions .mini.plus-small{flex:1 1 0}
+    .tab-actions .mini.pay{flex:1 1 100%;margin-top:4px}
+  }
+  /* Mobil: kompaktní hlavička a odpočet, ať jsou lístky vidět co nejdřív */
+  @media (max-width:480px){
+    .hero{padding:16px 14px 14px}
+    .admin-btn{top:10px;right:10px;width:44px;height:44px}
+    .logo{width:52px;margin-bottom:4px}
+    .kicker{font-size:10.5px;letter-spacing:.12em;padding:4px 11px;margin-bottom:8px}
+    h1{font-size:31px;margin:0 0 10px}
+    .chips{gap:6px}
+    .chip{font-size:12.5px;padding:5px 11px}
+    .chip:first-child{display:none}
+    .count{margin-top:10px;padding:12px 12px 12px}
+    .count .lbl{font-size:10.5px}
+    .count .clock{font-size:29px;margin:1px 0 2px}
+    .count .when{font-size:13.5px}
+    .count .keg-line{margin-top:8px;padding-top:8px;font-size:12.5px;line-height:1.45}
+    .count .keg-bar{margin:6px auto 5px;height:6px}
+    .count .keg-foot{font-size:12px}
+    .count .keg-alert{margin-top:7px;padding:7px 10px;font-size:12.5px}
+    .panel{margin-top:10px}
   }
   .tabs-idle{border:1px dashed var(--line-2);border-radius:var(--r-md);padding:4px 14px}
   .tabs-idle summary{cursor:pointer;color:var(--txt-2);font-size:13.5px;padding:10px 0;list-style-position:inside}
@@ -516,7 +543,7 @@
         <g fill="#3a2c18"><ellipse cx="44" cy="30" rx="1.4" ry="3" transform="rotate(25 44 30)"/><ellipse cx="30" cy="47" rx="1.4" ry="3" transform="rotate(-15 30 47)"/><ellipse cx="52" cy="44" rx="1.4" ry="3" transform="rotate(40 52 44)"/><ellipse cx="42" cy="55" rx="1.4" ry="3" transform="rotate(-30 42 55)"/><ellipse cx="58" cy="52" rx="1.4" ry="3" transform="rotate(10 58 52)"/><ellipse cx="35" cy="72" rx="1.4" ry="3" transform="rotate(60 35 72)"/></g>
         <g fill="#e9bb68"><circle cx="103" cy="38" r="3.2"/><circle cx="110" cy="50" r="2.2"/><circle cx="105" cy="61" r="2.6"/><circle cx="113" cy="42" r="1.6"/></g>
       </svg>
-      <div class="kicker">Hospodská tabule · od léta Páně 2019</div>
+      <div class="kicker"><span>Hospodská tabule</span><span class="kicker-dot">·</span><span class="nw">od léta Páně 2019</span></div>
       <h1>Studovna <span class="grad">u Drobka</span></h1>
       <div class="chips">
         <span class="chip">📚 <b>Studium</b> chmele a sladu</span>
@@ -538,7 +565,7 @@
         <div class="head-left">
           <h2>🍻 Rozpitá piva</h2>
           <span class="price-badge" id="priceBadge" title="Aktuální cena velkého / malého piva">🍺 40 / 24 Kč</span>
-          <button class="sound-btn" id="soundBtn" title="Zvuk při čárce">🔊</button>
+          <button class="sound-btn" id="soundBtn" type="button" title="Zvuky zap/vyp" aria-label="Zvuky zap/vyp" aria-pressed="true">🔊</button>
         </div>
         <span class="week" id="tabsTotal"></span>
       </div>
@@ -547,7 +574,7 @@
         <button class="btn" id="openTabBtn" style="flex:1">🍺 Začínám pít — založit lístek</button>
       </div>
       <p class="note">
-        Velké pivo = <b class="price-now">40 Kč</b>, malé = <b class="price-small-now">24 Kč</b>. Čárkuj svoje piva tlačítkem <b>+ 🍺</b> (mínusem vrátíš poslední).<br>
+        Velké pivo = <b class="price-now">40 Kč</b>, malé = <b class="price-small-now">24 Kč</b>. Čárkuj svoje piva tlačítkem <b>+ 🍺</b> (mínusem vrátíš poslední), čárky jdou po pětkách, <span style="color:#7ec8e3">malá jsou modrá</span>.<br>
         Tlačítko <b>Platím</b> ukáže QR na přesnou částku a po zaplacení lístek smaže. Rozpitá piva vidí každý.
       </p>
     </section>
@@ -1006,17 +1033,24 @@ async function saveSession(iso){
 
 // ====== ROZPITÁ PIVA ======
 function smallPrice(){ return PRICE_SMALL>0 ? PRICE_SMALL : Math.round(PRICE*3/5); }
-const MARK_LARGE='<svg class="mk" viewBox="0 0 8 18" aria-label="velké"><line x1="4" y1="1" x2="4" y2="17"/></svg>';
-const MARK_SMALL='<svg class="mk mk-small" viewBox="0 0 8 18" aria-label="malé"><line x1="1.4" y1="1.6" x2="6.6" y2="16.4"/><line x1="6.6" y1="1.6" x2="1.4" y2="16.4"/></svg>';
+// Hospodské čárky po pětkách: 4 svislé a pátá je přeškrtne. Malé pivo má
+// jinou barvu a je o kus kratší (rozliší se i bez rozlišení barev).
 function tallyMarks(marks){
   if(!marks||!marks.length) return "";
-  // | = velké, křížek = malé; seskupení po 5 pomocí mezery
-  let s="",count=0;
-  marks.forEach((m,i)=>{
-    s+=(m&&m.s==="small")?MARK_SMALL:MARK_LARGE;
-    count++;
-    if(count%5===0 && i<marks.length-1) s+='<span class="mk-gap"></span>';
-  });
+  let s="";
+  for(let g=0; g<marks.length; g+=5){
+    const grp=marks.slice(g,g+5), n=grp.length, full=n===5;
+    const w=full?28:n*6+2;
+    const small=grp.filter(m=>m&&m.s==="small").length;
+    const lbl=n+" "+plBeer(n)+(small?", z toho "+small+" "+plSmall(small):"");
+    let body="";
+    grp.slice(0,4).forEach((m,i)=>{
+      const sm=m&&m.s==="small", x=4+i*6;
+      body+='<line class="'+(sm?"s":"l")+'" x1="'+x+'" y1="'+(sm?5:1.5)+'" x2="'+x+'" y2="16.5"/>';
+    });
+    if(full){ const sm=grp[4]&&grp[4].s==="small"; body+='<line class="'+(sm?"s":"l")+' strike" x1="0.5" y1="14.5" x2="27.5" y2="3.5"/>'; }
+    s+='<svg class="mk" width="'+w+'" height="18" viewBox="0 0 '+w+' 18" role="img" aria-label="'+lbl+'"><title>'+lbl+'</title>'+body+'</svg>';
+  }
   return s;
 }
 function tabMarks(rec){
@@ -1666,9 +1700,14 @@ $("#waShareHall").onclick=async()=>{
   if(!WA_HALL){ toast("Síň slávy je zatím prázdná 🏆"); return; }
   window.open("https://wa.me/?text="+encodeURIComponent(WA_HALL),"_blank");
 };
+function renderSoundBtn(){
+  const b=$("#soundBtn"); b.textContent=SOUND_ON?"🔊":"🔇";
+  b.setAttribute("aria-pressed",SOUND_ON?"true":"false");
+  b.title="Zvuky zap/vyp – teď "+(SOUND_ON?"zapnuté":"vypnuté");
+}
 $("#soundBtn").onclick=()=>{ SOUND_ON=!SOUND_ON; try{ localStorage.setItem("studovna_sound",SOUND_ON?"1":"0"); }catch(e){}
-  $("#soundBtn").textContent=SOUND_ON?"🔊":"🔇"; if(SOUND_ON){ unlockSpeech(); playPraise("large"); } };
-$("#soundBtn").textContent=SOUND_ON?"🔊":"🔇";
+  renderSoundBtn(); toast(SOUND_ON?"Zvuky zapnuté 🔊":"Zvuky vypnuté 🔇"); if(SOUND_ON){ unlockSpeech(); playPraise("large"); } };
+renderSoundBtn();
 
 // ====== VLASTNÍ DIALOG (náhrada prompt/confirm) ======
 // askDialog({title, hint, body, fields:[{name,label,type,value,placeholder,attrs,validate}], ok, cancel, danger, check})
