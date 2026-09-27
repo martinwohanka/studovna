@@ -200,10 +200,13 @@
   .mini.plus-small:hover{box-shadow:0 6px 18px rgba(74,155,190,.4)}
   .mini.pay{color:#06250f;background:var(--green);border:none;flex:1 1 100%}
   .mini.pay:hover{box-shadow:0 6px 18px rgba(61,220,132,.4)}
+  .tab-actions .mini{min-height:44px}
+  /* mínus je malý cíl hned vedle „+ velké“ – aspoň 44×44 px, ať se trefí i prst */
+  .mini[data-act="minus"]{min-width:44px;padding:0 12px;font-size:22px;line-height:1}
   @media (max-width:480px){
     .tab-actions{flex-wrap:nowrap;gap:5px}
     .tab-actions .mini{padding:9px 4px;font-size:11.5px;min-width:0}
-    .tab-actions .mini[data-act="minus"]{flex:0 0 32px;padding:9px 0}
+    .tab-actions .mini[data-act="minus"]{flex:0 0 44px;padding:0;font-size:22px}
     .tab-actions .mini.plus,.tab-actions .mini.plus-small,.tab-actions .mini.pay{flex:1 1 0}
   }
   .tabs-empty{text-align:center;color:var(--txt-2);font-size:14px;border:1px dashed var(--line-2);border-radius:var(--r-md);padding:20px 16px;margin-top:14px;}
@@ -225,6 +228,9 @@
     padding:13px 22px;border-radius:999px;font-size:14px;font-weight:500;opacity:0;pointer-events:none;transition:.3s ease;z-index:150;
     -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 14px 40px rgba(0,0,0,.55);max-width:92vw;}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.act.show{pointer-events:auto;display:flex;align-items:center;gap:12px;padding:6px 6px 6px 20px}
+  .toast-act{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:#0a0c10;background:var(--grad);
+    border:none;border-radius:999px;min-height:44px;min-width:64px;padding:0 18px;cursor:pointer}
   .toast.warn{background:rgba(60,20,20,.96);border-color:rgba(224,71,71,.65);color:#ffd9d9;
     box-shadow:0 14px 40px rgba(224,71,71,.3)}
   .toast.warn b{color:#ff8a80;font-weight:700}
@@ -288,6 +294,25 @@
   .btn-green{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14.5px;color:#06250f;background:var(--green);
     border:none;border-radius:var(--r-sm);padding:10px 18px;cursor:pointer;transition:.18s ease;}
   .btn-green:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(61,220,132,.4)}
+  .btn-danger{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14.5px;color:#fff;background:#d9483b;
+    border:none;border-radius:var(--r-sm);padding:10px 18px;cursor:pointer;transition:.18s ease;}
+  .btn-danger:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(224,71,71,.4)}
+  .btn-gold:disabled,.btn-danger:disabled,.btn-green:disabled{opacity:.55;cursor:default;transform:none;box-shadow:none}
+
+  /* ===== vlastní dialog (místo prompt/confirm) ===== */
+  #dlgModal{z-index:130}
+  .dlg-field{margin-top:12px}
+  .dlg-field label{display:block;font-size:13px;font-weight:600;color:var(--txt-2);margin-bottom:6px}
+  .dlg-field input{width:100%;font-family:'Inter',sans-serif;font-size:16px;font-weight:500;color:var(--txt);color-scheme:dark;
+    background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:var(--r-sm);padding:11px 13px;transition:.18s ease}
+  .dlg-field input:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,185,66,.14)}
+  .dlg-field.bad input{border-color:var(--red);box-shadow:0 0 0 3px rgba(255,107,94,.14)}
+  .dlg-field .dlg-ferr{color:#ff8a80;font-size:12.5px;margin-top:5px;min-height:0}
+  .dlg-field .dlg-ferr:empty{display:none}
+  .dlg-err{color:#ff8a80;font-size:13px;font-weight:600;margin-top:12px}
+  .dlg-err:empty{display:none}
+  .dlg-body{color:var(--txt);font-size:14px;line-height:1.55;white-space:pre-line}
+  .dlg-body:empty{display:none}
 
   .admin-keg{margin-top:14px;border-top:1px solid var(--line);padding-top:13px}
   .keg-stat{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:9px}
@@ -549,8 +574,10 @@
       </div>
       <div class="admin-danger">
         <button class="linklike" id="hallResetBtn" type="button">🏆 Vynulovat síň slávy</button>
+        <button class="linklike" id="pwChangeBtn" type="button" style="color:var(--txt-2)">🔑 Změnit heslo administrátora</button>
       </div>
       <div class="modal-actions">
+        <button class="btn-ghost" id="adminLogout" type="button">🔒 Odhlásit</button>
         <button class="btn-ghost" id="adminCancel">Zavřít</button>
       </div>
     </div>
@@ -610,6 +637,22 @@
       <div class="modal-actions">
         <button class="btn-ghost" id="changelogClose">Zavřít</button>
       </div>
+    </div>
+  </div>
+
+  <div class="modal" id="dlgModal" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
+    <div class="modal-card" style="max-width:400px">
+      <h3 id="dlgTitle"></h3>
+      <p class="modal-hint" id="dlgHint"></p>
+      <form id="dlgForm" novalidate autocomplete="off">
+        <div class="dlg-body" id="dlgBody"></div>
+        <div id="dlgFields"></div>
+        <div class="dlg-err" id="dlgErr" role="alert"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" id="dlgCancel">Zrušit</button>
+          <button type="submit" class="btn-gold" id="dlgOk">OK</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -840,11 +883,9 @@ async function loadPrice(){
 async function savePrice(val){
   const v=parseInt(val,10);
   if(!(v>0&&v<=9999)){ toast("Zadej platnou cenu v Kč 💰"); return false; }
-  PRICE=v;
-  if(sb){ await sb.from("suggestions").delete().eq("period",PRICE_KEY);
-    const {error}=await sb.from("suggestions").insert({period:PRICE_KEY,beer:String(v)}); if(error){ dbFail("uložení ceny",error); return false; } }
+  if(sb){ const {error}=await adminRpc("admin_set_price",{p_price:v},"uložení ceny"); if(error) return false; }
   else { await sSet("beer_price",String(v),true); }
-  updatePriceUI(); return true;
+  PRICE=v; updatePriceUI(); return true;
 }
 
 // ---- meeting override ----
@@ -856,10 +897,9 @@ async function loadSession(){
 }
 async function saveSession(iso){
   const stored = iso || null;
-  SESSION_OVERRIDE = stored;
-  if(sb){ await sb.from("suggestions").delete().eq("period",SESSION_KEY);
-    if(stored){ const {error}=await sb.from("suggestions").insert({period:SESSION_KEY,beer:stored}); if(error){ dbFail("uložení meetingu",error); } } }
+  if(sb){ const {error}=await adminRpc("admin_set_session",{p_iso:stored},"uložení meetingu"); if(error) return false; }
   else { await sSet("session_override", stored||"", true); }
+  SESSION_OVERRIDE = stored; return true;
 }
 
 // ====== ROZPITÁ PIVA ======
@@ -924,7 +964,7 @@ async function renderTabs(){
     const isMe=me && n.toLowerCase()===me;
     let lastTxt=""; const ts=marks.map(m=>m&&m.t).filter(Boolean); if(ts.length){ lastTxt="poslední "+fmtLastSeen(Math.max(...ts)); }
     const el=document.createElement("div"); el.className="tab"+(isMe?" mine":"");
-    el.innerHTML=`<div class="tab-row"><div class="tab-name"><span>🍻</span><span>${esc(n)}</span>${isMe?'<span class="star">ty</span>':''}</div><div class="tab-price">${c} ${plBeer(c)} · <b>${tot} Kč</b></div></div><div class="tab-marks">${tallyMarks(marks)||"&nbsp;"}</div>${lastTxt?'<div class="tab-last">'+lastTxt+'</div>':''}<div class="tab-actions"><button class="mini" data-act="minus" title="Vrátit poslední pivo">−</button><button class="mini plus" data-act="plus">+ 🍺 velké</button><button class="mini plus-small" data-act="plus-small">+ 🍺 malé</button><button class="mini pay" data-act="pay">Platím 💸</button></div>`;
+    el.innerHTML=`<div class="tab-row"><div class="tab-name"><span>🍻</span><span>${esc(n)}</span>${isMe?'<span class="star">ty</span>':''}</div><div class="tab-price">${c} ${plBeer(c)} · <b>${tot} Kč</b></div></div><div class="tab-marks">${tallyMarks(marks)||"&nbsp;"}</div>${lastTxt?'<div class="tab-last">'+lastTxt+'</div>':''}<div class="tab-actions"><button class="mini" data-act="minus" title="Vrátit poslední pivo" aria-label="Vrátit poslední pivo">−</button><button class="mini plus" data-act="plus">+ 🍺 velké</button><button class="mini plus-small" data-act="plus-small">+ 🍺 malé</button><button class="mini pay" data-act="pay">Platím 💸</button></div>`;
     el.querySelector('[data-act="plus"]').onclick=(ev)=>tabDelta(n,"large",ev);
     el.querySelector('[data-act="plus-small"]').onclick=(ev)=>tabDelta(n,"small",ev);
     el.querySelector('[data-act="minus"]').onclick=(ev)=>tabDelta(n,null,ev);
@@ -941,17 +981,31 @@ async function tabDelta(name,size,ev){
   try{
     const tabs=await loadTabs();
     if(!(name in tabs)){ toast("Lístek už neexistuje 🤷"); await renderTabs(); return; }
-    let marks=tabMarks(tabs[name]).slice();
+    let marks=tabMarks(tabs[name]).slice(), removed=null;
     if(size==="large"){ marks.push({t:Date.now(),p:PRICE,s:"large"}); }
     else if(size==="small"){ marks.push({t:Date.now(),p:smallPrice(),s:"small"}); }
-    else { if(!marks.length){ toast("Lístek je prázdný"); return; } marks.pop(); }
+    else { if(!marks.length){ toast("Lístek je prázdný"); return; } removed=marks.pop(); }
     const ok=await setTab(name,marks.length,marks);
     if(!ok){ toast("Nepovedlo se uložit 😕"); return; }
     await renderTabs();
     if(size==="large"){ pourEffect(ev); playPraise("large"); toast("Načárkováno pro "+name+" 🍺 ("+marks.length+". pivo)"); }
     else if(size==="small"){ pourEffect(ev); playPraise("small"); toast("Malé načárkováno pro "+name+" × ("+marks.length+". pivo)"); }
-    else toast("Poslední pivo vráceno ("+name+": "+marks.length+")");
+    else toastAction("Vráceno 1 "+(removed&&removed.s==="small"?"malé ":"")+"pivo ("+name+")","Zpět",()=>undoMinus(name,removed),5000);
     if(size) await warnIfKegLow();
+  } finally { tabBusy=false; }
+}
+// „Zpět“ po mínusu: vrátí odebranou čárku i s původním časem a cenou
+async function undoMinus(name,mark){
+  if(!mark) return;
+  if(tabBusy){ setTimeout(()=>undoMinus(name,mark),150); return; }
+  tabBusy=true;
+  try{
+    const tabs=await loadTabs();
+    if(!(name in tabs)){ toast("Lístek už neexistuje – pivo nejde vrátit 🤷"); await renderTabs(); return; }
+    const marks=tabMarks(tabs[name]).slice(); marks.push(mark);
+    if(!(await setTab(name,marks.length,marks))){ toast("Nepovedlo se uložit 😕"); return; }
+    await renderTabs();
+    toast("Pivo je zpátky na lístku ↩️ ("+name+": "+marks.length+")");
   } finally { tabBusy=false; }
 }
 // Upozornění při načárkování, když v sudu zbývá méně než 10 %
@@ -1006,12 +1060,22 @@ $("#tabPaidBtn").onclick=async()=>{
   const nyni=tabMarks(tabs[name]);
   const zbytek=nyni.length>c ? nyni.slice(c) : [];
 
-  const w=beerEquivalents(marks);
-  const small=marks.filter(m=>m&&m.s==="small").length; const large=c-small;
-  await creditHall(name,w,amount);
-  await recordPayment({name,beers:c,small,large,eq:Math.round(w*10)/10,amount,ts:Date.now(),
-    mk:marks.map(m=>({t:(m&&m.t)||0,s:(m&&m.s==="small")?"small":"large"}))});
-  if(zbytek.length) await setTab(name,zbytek.length,zbytek); else await deleteTab(name);
+  if(sb){
+    // Platba, síň slávy i lístek v jedné transakci na straně DB
+    let res; try{ res=await sb.rpc("pay_tab",{p_name:name,p_marks:marks,p_amount:amount}); }catch(e){ res={error:e}; }
+    if(res.error){
+      if(missingFnErr(res.error)) dbStatus("⚠ V databázi chybí funkce „pay_tab“ – spusť migrace_v136.sql.","warn"); else dbFail("zaplacení lístku",res.error);
+      toast("Platbu se nepovedlo zapsat 😕 Zkus to znovu."); return;
+    }
+    if(!res.data || !res.data.ok){ $("#tabPayModal").style.display="none"; await renderTabs(); await renderHall(); toast("Lístek už neexistuje 🤷"); return; }
+  } else {
+    const w=beerEquivalents(marks);
+    const small=marks.filter(m=>m&&m.s==="small").length; const large=c-small;
+    await creditHall(name,w,amount);
+    await recordPayment({name,beers:c,small,large,eq:Math.round(w*10)/10,amount,ts:Date.now(),
+      mk:marks.map(m=>({t:(m&&m.t)||0,s:(m&&m.s==="small")?"small":"large"}))});
+    if(zbytek.length) await setTab(name,zbytek.length,zbytek); else await deleteTab(name);
+  }
   $("#tabPayModal").style.display="none";
   await renderTabs(); await renderHall();
   toast("Zaplaceno ✓ "+c+" "+plBeer(c)+" do síně slávy"
@@ -1022,16 +1086,11 @@ $("#tabPayModal").addEventListener("click",e=>{ if(e.target.id==="tabPayModal"){
 
 // ====== EVIDENCE PLATEB (neměnný ledger) ======
 const PAYMENT_KEY="__payment__";
+// Jen lokální režim – v DB platbu zapisuje funkce pay_tab
 async function recordPayment(rec){
   const blob=JSON.stringify(rec);
-  if(sb){
-    const {error}=await sb.from("suggestions").insert({period:PAYMENT_KEY,beer:blob,name:rec.name});
-    if(error){ dbFail("zápis platby",error); return null; }
-    return blob;
-  } else {
-    const raw=await sGet("payments",true); let arr=[]; try{ arr=raw?JSON.parse(raw):[]; }catch(e){ arr=[]; }
-    arr.push(blob); await sSet("payments",JSON.stringify(arr),true); return blob;
-  }
+  const raw=await sGet("payments",true); let arr=[]; try{ arr=raw?JSON.parse(raw):[]; }catch(e){ arr=[]; }
+  arr.push(blob); await sSet("payments",JSON.stringify(arr),true); return blob;
 }
 async function loadPayments(){
   let blobs=[];
@@ -1050,12 +1109,13 @@ async function loadPayments(){
 }
 // Mazání jednotlivé platby — dostupné jen z administrace.
 // Shodné záznamy prakticky nevzniknou (čas v ms + časy jednotlivých čárek).
+// V DB to dělá admin_delete_payment: smaže jeden záznam a zároveň (je-li platba
+// novější než obnova síně slávy) odečte piva i útratu ze síně slávy.
 async function deletePaymentRecord(rec){
   if(!rec || !rec._raw) return false;
   if(sb){
-    const {error}=await sb.from("suggestions").delete().eq("period",PAYMENT_KEY).eq("beer",rec._raw);
-    if(error){ dbFail("smazání platby",error); return false; }
-    return true;
+    const {error}=await adminRpc("admin_delete_payment",{p_raw:rec._raw},"smazání platby");
+    return !error;
   }
   const raw=await sGet("payments",true); let arr=[]; try{ arr=raw?JSON.parse(raw):[]; }catch(e){ arr=[]; }
   const i=arr.indexOf(rec._raw); if(i<0) return false;
@@ -1101,7 +1161,7 @@ async function askDeletePayment(rec){
               : "Síň slávy zůstane beze změny — platba je starší než její poslední obnova.")
       +"\nZ počítadla sudu zmizí čárky udělané po jeho naražení. Tohle se nedá vrátit.")) return;
   if(!(await deletePaymentRecord(rec))){ toast("Platbu se nepovedlo smazat 😕"); return; }
-  if(vSini){
+  if(vSini && !sb){
     const eq = (rec.eq!=null) ? rec.eq
       : (Array.isArray(rec.mk) && rec.mk.length ? beerEquivalents(rec.mk) : (rec.beers||0));
     await creditHall(rec.name, -eq, -(rec.amount||0));
@@ -1122,7 +1182,6 @@ function paymentsCSV(rows){
 
 // ====== SUD (počítadlo od poslední výměny) ======
 const KEG_KEY="__keg__";
-const KEG_LOG_KEY="__keg_log__";
 const L_LARGE=0.5, L_SMALL=0.3; // litry
 let KEG_START=null, KEG_NAME="", KEG_SIZE=0;
 async function loadKegStart(){
@@ -1141,28 +1200,29 @@ async function loadKegStart(){
     // Jinak by výpadek sítě resetoval sud (renderKeg běží každých 15 s).
     if(!ok) return KEG_START;
     if(KEG_START) return KEG_START; // sud jsme už jednou načtli – prázdné čtení je chyba, ne nový sud
-    if(sb){ // druhé čtení pro jistotu, ať prázdný sud nezaložíme kvůli souběhu se zápisem
-      try{ const {data,error}=await sb.from("suggestions").select("beer").eq("period",KEG_KEY).limit(1);
-        if(error || (data&&data.length)) return KEG_START; }catch(e){ return KEG_START; }
-    }
+    // S databází sud zakládá jen administrátor (anon nemá práva zápisu) – do té doby žádný sud
+    if(sb) return KEG_START;
     ts=Date.now(); nm=""; sz=0; await saveKegStart(ts,nm,sz); return ts;
   }
   KEG_START=ts; KEG_NAME=nm; KEG_SIZE=sz; return ts;
 }
+// Jen lokální režim bez databáze. V DB sud ukládá admin_save_keg – výměna
+// záznamu tam proběhne v jedné transakci, takže sud nikdy „nezmizí“ (8. 9. 2026).
 async function saveKegStart(ts,name,liters){
   KEG_START=ts; KEG_NAME=name||""; KEG_SIZE=parseFloat(liters)||0;
-  const blob=JSON.stringify({ts:ts,name:KEG_NAME,liters:KEG_SIZE});
+  await sSet("keg_start",JSON.stringify({ts:ts,name:KEG_NAME,liters:KEG_SIZE}),true);
+}
+// Nový sud (isNew) nebo oprava názvu a objemu stávajícího. Vrací true při úspěchu.
+async function adminSaveKeg(name,liters,isNew,st){
+  const log=isNew&&st ? JSON.stringify({from:st.since,to:Date.now(),name:st.name||"",size:st.size||0,large:st.large,small:st.small,count:st.count,liters:Math.round(st.liters*10)/10}) : null;
   if(sb){
-    // POZOR na pořadí: nejdřív vložit nový záznam, teprve pak smazat staré.
-    // Kdyby se mazalo první, vznikne okno (jedno kolo po síti), ve kterém sud
-    // v databázi vůbec není – a jiné zařízení, které si zrovna načítá stav,
-    // by ho považovalo za nezaložený a přepsalo prázdným. Přesně tak zmizel
-    // název a objem sudu 8. 9. 2026 půl vteřiny po naražení.
-    const {error}=await sb.from("suggestions").insert({period:KEG_KEY,beer:blob});
-    if(error){ dbFail("uložení sudu",error); return; }
-    await sb.from("suggestions").delete().eq("period",KEG_KEY).neq("beer",blob);
+    const {data,error}=await adminRpc("admin_save_keg",{p_name:name,p_liters:liters,p_new:!!isNew,p_log:log},"uložení sudu");
+    if(error) return false;
+    KEG_START=Number(data)||KEG_START; KEG_NAME=name; KEG_SIZE=liters; return true;
   }
-  else { await sSet("keg_start",blob,true); }
+  if(log){ const raw=await sGet("keg_log",true); let a=[]; try{ a=raw?JSON.parse(raw):[]; }catch(e){ a=[]; }
+    a.push(log); await sSet("keg_log",JSON.stringify(a),true); }
+  await saveKegStart(isNew?Date.now():KEG_START,name,liters); return true;
 }
 // Spočítá vypitá piva od naražení sudu. Rozhoduje výhradně čas udělání čárky,
 // ne to, jestli je pivo zaplacené – zaplacením se přesune do síně slávy,
@@ -1234,13 +1294,6 @@ async function renderKeg(){
   }
 }
 function fmtLiters(x){ const r=Math.round(x*10)/10; return Number.isInteger(r)?String(r):r.toFixed(1).replace(".",","); }
-// Uzavření sudu se zapíše do historie (neměnné, jako platby)
-async function logKeg(st){
-  const blob=JSON.stringify({from:st.since,to:Date.now(),name:st.name||"",size:st.size||0,large:st.large,small:st.small,count:st.count,liters:Math.round(st.liters*10)/10});
-  if(sb){ await sb.from("suggestions").insert({period:KEG_LOG_KEY,beer:blob}); }
-  else { const raw=await sGet("keg_log",true); let a=[]; try{ a=raw?JSON.parse(raw):[]; }catch(e){ a=[]; }
-    a.push(blob); await sSet("keg_log",JSON.stringify(a),true); }
-}
 
 // ====== SÍŇ SLÁVY ======
 async function loadHall(){
@@ -1256,24 +1309,13 @@ async function creditHall(name,dBeers,dPaid){
   // Malé pivo je 3/5 piva a to se v plovoucí čárce nedá zapsat přesně,
   // takže se přírůstek i výsledek zaokrouhlují — jinak by se z 10 malých
   // stalo 5,999999999999999 piva.
+  // Jen lokální režim – v databázi to dělají funkce pay_tab / admin_delete_payment atomicky.
   dBeers=Math.round(dBeers*10)/10; dPaid=Math.round(dPaid);
-  if(sb){
-    // Atomický přírůstek na straně DB (žádná ztráta při souběžných platbách).
-    // Vyžaduje funkci hall_credit v Supabase – viz SQL v dokumentaci/chatu.
-    try{
-      const {error}=await sb.rpc("hall_credit",{p_name:name,p_beers:dBeers,p_paid:dPaid});
-      if(!error) return;
-      console.warn("hall_credit RPC nedostupná, používám fallback:",error.message||error);
-    }catch(e){ console.warn("hall_credit RPC selhala, fallback:",e); }
-  }
-  // Fallback (NEatomické – při souběhu dvou plateb může jedna přepsat druhou)
-  const h=await loadHall(); const cur=h[name]||{beers:0,paid:0};
+  const m=await loadHall(); const cur=m[name]||{beers:0,paid:0};
   const beers=Math.max(0,Math.round(((cur.beers||0)+dBeers)*10)/10);
   const paid=Math.max(0,Math.round((cur.paid||0)+dPaid));
-  if(sb){
-    if(beers===0&&paid===0){ await sb.from("hall").delete().eq("name",name); }
-    else { const {error}=await sb.from("hall").upsert({name,beers,paid},{onConflict:"name"}); if(error){ dbFail("zápis do síně slávy",error); } }
-  } else { const m=await loadHall(); if(beers===0&&paid===0) delete m[name]; else m[name]={beers,paid}; await sSet("hall",JSON.stringify(m),true); }
+  if(beers===0&&paid===0) delete m[name]; else m[name]={beers,paid};
+  await sSet("hall",JSON.stringify(m),true);
 }
 // ---- odkdy se síň slávy počítá (datum poslední obnovy) ----
 const HALL_SINCE_KEY="__hall_since__";
@@ -1285,8 +1327,9 @@ async function loadHallSince(){
   else { try{ v=await sGet("hall_since",true); ok=true; }catch(e){} }
   let ts=parseInt(v,10);
   if(!ts||isNaN(ts)){
-    // POZOR: zakládáme jen když čtení opravdu prošlo, jinak by výpadek sítě datum přepsal
-    if(!ok) return HALL_SINCE;
+    // POZOR: zakládáme jen když čtení opravdu prošlo, jinak by výpadek sítě datum přepsal.
+    // V databázi datum doplňuje migrace / admin_reset_hall (anon nemá práva zápisu).
+    if(!ok || sb) return HALL_SINCE;
     // Poprvé: odhadneme podle nejstarší platby, jinak bereme dnešek
     let first=0;
     try{ const p=await loadPayments(); if(p.length) first=Math.min(...p.map(r=>r.ts||0)); }catch(e){}
@@ -1295,17 +1338,10 @@ async function loadHallSince(){
   }
   HALL_SINCE=ts; return ts;
 }
-async function saveHallSince(ts){
-  HALL_SINCE=ts;
-  if(sb){ await sb.from("suggestions").delete().eq("period",HALL_SINCE_KEY);
-    const {error}=await sb.from("suggestions").insert({period:HALL_SINCE_KEY,beer:String(ts)});
-    if(error){ dbFail("uložení data síně slávy",error); } }
-  else { await sSet("hall_since",String(ts),true); }
-}
+async function saveHallSince(ts){ HALL_SINCE=ts; await sSet("hall_since",String(ts),true); }   // jen lokálně
 async function resetHall(){
-  if(sb){ await sb.from("hall").delete().gte("beers",0); }
-  else { await sSet("hall","{}",true); }
-  await saveHallSince(Date.now());
+  if(sb){ const {error}=await adminRpc("admin_reset_hall",{},"vynulování síně slávy"); if(error) return false; HALL_SINCE=null; await loadHallSince(); return true; }
+  await sSet("hall","{}",true); await saveHallSince(Date.now()); return true;
 }
 async function renderHall(){
   const h=await loadHall(); const list=$("#hallList");
@@ -1344,9 +1380,17 @@ $("#nameInput").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#nameSave
 
 // ---- toast ----
 let toastT;
-function toast(msg){ const el=$("#toast"); el.classList.remove("warn"); el.textContent=msg; el.classList.add("show");
+function toast(msg){ const el=$("#toast"); el.classList.remove("warn","act"); el.textContent=msg; el.classList.add("show");
   clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove("show"),2200); }
-function toastWarn(html,ms){ const el=$("#toast"); el.innerHTML=html;
+// Toast s tlačítkem (např. „Zpět“). Po vypršení se akce zahodí.
+function toastAction(msg,label,fn,ms){
+  const el=$("#toast"); el.classList.remove("warn");
+  el.innerHTML='<span>'+esc(msg)+'</span><button class="toast-act" type="button">'+esc(label)+'</button>';
+  el.classList.add("show","act");
+  el.querySelector(".toast-act").onclick=()=>{ clearTimeout(toastT); el.classList.remove("show","act"); fn(); };
+  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove("show","act"), ms||5000);
+}
+function toastWarn(html,ms){ const el=$("#toast"); el.classList.remove("act"); el.innerHTML=html;
   el.classList.add("show","warn");
   clearTimeout(toastT); toastT=setTimeout(()=>{ el.classList.remove("show"); setTimeout(()=>el.classList.remove("warn"),300); }, ms||4200); }
 
@@ -1393,17 +1437,129 @@ $("#soundBtn").onclick=()=>{ SOUND_ON=!SOUND_ON; try{ localStorage.setItem("stud
   $("#soundBtn").textContent=SOUND_ON?"🔊":"🔇"; if(SOUND_ON){ unlockSpeech(); playPraise("large"); } };
 $("#soundBtn").textContent=SOUND_ON?"🔊":"🔇";
 
+// ====== VLASTNÍ DIALOG (náhrada prompt/confirm) ======
+// askDialog({title, hint, body, fields:[{name,label,type,value,placeholder,attrs,validate}], ok, cancel, danger, check})
+// → Promise s hodnotami polí (objekt), nebo null při zrušení.
+// validate(v, všechny) vrací text chyby u pole; check(hodnoty) může být async
+// a vrátit chybu celého formuláře – dialog pak zůstane otevřený.
+let DLG=null;
+function askDialog(o){
+  if(DLG) DLG.finish(null);
+  return new Promise(res=>{
+    $("#dlgTitle").textContent=o.title||"";
+    $("#dlgHint").innerHTML=o.hint||""; $("#dlgHint").style.display=o.hint?"":"none";
+    $("#dlgBody").textContent=o.body||"";
+    $("#dlgErr").textContent="";
+    const ok=$("#dlgOk"); ok.textContent=o.ok||"OK"; ok.className=o.danger?"btn-danger":"btn-gold"; ok.disabled=false;
+    $("#dlgCancel").textContent=o.cancel||"Zrušit";
+    const fields=o.fields||[];
+    $("#dlgFields").innerHTML=fields.map((f,i)=>{
+      const a=f.attrs||{}; let extra="";
+      Object.keys(a).forEach(k=>{ extra+=' '+k+'="'+esc(String(a[k])).replace(/"/g,"&quot;")+'"'; });
+      return '<div class="dlg-field" data-f="'+i+'"><label for="dlgF'+i+'">'+esc(f.label||"")+'</label>'
+        +'<input id="dlgF'+i+'" name="'+esc(f.name)+'" type="'+(f.type||"text")+'"'
+        +' value="'+esc(f.value!=null?String(f.value):"").replace(/"/g,"&quot;")+'"'
+        +' placeholder="'+esc(f.placeholder||"").replace(/"/g,"&quot;")+'"'+extra+'>'
+        +'<div class="dlg-ferr"></div></div>';
+    }).join("");
+    const inputs=[...document.querySelectorAll("#dlgFields input")];
+    const values=()=>{ const v={}; fields.forEach((f,i)=>{ v[f.name]=inputs[i].value.trim(); }); return v; };
+    inputs.forEach(inp=>inp.addEventListener("input",()=>{ inp.parentNode.classList.remove("bad"); inp.parentNode.querySelector(".dlg-ferr").textContent=""; }));
+    const prevFocus=document.activeElement;
+    const finish=(val)=>{ if(DLG!==state) return; DLG=null; $("#dlgModal").style.display="none";
+      document.removeEventListener("keydown",onKey,true);
+      try{ if(prevFocus&&prevFocus.focus) prevFocus.focus(); }catch(e){}
+      res(val); };
+    const onKey=(e)=>{ if(e.key==="Escape"){ e.preventDefault(); e.stopPropagation(); finish(null); } };
+    const state={finish}; DLG=state;
+    $("#dlgForm").onsubmit=async(e)=>{
+      e.preventDefault();
+      const v=values(); let bad=false;
+      fields.forEach((f,i)=>{
+        const err=f.validate?f.validate(v[f.name],v):null;
+        const box=inputs[i].parentNode; box.classList.toggle("bad",!!err); box.querySelector(".dlg-ferr").textContent=err||"";
+        if(err&&!bad){ bad=true; inputs[i].focus(); }
+      });
+      if(bad) return;
+      if(o.check){
+        ok.disabled=true; $("#dlgErr").textContent="";
+        let err=null; try{ err=await o.check(v); }catch(x){ err="Něco se pokazilo 😕"; }
+        ok.disabled=false;
+        if(DLG!==state) return;
+        if(err){ $("#dlgErr").textContent=err; if(inputs[0]){ inputs[0].focus(); inputs[0].select&&inputs[0].select(); } return; }
+      }
+      finish(v);
+    };
+    $("#dlgCancel").onclick=()=>finish(null);
+    $("#dlgModal").onclick=(e)=>{ if(e.target.id==="dlgModal") finish(null); };
+    document.addEventListener("keydown",onKey,true);
+    $("#dlgModal").style.display="flex";
+    setTimeout(()=>{ (inputs[0]||ok).focus(); },60);
+  });
+}
+async function askConfirm(title,body,ok,danger){
+  return !!(await askDialog({title,body,ok:ok||"Ano",danger:danger!==false}));
+}
+
+// ====== PŘIHLÁŠENÍ DO ADMINISTRACE ======
+// Heslo se ověřuje v databázi (bcrypt, funkce admin_login). V prohlížeči ho
+// držíme jen v paměti a v sessionStorage (zmizí se zavřením panelu), max. 30 min
+// od poslední akce. Každá admin operace ho posílá RPC funkci, která ho ověří znovu.
+const ADMIN_SS="studovna_admin", ADMIN_TTL=30*60*1000;
+let ADMIN_PW=null, ADMIN_EXP=0;
+function adminStore(){ try{ sessionStorage.setItem(ADMIN_SS,JSON.stringify({pw:ADMIN_PW,exp:ADMIN_EXP})); }catch(e){} }
+function adminForget(){ ADMIN_PW=null; ADMIN_EXP=0; try{ sessionStorage.removeItem(ADMIN_SS); }catch(e){} }
+function adminPw(){
+  if(!ADMIN_PW){ try{ const o=JSON.parse(sessionStorage.getItem(ADMIN_SS)||"null"); if(o&&o.pw){ ADMIN_PW=o.pw; ADMIN_EXP=o.exp||0; } }catch(e){} }
+  if(!ADMIN_PW || Date.now()>ADMIN_EXP){ adminForget(); return null; }
+  ADMIN_EXP=Date.now()+ADMIN_TTL; adminStore();       // posuneme platnost od poslední akce
+  return ADMIN_PW;
+}
+function isAuthErr(error){ return !!error && (error.code==="28P01" || /heslo/i.test(error.message||"")); }
+function missingFnErr(error){ return !!error && (error.code==="PGRST202" || /could not find the function|does not exist/i.test(error.message||"")); }
+async function adminVerify(pw){
+  if(!pw) return "Zadej heslo";
+  if(!sb) return null;                                   // lokální režim bez DB – není co chránit
+  try{
+    const {data,error}=await sb.rpc("admin_login",{p_pw:pw});
+    if(error) return missingFnErr(error) ? "V databázi chybí funkce admin_login – spusť migrace_v136.sql." : "Chyba databáze: "+(error.message||error);
+    return data===true ? null : "Špatné heslo 🔒";
+  }catch(e){ return "Heslo se nepodařilo ověřit – zkontroluj připojení."; }
+}
+async function adminEnsure(){
+  if(adminPw()) return true;
+  const v=await askDialog({title:"🔒 Administrace",hint:"Zadej heslo administrátora.",ok:"Přihlásit",
+    fields:[{name:"pw",label:"Heslo",type:"password",attrs:{autocomplete:"current-password"},validate:v=>v?null:"Zadej heslo"}],
+    check:v=>adminVerify(v.pw)});
+  if(!v) return false;
+  ADMIN_PW=v.pw; ADMIN_EXP=Date.now()+ADMIN_TTL; adminStore(); return true;
+}
+function closeAdminUI(){ ["adminModal","paymentsModal"].forEach(id=>{ const m=document.getElementById(id); if(m) m.style.display="none"; }); }
+// Zavolá admin RPC s heslem. Vrací {data} nebo {error}; chyby rovnou ohlásí.
+async function adminRpc(fn,params,kde){
+  const pw=adminPw();
+  if(!pw){ closeAdminUI(); toast("Přihlášení vypršelo – otevři administraci znovu 🔒"); return {error:{message:"nepřihlášen"}}; }
+  let res;
+  try{ res=await sb.rpc(fn,Object.assign({p_pw:pw},params||{})); }catch(e){ res={error:e}; }
+  if(res.error){
+    if(isAuthErr(res.error)){ adminForget(); closeAdminUI(); toast("Heslo už neplatí – přihlas se znovu 🔒"); }
+    else if(missingFnErr(res.error)) dbStatus("⚠ V databázi chybí funkce „"+fn+"“ – spusť migrace_v136.sql.","warn");
+    else dbFail(kde,res.error);
+    return {error:res.error};
+  }
+  return {data:res.data};
+}
+
 // ---- admin ----
 async function applySessionFromInputs(){
   const dv=$("#sessDate").value, tv=$("#sessTime").value; let target=null;
   if(dv&&tv){ const [Y,M,D]=dv.split("-").map(Number); const [h,m]=tv.split(":").map(Number);
     const d=new Date(Y,(M||1)-1,(D||1),(h||0),(m||0),0,0);
     if(!isNaN(d.getTime())){ if(d.getTime()<=Date.now()){ toast("Datum je v minulosti – beru běžnou středu 18:00"); } else target=d; } }
-  if(target && target.getTime()!==nextWed().getTime()){ await saveSession(target.toISOString()); } else { await saveSession(null); }
+  if(target && target.getTime()!==nextWed().getTime()){ return await saveSession(target.toISOString()); } else { return await saveSession(null); }
 }
 $("#adminBtn").onclick=async()=>{
-  const pw=window.prompt("Heslo administrátora:"); if(pw===null) return;
-  if(pw!=="drobek"){ toast("Špatné heslo 🔒"); return; }
+  if(!(await adminEnsure())) return;
   await loadSession(); await loadPrice();
   const base=nextSession(); $("#sessDate").value=toDateInput(base); $("#sessTime").value=toTimeInput(base); $("#priceInput").value=PRICE;
   $("#adminModal").style.display="flex";
@@ -1422,8 +1578,7 @@ $("#kegNewBtn").onclick=async()=>{
   if(!sz||isNaN(sz)||sz<=0||sz>1000){ toast("Zadej platný objem v litrech 🛢️"); return; }
   const summary=st.count+" "+plBeer(st.count)+" ("+st.large+"× velké, "+st.small+"× malé, "+fmtLiters(st.liters)+" l)";
   if(!confirm("Narazit nový sud?\n\n"+nm+" · "+fmtLiters(sz)+" l\n\nNa předchozím sudu se vypilo: "+summary+"\nPočítadlo se vynuluje a začne počítat od teď.")) return;
-  await logKeg(st);
-  await saveKegStart(Date.now(),nm,sz);
+  if(!(await adminSaveKeg(nm,sz,true,st))) return;
   await renderKeg();
   toast("Naražen nový sud: "+nm+" "+fmtLiters(sz)+" l 🛢️");
 };
@@ -1439,16 +1594,28 @@ $("#kegEditBtn").onclick=async()=>{
   if(sizeRaw===null) return;
   const sz=parseFloat(String(sizeRaw).replace(",","."));
   if(!sz||isNaN(sz)||sz<=0||sz>1000){ toast("Zadej platný objem v litrech 🛢️"); return; }
-  await saveKegStart(KEG_START,nm,sz);
+  if(!(await adminSaveKeg(nm,sz,false))) return;
   await renderKeg();
   toast("Údaje o sudu upraveny: "+nm+" "+fmtLiters(sz)+" l ✏️");
 };
-$("#sessSaveBtn").onclick=async()=>{ const btn=$("#sessSaveBtn"); btn.disabled=true; await applySessionFromInputs(); btn.disabled=false;
+$("#sessSaveBtn").onclick=async()=>{ const btn=$("#sessSaveBtn"); btn.disabled=true; const ok=await applySessionFromInputs(); btn.disabled=false;
+  if(!ok) return;
   tick(); $("#adminModal").style.display="none"; toast("Termín meetingu uložen 📅"); };
 $("#priceSaveBtn").onclick=async()=>{ const btn=$("#priceSaveBtn"); btn.disabled=true; const ok=await savePrice($("#priceInput").value); btn.disabled=false;
   if(ok){ await renderTabs(); $("#adminModal").style.display="none"; toast("Cena piva nastavena na "+PRICE+" Kč 💰"); } };
-$("#hallResetBtn").onclick=async()=>{ if(!confirm("Vynulovat síň slávy? Smaže se celá historie útrat."))return; await resetHall(); await renderHall(); toast("Síň slávy vynulována ✨"); };
+$("#hallResetBtn").onclick=async()=>{ if(!confirm("Vynulovat síň slávy? Smaže se celá historie útrat."))return; if(!(await resetHall())) return; await renderHall(); toast("Síň slávy vynulována ✨"); };
 $("#adminCancel").onclick=()=>{ $("#adminModal").style.display="none"; };
+$("#adminLogout").onclick=()=>{ adminForget(); closeAdminUI(); toast("Odhlášeno z administrace 🔒"); };
+$("#pwChangeBtn").onclick=async()=>{
+  if(!sb){ toast("Heslo se nastavuje jen s databází 🔑"); return; }
+  const v=await askDialog({title:"🔑 Nové heslo",hint:"Heslo se v databázi uloží jen jako bcrypt hash.",ok:"Změnit heslo",
+    fields:[{name:"pw",label:"Nové heslo (aspoň 6 znaků)",type:"password",attrs:{autocomplete:"new-password"},validate:v=>v.length>=6?null:"Aspoň 6 znaků"},
+            {name:"pw2",label:"Nové heslo znovu",type:"password",attrs:{autocomplete:"new-password"},validate:(v,a)=>v===a.pw?null:"Hesla se neshodují"}]});
+  if(!v) return;
+  const {error}=await adminRpc("admin_change_password",{p_new:v.pw},"změna hesla");
+  if(error) return;
+  ADMIN_PW=v.pw; ADMIN_EXP=Date.now()+ADMIN_TTL; adminStore(); toast("Heslo změněno 🔑");
+};
 $("#adminModal").addEventListener("click",e=>{ if(e.target.id==="adminModal") $("#adminModal").style.display="none"; });
 $("#ledgerBtn").onclick=async()=>{ $("#payRows").innerHTML='<tr><td colspan="5"><div class="pay-empty">Načítám…</div></td></tr>'; $("#paymentsModal").style.display="flex"; await renderPayments(); };
 $("#paymentsClose").onclick=()=>{ $("#paymentsModal").style.display="none"; };
