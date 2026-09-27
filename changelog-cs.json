@@ -4,5 +4,9 @@
   "42ee4a6": "Oprava chyby v generování seznamu změn (nevalidní YAML)",
   "485c50f": "Odstraněna zbytečná sekce s pevnou platbou za jedno pivo",
   "cb160aa": "Oprava tlačítka Platím, které nechávalo prázdné místo na mobilu",
-  "578a3b3": "Tlačítka u lístku (mínus, velké, malé, Platím) se teď na mobilu vejdou na jeden řádek"
+  "578a3b3": "Tlačítka u lístku (mínus, velké, malé, Platím) se teď na mobilu vejdou na jeden řádek",
+  "49c4f07": "Heslo administrace je bezpečně v databázi, mínus na lístku jde vrátit tlačítkem Zpět",
+  "f09981e": "Síň slávy ukazuje počty piv (velká + malá), vlastní cena malého piva, našeptávání jmen a jejich slučování, data se obnovují sama",
+  "8806b7e": "Nová okna pro sud a potvrzení, přehled plateb s filtry a souhrnem po lidech",
+  "df8cbf8": "Na mobilu je Platím zvlášť pod tlačítky, menší hlavička, čárky po pětkách, lepší čitelnost"
 }

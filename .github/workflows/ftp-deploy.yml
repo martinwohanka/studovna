@@ -17,22 +17,30 @@ jobs:
 
       - name: Vygenerovat seznam změn z historie commitů
         run: |
-          # Verze se počítá z počtu commitů, ať se nezapomene zvýšit.
-          # Setinky po 99 přetečou do další desítky: 99 commitů = v1.99, 100 = v2.00
-          N=$(git rev-list --count HEAD)
-          VERZE=$(printf 'v%d.%02d' $((1 + N/100)) $((N%100)))
-          echo "verze: $VERZE (commitů: $N)"
+          # Verze se bere z index.html (const APP_VERSION_CODE = "v1.36"), ne z počtu
+          # commitů – ten se měnil i bez vydání a verze pak neodpovídala kódu.
+          verze_v() { git show "$1:index.html" 2>/dev/null | grep -oP 'APP_VERSION_CODE\s*=\s*"\Kv\d+\.\d+' | head -1; }
+          VERZE=$(verze_v HEAD)
+          if [ -z "$VERZE" ]; then echo "::error::V index.html chybí const APP_VERSION_CODE"; exit 1; fi
+          echo "verze: $VERZE"
 
-          # Nejnovější commit je verze N, každý starší o jednu níž
+          # Commity do v1.33 (33. commit) neměly verzi v kódu – ty číslujeme postaru
+          # podle pořadí. Novější commit bez verze v kódu patří k nejbližší novější
+          # verzi (je to rozpracovaná část vydání).
+          LEGACY_MAX=33
           SEP=$'\x1f'
-          git log --pretty=format:"%h${SEP}%ad${SEP}%s" --date=format:'%d. %m. %Y' -n 30 \
-            | jq -R -s -c --arg sep "$SEP" --argjson n "$N" '
-                split("\n") | map(select(length>0) | split($sep)) | to_entries
-                | map(($n - .key) as $k | {
-                    sha: .value[0], date: .value[1], message: .value[2],
-                    version: ("v" + ((1 + ($k/100|floor))|tostring) + "." + (("0" + (($k%100)|tostring))[-2:]))
-                  })' \
-            > changelog.json
+          CUR=""
+          git log --pretty=tformat:"%H${SEP}%h${SEP}%ad${SEP}%s" --date=format:'%d. %m. %Y' -n 30 \
+            | while IFS="$SEP" read -r full sha date msg; do
+                N=$(git rev-list --count "$full")
+                V=$(verze_v "$full")
+                if [ -n "$V" ]; then CUR="$V"
+                elif [ "$N" -le "$LEGACY_MAX" ]; then V=$(printf 'v%d.%02d' $((1 + N/100)) $((N%100)))
+                else V="${CUR:-$VERZE}"; fi
+                jq -n -c --arg sha "$sha" --arg date "$date" --arg message "$msg" --arg version "$V" \
+                  '{sha:$sha, date:$date, message:$message, version:$version}'
+              done \
+            | jq -s -c . > changelog.json
 
           if [ -f changelog-cs.json ]; then
             jq --slurpfile overrides changelog-cs.json \
@@ -43,6 +51,7 @@ jobs:
 
           jq -c --arg v "$VERZE" '{version:$v, entries:.}' changelog.json > changelog.tmp.json
           mv changelog.tmp.json changelog.json
+          head -c 600 changelog.json; echo
 
       - name: Nahrát soubory přes FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5

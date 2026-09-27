@@ -21,7 +21,7 @@
     --line:rgba(255,255,255,.09);
     --line-2:rgba(255,255,255,.16);
     --txt:#f2f3f5;
-    --txt-2:#9aa3ad;
+    --txt-2:#b0b8c2;   /* šedé texty: ≥ 7:1 na kartách (WCAG AA chce 4,5:1) */
     --amber:#f5b942;
     --amber-2:#e8762d;
     --grad:linear-gradient(135deg,#f5b942,#e8762d);
@@ -72,7 +72,8 @@
   @keyframes bubDrift{from{transform:translateX(-6px)}to{transform:translateX(6px)}}
 
   /* hustá krémová pěna: plný krém nahoře, dolů řídne a teple se barví od piva */
-  .beer-foam{position:fixed;top:0;left:0;right:0;height:clamp(70px,11vh,118px);
+  /* pěna je jen nahoře na stránce a odjede se scrollem – nepřekrývá obsah */
+  .beer-foam{position:absolute;top:0;left:0;right:0;height:clamp(48px,8vh,84px);
     z-index:-1;pointer-events:none;overflow:hidden;
     background:linear-gradient(180deg,
       rgba(255,252,243,.44) 0%,
@@ -105,6 +106,8 @@
     font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--txt-2);
     border:1px solid var(--line);border-radius:999px;padding:6px 14px;margin-bottom:14px;
     background:rgba(255,255,255,.03);position:relative;}
+  .kicker{flex-wrap:wrap;justify-content:center;column-gap:6px;row-gap:2px;max-width:100%}
+  .kicker .nw{white-space:nowrap}   /* „2019“ nesmí zůstat sám na řádku */
   .kicker::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
   h1{font-family:'Space Grotesk',sans-serif;font-weight:700;
     font-size:clamp(34px,8.5vw,62px);line-height:1.02;letter-spacing:-.02em;margin:2px 0 14px;position:relative;}
@@ -133,7 +136,7 @@
   .count .keg-line{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);
     font-size:clamp(13px,3.2vw,14.5px);color:var(--txt-2);line-height:1.55}
   .count .keg-line b{color:var(--amber);font-weight:700}
-  .count .keg-line .keg-when{color:var(--txt);font-weight:600}
+  .count .keg-line .keg-when{color:var(--txt);font-weight:600;white-space:nowrap}
   .count .keg-line .keg-empty{color:var(--red)}
   .count .keg-bar{margin:9px auto 7px;max-width:420px;height:7px;border-radius:999px;
     background:rgba(255,255,255,.07);overflow:hidden}
@@ -184,11 +187,12 @@
   .tab-name{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:clamp(16px,4.2vw,19px);font-weight:600;letter-spacing:-.005em;}
   .tab-price{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(14.5px,3.8vw,17px);color:var(--txt-2);white-space:nowrap;font-variant-numeric:tabular-nums;}
   .tab-price b{font-weight:700;font-size:1.12em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;}
-  .tab-marks{margin-top:8px;min-height:18px;line-height:1.3;word-break:break-all;display:flex;flex-wrap:wrap;align-items:center;gap:3px;}
-  .tab-marks .mk{height:17px;width:8px;flex:0 0 auto;overflow:visible}
-  .tab-marks .mk line{stroke:var(--amber);stroke-width:2.2;stroke-linecap:round;filter:drop-shadow(0 0 6px rgba(245,185,66,.5))}
-  .tab-marks .mk-small line{stroke:#7ec8e3;filter:drop-shadow(0 0 6px rgba(126,200,227,.5))}
-  .tab-marks .mk-gap{flex:0 0 auto;width:7px}
+  .tab-marks{margin-top:8px;min-height:18px;line-height:1.3;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;}
+  .tab-marks .mk{height:18px;flex:0 0 auto;overflow:visible}
+  .tab-marks .mk line{stroke-width:2.2;stroke-linecap:round}
+  .tab-marks .mk line.l{stroke:var(--amber);filter:drop-shadow(0 0 5px rgba(245,185,66,.5))}
+  .tab-marks .mk line.s{stroke:#7ec8e3;filter:drop-shadow(0 0 5px rgba(126,200,227,.5))}
+  .tab-marks .mk line.strike{stroke-width:2.4}
   .tab-last{color:var(--txt-2);font-size:12px;margin-top:4px}
   .tab-actions{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
   .mini{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;color:var(--txt);background:rgba(255,255,255,.05);
@@ -200,12 +204,43 @@
   .mini.plus-small:hover{box-shadow:0 6px 18px rgba(74,155,190,.4)}
   .mini.pay{color:#06250f;background:var(--green);border:none;flex:1 1 100%}
   .mini.pay:hover{box-shadow:0 6px 18px rgba(61,220,132,.4)}
+  .tab-actions .mini{min-height:44px}
+  /* mínus je malý cíl hned vedle „+ velké“ – aspoň 44×44 px, ať se trefí i prst */
+  .mini[data-act="minus"]{min-width:44px;padding:0 12px;font-size:22px;line-height:1}
+  /* Mobil: [−] [+ velké] [+ malé] v řadě, Platím samostatně pod nimi přes celou
+     šířku – dřív bylo hned vedle „+ malé“ a snadno se na něj překliklo. */
   @media (max-width:480px){
-    .tab-actions{flex-wrap:nowrap;gap:5px}
-    .tab-actions .mini{padding:9px 4px;font-size:11.5px;min-width:0}
-    .tab-actions .mini[data-act="minus"]{flex:0 0 32px;padding:9px 0}
-    .tab-actions .mini.plus,.tab-actions .mini.plus-small,.tab-actions .mini.pay{flex:1 1 0}
+    .tab-actions{flex-wrap:wrap;gap:8px}
+    .tab-actions .mini{padding:9px 6px;font-size:14px;min-width:0}
+    .tab-actions .mini[data-act="minus"]{flex:0 0 44px;padding:0;font-size:22px}
+    .tab-actions .mini.plus,.tab-actions .mini.plus-small{flex:1 1 0}
+    .tab-actions .mini.pay{flex:1 1 100%;margin-top:4px}
   }
+  /* Mobil: kompaktní hlavička a odpočet, ať jsou lístky vidět co nejdřív */
+  @media (max-width:480px){
+    .hero{padding:16px 14px 14px}
+    .admin-btn{top:10px;right:10px;width:44px;height:44px}
+    .logo{width:52px;margin-bottom:4px}
+    .kicker{font-size:10.5px;letter-spacing:.12em;padding:4px 11px;margin-bottom:8px}
+    h1{font-size:31px;margin:0 0 10px}
+    .chips{gap:6px}
+    .chip{font-size:12.5px;padding:5px 11px}
+    .chip:first-child{display:none}
+    .count{margin-top:10px;padding:12px 12px 12px}
+    .count .lbl{font-size:10.5px}
+    .count .clock{font-size:29px;margin:1px 0 2px}
+    .count .when{font-size:13.5px}
+    .count .keg-line{margin-top:8px;padding-top:8px;font-size:12.5px;line-height:1.45}
+    .count .keg-bar{margin:6px auto 5px;height:6px}
+    .count .keg-foot{font-size:12px}
+    .count .keg-alert{margin-top:7px;padding:7px 10px;font-size:12.5px}
+    .panel{margin-top:10px}
+  }
+  .tabs-idle{border:1px dashed var(--line-2);border-radius:var(--r-md);padding:4px 14px}
+  .tabs-idle summary{cursor:pointer;color:var(--txt-2);font-size:13.5px;padding:10px 0;list-style-position:inside}
+  .tabs-idle summary:hover{color:var(--txt)}
+  .tabs-idle[open]{padding-bottom:12px}
+  .tabs-idle .tabs{margin-top:4px}
   .tabs-empty{text-align:center;color:var(--txt-2);font-size:14px;border:1px dashed var(--line-2);border-radius:var(--r-md);padding:20px 16px;margin-top:14px;}
 
   /* ===== síň slávy ===== */
@@ -223,8 +258,12 @@
   .toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);
     background:rgba(20,23,29,.92);border:1px solid var(--line-2);color:var(--txt);
     padding:13px 22px;border-radius:999px;font-size:14px;font-weight:500;opacity:0;pointer-events:none;transition:.3s ease;z-index:150;
-    -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 14px 40px rgba(0,0,0,.55);max-width:92vw;}
+    -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 14px 40px rgba(0,0,0,.55);
+    width:max-content;max-width:min(92vw,560px);}   /* bez width by left:50 % zúžilo toast na půl displeje */
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.act.show{pointer-events:auto;display:flex;align-items:center;gap:12px;padding:6px 6px 6px 20px}
+  .toast-act{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:#0a0c10;background:var(--grad);
+    border:none;border-radius:999px;min-height:44px;min-width:64px;padding:0 18px;cursor:pointer}
   .toast.warn{background:rgba(60,20,20,.96);border-color:rgba(224,71,71,.65);color:#ffd9d9;
     box-shadow:0 14px 40px rgba(224,71,71,.3)}
   .toast.warn b{color:#ff8a80;font-weight:700}
@@ -247,19 +286,34 @@
   .modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:20px;
     background:rgba(5,6,9,.7);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
   .modal-card{width:100%;max-width:460px;background:rgba(18,21,27,.96);border:1px solid var(--line-2);border-radius:var(--r-lg);
-    padding:24px 24px 20px;box-shadow:0 30px 80px rgba(0,0,0,.65);max-height:90vh;overflow-y:auto;}
+    padding:24px 24px 20px;box-shadow:0 30px 80px rgba(0,0,0,.65);max-height:90vh;max-height:90dvh;overflow-y:auto;
+    overscroll-behavior:contain;}
   .modal-card h3{font-family:'Space Grotesk',sans-serif;font-weight:700;letter-spacing:-.01em;font-size:22px;margin-bottom:4px;}
+  /* Nadpis a spodní tlačítka zůstávají na místě, scrolluje jen obsah mezi nimi –
+     na nízkých displejích se tak Zavřít neořízne. Záporné okraje = padding karty. */
+  .modal-card > h3:first-child{position:sticky;top:-24px;z-index:4;margin:-24px -24px 4px;padding:24px 24px 8px;background:#12151b}
+  .modal-card .modal-actions:last-child{position:sticky;bottom:-20px;z-index:4;margin:18px -24px -20px;padding:12px 24px 20px;
+    background:#12151b;border-top:1px solid var(--line)}
   .modal-hint{color:var(--txt-2);font-size:13px;line-height:1.55;margin-bottom:14px}
   .modal-hint b{color:var(--amber);font-weight:600}
   #nameInput{width:100%;font-family:'Inter',sans-serif;font-size:16px;font-weight:500;color:var(--txt);
     background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:var(--r-sm);padding:13px 15px;transition:.18s ease;}
   #nameInput:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,185,66,.14)}
+  .name-warn{margin-top:10px;font-size:14px;line-height:1.5;color:#ffd08a;background:rgba(245,185,66,.08);
+    border:1px solid rgba(245,185,66,.35);border-radius:var(--r-sm);padding:10px 12px}
+  .name-warn:empty{display:none}
+  .name-warn b{color:var(--amber)}
+  .name-warn .nw-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .name-warn button{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13.5px;border-radius:10px;padding:9px 14px;cursor:pointer;min-height:40px}
+  .name-warn .nw-yes{color:#0a0c10;background:var(--grad);border:none}
+  .name-warn .nw-no{color:var(--txt);background:none;border:1px solid var(--line-2)}
   .sess-edit{margin:18px 0 2px;border-top:1px solid var(--line);padding-top:16px}
   .sess-lbl{display:block;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:16px;color:var(--amber);margin-bottom:10px;}
   .sess-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .sess-row input{flex:1;min-width:130px;font-family:'Inter',sans-serif;font-size:16px;font-weight:500;color:var(--txt);
     color-scheme:dark;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 12px;transition:.18s ease;}
   .sess-row input:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,185,66,.14)}
+  .sess-row input.price-in{max-width:140px;flex:0 1 140px}
   .sess-row .suffix{color:var(--txt-2);font-size:14px;font-weight:600;white-space:nowrap}
   .sess-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:12px}
   .sess-save{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;color:#0a0c10;background:var(--grad);
@@ -288,6 +342,25 @@
   .btn-green{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14.5px;color:#06250f;background:var(--green);
     border:none;border-radius:var(--r-sm);padding:10px 18px;cursor:pointer;transition:.18s ease;}
   .btn-green:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(61,220,132,.4)}
+  .btn-danger{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14.5px;color:#fff;background:#d9483b;
+    border:none;border-radius:var(--r-sm);padding:10px 18px;cursor:pointer;transition:.18s ease;}
+  .btn-danger:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(224,71,71,.4)}
+  .btn-gold:disabled,.btn-danger:disabled,.btn-green:disabled{opacity:.55;cursor:default;transform:none;box-shadow:none}
+
+  /* ===== vlastní dialog (místo prompt/confirm) ===== */
+  #dlgModal{z-index:130}
+  .dlg-field{margin-top:12px}
+  .dlg-field label{display:block;font-size:13px;font-weight:600;color:var(--txt-2);margin-bottom:6px}
+  .dlg-field input{width:100%;font-family:'Inter',sans-serif;font-size:16px;font-weight:500;color:var(--txt);color-scheme:dark;
+    background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:var(--r-sm);padding:11px 13px;transition:.18s ease}
+  .dlg-field input:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,185,66,.14)}
+  .dlg-field.bad input{border-color:var(--red);box-shadow:0 0 0 3px rgba(255,107,94,.14)}
+  .dlg-field .dlg-ferr{color:#ff8a80;font-size:12.5px;margin-top:5px;min-height:0}
+  .dlg-field .dlg-ferr:empty{display:none}
+  .dlg-err{color:#ff8a80;font-size:13px;font-weight:600;margin-top:12px}
+  .dlg-err:empty{display:none}
+  .dlg-body{color:var(--txt);font-size:14px;line-height:1.55;white-space:pre-line}
+  .dlg-body:empty{display:none}
 
   .admin-keg{margin-top:14px;border-top:1px solid var(--line);padding-top:13px}
   .keg-stat{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:9px}
@@ -350,7 +423,36 @@
     table.pay-table td.del{grid-column:3;grid-row:1/3;position:static;
       background:none;box-shadow:none;width:auto;padding-left:4px}
     .pay-brk{font-size:11px}
+    /* na telefonu žádný vnořený scroll – posouvá se celá karta (hlavička a Zavřít drží) */
+    .pay-scroll{max-height:none;overflow:visible}
+    .pay-filters #payPeriod{flex:1 1 100%}
+    table.pay-table tbody tr.cur-keg{box-shadow:inset 3px 0 0 var(--amber)}
+    table.pay-table tbody tr.cur-keg td:first-child{box-shadow:none}
   }
+  table.pay-table th.num{text-align:right}
+  .pay-filters{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 10px}
+  .pay-filters input,.pay-filters select{font-family:'Inter',sans-serif;font-size:15px;color:var(--txt);color-scheme:dark;
+    background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-height:42px}
+  .pay-filters input:focus,.pay-filters select:focus{outline:none;border-color:var(--amber)}
+  .pay-filters select option{background:#12151b}
+  #payName{flex:1 1 160px;min-width:0}
+  #payPeriod{flex:0 1 180px}
+  .pay-range{display:flex;align-items:center;gap:6px;flex:1 1 100%}
+  .pay-range[hidden]{display:none}
+  .pay-range input{flex:1;min-width:0}
+  .pay-range span{color:var(--txt-2)}
+  .pay-people{margin:0 0 12px;border:1px solid var(--line);border-radius:var(--r-sm);padding:0 12px}
+  .pay-people summary{cursor:pointer;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;color:var(--amber);padding:10px 0}
+  .pay-people[open]{padding-bottom:8px}
+  .pp-row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid rgba(255,255,255,.05);font-size:13.5px}
+  .pp-row .pp-n{font-weight:600}
+  .pp-row .pp-v{color:var(--txt-2);text-align:right;font-variant-numeric:tabular-nums}
+  .pp-row .pp-v b{color:var(--green)}
+  table.pay-table tbody tr.cur-keg td:first-child{box-shadow:inset 3px 0 0 var(--amber)}
+  table.pay-table tbody tr.cur-keg{background:rgba(245,185,66,.06)}
+  table.pay-table tbody tr.cur-keg:nth-child(even){background:rgba(245,185,66,.09)}
+  .pay-keg-mark{border-left:3px solid var(--amber);padding-left:5px;color:var(--txt)}
+  .pay-more{text-align:center;margin-top:10px}
   .pay-note{margin-top:12px;color:var(--txt-2);font-size:12px;line-height:1.5}
   .pay-note b{color:var(--txt);font-weight:600}
 
@@ -442,7 +544,7 @@
         <g fill="#3a2c18"><ellipse cx="44" cy="30" rx="1.4" ry="3" transform="rotate(25 44 30)"/><ellipse cx="30" cy="47" rx="1.4" ry="3" transform="rotate(-15 30 47)"/><ellipse cx="52" cy="44" rx="1.4" ry="3" transform="rotate(40 52 44)"/><ellipse cx="42" cy="55" rx="1.4" ry="3" transform="rotate(-30 42 55)"/><ellipse cx="58" cy="52" rx="1.4" ry="3" transform="rotate(10 58 52)"/><ellipse cx="35" cy="72" rx="1.4" ry="3" transform="rotate(60 35 72)"/></g>
         <g fill="#e9bb68"><circle cx="103" cy="38" r="3.2"/><circle cx="110" cy="50" r="2.2"/><circle cx="105" cy="61" r="2.6"/><circle cx="113" cy="42" r="1.6"/></g>
       </svg>
-      <div class="kicker">Hospodská tabule · od léta Páně 2019</div>
+      <div class="kicker"><span>Hospodská tabule</span><span class="kicker-dot">·</span><span class="nw">od léta Páně 2019</span></div>
       <h1>Studovna <span class="grad">u Drobka</span></h1>
       <div class="chips">
         <span class="chip">📚 <b>Studium</b> chmele a sladu</span>
@@ -457,12 +559,14 @@
       <div class="keg-line" id="kegLine"></div>
     </section>
 
+    <div id="dbStatus" class="dbstat" role="status" aria-live="polite"></div>
+
     <section class="panel">
       <div class="panel-head">
         <div class="head-left">
           <h2>🍻 Rozpitá piva</h2>
-          <span class="price-badge" id="priceBadge" title="Aktuální cena piva">🍺 40 Kč</span>
-          <button class="sound-btn" id="soundBtn" title="Zvuk při čárce">🔊</button>
+          <span class="price-badge" id="priceBadge" title="Aktuální cena velkého / malého piva">🍺 40 / 24 Kč</span>
+          <button class="sound-btn" id="soundBtn" type="button" title="Zvuky zap/vyp" aria-label="Zvuky zap/vyp" aria-pressed="true">🔊</button>
         </div>
         <span class="week" id="tabsTotal"></span>
       </div>
@@ -471,7 +575,7 @@
         <button class="btn" id="openTabBtn" style="flex:1">🍺 Začínám pít — založit lístek</button>
       </div>
       <p class="note">
-        Každé pivo = <b class="price-now">40 Kč</b>. Čárkuj svoje piva tlačítkem <b>+ 🍺</b> (mínusem vrátíš poslední).<br>
+        Velké pivo = <b class="price-now">40 Kč</b>, malé = <b class="price-small-now">24 Kč</b>. Čárkuj svoje piva tlačítkem <b>+ 🍺</b> (mínusem vrátíš poslední), čárky jdou po pětkách, <span style="color:#7ec8e3">malá jsou modrá</span>.<br>
         Tlačítko <b>Platím</b> ukáže QR na přesnou částku a po zaplacení lístek smaže. Rozpitá piva vidí každý.
       </p>
     </section>
@@ -485,8 +589,6 @@
       <div class="hall-list" id="hallList"></div>
     </section>
 
-    <div id="dbStatus" class="dbstat"></div>
-
     <footer class="site-footer">
       🍺 Studovna u Drobka · vytvořil <span class="author">inža</span> · <span class="ver" id="footVer">seznam změn…</span>
     </footer>
@@ -495,11 +597,13 @@
 
   <div class="toast" id="toast"></div>
 
+  <datalist id="knownNames"></datalist>
   <div class="modal" id="nameModal">
     <div class="modal-card" style="max-width:380px">
       <h3>👋 Jak ti říkat?</h3>
       <p class="modal-hint">Jméno tě spojí s tvým lístkem a se síní slávy. Stačí zadat jednou.</p>
-      <input id="nameInput" type="text" maxlength="30" placeholder="Tvoje jméno…" spellcheck="false">
+      <input id="nameInput" type="text" maxlength="30" placeholder="Tvoje jméno…" spellcheck="false" list="knownNames" autocomplete="off">
+      <div class="name-warn" id="nameWarn" role="alert"></div>
       <div class="modal-actions">
         <button class="btn-ghost" id="nameCancel">Zrušit</button>
         <button class="btn-gold" id="nameSave">Uložit</button>
@@ -518,18 +622,23 @@
         </div>
         <div class="sess-actions">
           <button class="sess-save" id="sessSaveBtn" type="button">💾 Uložit termín</button>
+          <button class="linklike" id="sessTueBtn" type="button">📅 Další úterý 18:00</button>
         </div>
       </div>
       <div class="sess-edit">
         <label class="sess-lbl">💰 Cena piva</label>
         <div class="sess-row">
-          <input type="number" id="priceInput" min="1" max="9999" step="1" style="max-width:140px;flex:0 1 140px;font-size:16px;font-family:'Inter',sans-serif;font-weight:500;color:var(--txt);color-scheme:dark;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 12px">
-          <span class="suffix">Kč za pivo</span>
+          <input type="number" id="priceInput" min="1" max="9999" step="1" inputmode="numeric" class="price-in" aria-label="Cena velkého piva">
+          <span class="suffix">Kč velké</span>
+        </div>
+        <div class="sess-row" style="margin-top:8px">
+          <input type="number" id="priceSmallInput" min="1" max="9999" step="1" inputmode="numeric" class="price-in" aria-label="Cena malého piva">
+          <span class="suffix">Kč malé</span>
         </div>
         <div class="sess-actions">
           <button class="sess-save" id="priceSaveBtn" type="button">💾 Uložit cenu</button>
         </div>
-        <p class="sess-note">Nová cena platí pro <b>nově</b> načárkovaná piva. Dříve načárkovaná si drží cenu z okamžiku objednání.</p>
+        <p class="sess-note">Nová cena platí pro <b>nově</b> načárkovaná piva. Dříve načárkovaná si drží cenu z okamžiku objednání. Necháš-li cenu malého prázdnou, počítá se jako 3/5 velkého.</p>
       </div>
       <div class="admin-share">
         <button class="wa-share" id="waShareHall">🏆 Sdílet síň slávy na WhatsApp</button>
@@ -546,11 +655,14 @@
 
       <div class="admin-ledger">
         <button class="ledger-open" id="ledgerBtn" type="button">📒 Přehled plateb</button>
+        <button class="ledger-open" id="mergeBtn" type="button" style="margin-top:8px">🔀 Sloučit jména</button>
       </div>
       <div class="admin-danger">
         <button class="linklike" id="hallResetBtn" type="button">🏆 Vynulovat síň slávy</button>
+        <button class="linklike" id="pwChangeBtn" type="button" style="color:var(--txt-2)">🔑 Změnit heslo administrátora</button>
       </div>
       <div class="modal-actions">
+        <button class="btn-ghost" id="adminLogout" type="button">🔒 Odhlásit</button>
         <button class="btn-ghost" id="adminCancel">Zavřít</button>
       </div>
     </div>
@@ -560,17 +672,36 @@
     <div class="modal-card pay-card">
       <h3>📒 Přehled plateb</h3>
       <p class="modal-hint">Evidence všech proběhlých plateb. Mazat záznamy jde <b>jen tady v administraci</b> — běžní uživatelé je nikde neodstraní.</p>
+      <div class="pay-filters">
+        <input type="search" id="payName" list="knownNames" placeholder="🔍 Jméno…" autocomplete="off" aria-label="Filtr podle jména">
+        <select id="payPeriod" aria-label="Období">
+          <option value="all">Celé období</option>
+          <option value="keg">Aktuální sud</option>
+          <option value="month">Tento měsíc</option>
+          <option value="custom">Vlastní rozsah…</option>
+        </select>
+        <div class="pay-range" id="payRange" hidden>
+          <input type="date" id="payFrom" aria-label="Od"><span>–</span><input type="date" id="payTo" aria-label="Do">
+        </div>
+      </div>
       <div class="pay-tools">
         <span class="pay-sum" id="paySum"></span>
         <button class="pay-csv" id="payCsvBtn" type="button">⬇️ Export CSV</button>
       </div>
+      <details class="pay-people" id="payPeopleBox">
+        <summary>👥 Souhrn podle osob</summary>
+        <div id="payPeople"></div>
+      </details>
       <div class="pay-scroll">
         <table class="pay-table">
           <thead><tr><th>Datum a čas</th><th>Jméno</th><th class="num">Piv</th><th class="num">Útrata</th><th></th></tr></thead>
           <tbody id="payRows"></tbody>
         </table>
       </div>
-      <p class="pay-note">Sloupec „Piv" ukazuje počet kusů (z toho malá jako křížek). Útrata je skutečně zaplacená částka v Kč. Křížkem vpravo platbu smažeš — <b>odečte se i ze síně slávy</b> a z počítadla sudu.</p>
+      <div class="pay-more" id="payMoreBox" hidden><button class="ledger-open" id="payMore" type="button">Načíst dalších 50</button></div>
+      <p class="pay-note">Sloupec „Piv“ ukazuje počet kusů, v závorce rozpad na velká a malá. Útrata je skutečně zaplacená částka v Kč.
+        Platby <span class="pay-keg-mark">aktuálního sudu</span> mají vlevo jantarový proužek. Export CSV obsahuje všechny platby podle filtru.
+        Tlačítkem ✕ platbu smažeš — <b>odečte se ze síně slávy</b> (pokud je novější než její poslední obnova) a z počítadla sudu (jen platby po naražení aktuálního sudu).</p>
       <div class="modal-actions">
         <button class="btn-ghost" id="paymentsClose">Zavřít</button>
       </div>
@@ -613,10 +744,28 @@
     </div>
   </div>
 
+  <div class="modal" id="dlgModal" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
+    <div class="modal-card" style="max-width:400px">
+      <h3 id="dlgTitle"></h3>
+      <p class="modal-hint" id="dlgHint"></p>
+      <form id="dlgForm" novalidate autocomplete="off">
+        <div class="dlg-body" id="dlgBody"></div>
+        <div id="dlgFields"></div>
+        <div class="dlg-err" id="dlgErr" role="alert"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" id="dlgCancel">Zrušit</button>
+          <button type="submit" class="btn-gold" id="dlgOk">OK</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 <script>
 let PRICE = 40;
+let PRICE_SMALL = 0;   // 0 = malé se odvozuje jako 3/5 velkého (dosavadní chování)
 const SESSION_KEY = "__session__";
 const PRICE_KEY   = "__price__";
+const PRICE_SMALL_KEY = "__price_small__";
 
 const $ = s => document.querySelector(s);
 let memShared = {}, memMine = {};
@@ -663,17 +812,26 @@ const plBeer=(n)=>n===1?"pivo":(n>=2&&n<=4?"piva":"piv");
 const plDay=(n)=>n===1?"den":(n>=2&&n<=4?"dny":"dní");
 
 // ---- diagnostika DB ----
+// Pruh pod obsahem se ukazuje jen při chybě nebo výpadku – když je vše v pořádku, není vidět.
+let DB_WARN_TRANSIENT=false;   // chyba, kterou smaže další úspěšné načtení (výpadek sítě apod.)
 function dbStatus(msg,cls){
   const el=document.getElementById("dbStatus"); if(!el) return;
+  DB_WARN_TRANSIENT=false;
+  if(cls==="ok"){ el.textContent=""; el.className="dbstat"; return; }
   if(msg){ el.textContent=msg; el.className="dbstat "+(cls||"warn"); return; }
   if(!SUPABASE_URL || !SUPABASE_ANON_KEY){ el.textContent="⚠ Lokální režim: Supabase klíče nejsou vyplněné. Data se nesdílí a po reloadu zmizí."; el.className="dbstat warn"; return; }
   if(!window.supabase){ el.textContent="⚠ Knihovna Supabase se nenačetla – blokuje ji nejspíš síť nebo CSP."; el.className="dbstat warn"; return; }
-  el.textContent="✓ Připojeno k databázi – data se ukládají a sdílí."; el.className="dbstat ok";
+  el.textContent=""; el.className="dbstat";
 }
 function dbFail(kde,error){
   const m=(error && (error.message||error.hint||error.details))||error||"neznámá chyba";
-  dbStatus("⚠ Chyba databáze u „"+kde+"“: "+m+" (zkontroluj SQL s tabulkami a politikami).","warn");
+  const net=/fetch|network|timeout|offline/i.test(String(m));
+  dbStatus(net ? "⚠ Spojení s databází vypadlo – zkouším to znovu…"
+               : "⚠ Chyba databáze u „"+kde+"“: "+m+" (zkontroluj SQL s tabulkami a politikami).","warn");
+  // chyby při načítání zmizí samy, jakmile se data zase načtou
+  if(net || /^načtení|^test/.test(kde)) DB_WARN_TRANSIENT=true;
 }
+function dbRecovered(){ if(DB_WARN_TRANSIENT && navigator.onLine!==false) dbStatus(null,"ok"); }
 
 // ---- storage fallback ----
 async function sGet(key,shared){
@@ -825,26 +983,39 @@ function pourEffect(ev){
 // ---- cena piva (sdílená) ----
 let PRICE_RENDERED=null;
 function updatePriceUI(){
-  if(PRICE_RENDERED===PRICE) return;
-  PRICE_RENDERED=PRICE;
-  const b=$("#priceBadge"); if(b) b.textContent="🍺 "+PRICE+" Kč";
+  const key=PRICE+"/"+smallPrice();
+  if(PRICE_RENDERED===key) return;
+  PRICE_RENDERED=key;
+  const b=$("#priceBadge"); if(b) b.textContent="🍺 "+PRICE+" / "+smallPrice()+" Kč";
   document.querySelectorAll(".price-now").forEach(el=>{ el.textContent=PRICE+" Kč"; });
+  document.querySelectorAll(".price-small-now").forEach(el=>{ el.textContent=smallPrice()+" Kč"; });
 }
 async function loadPrice(){
   if(sb){
-    try{ const {data,error}=await sb.from("suggestions").select("beer").eq("period",PRICE_KEY).limit(1);
-      if(!error){ const v=parseInt((data&&data.length)?data[0].beer:"",10); PRICE=(v>0)?v:40; } }catch(e){}
-  } else { const v=parseInt((await sGet("beer_price",true))||"",10); PRICE=(v>0)?v:40; }
+    try{ const {data,error}=await sb.from("suggestions").select("period,beer").in("period",[PRICE_KEY,PRICE_SMALL_KEY]);
+      if(!error){
+        const get=k=>{ const r=(data||[]).find(x=>x.period===k); return parseInt(r?r.beer:"",10); };
+        const v=get(PRICE_KEY), vs=get(PRICE_SMALL_KEY);
+        PRICE=(v>0)?v:40; PRICE_SMALL=(vs>0)?vs:0;
+      } }catch(e){}
+  } else {
+    const v=parseInt((await sGet("beer_price",true))||"",10); PRICE=(v>0)?v:40;
+    const vs=parseInt((await sGet("beer_price_small",true))||"",10); PRICE_SMALL=(vs>0)?vs:0;
+  }
   updatePriceUI(); return PRICE;
 }
-async function savePrice(val){
+// small: číslo, nebo prázdné = odvozovat 3/5 z velkého
+async function savePrice(val,smallVal){
   const v=parseInt(val,10);
-  if(!(v>0&&v<=9999)){ toast("Zadej platnou cenu v Kč 💰"); return false; }
-  PRICE=v;
-  if(sb){ await sb.from("suggestions").delete().eq("period",PRICE_KEY);
-    const {error}=await sb.from("suggestions").insert({period:PRICE_KEY,beer:String(v)}); if(error){ dbFail("uložení ceny",error); return false; } }
-  else { await sSet("beer_price",String(v),true); }
-  updatePriceUI(); return true;
+  if(!(v>0&&v<=9999)){ toast("Zadej platnou cenu velkého piva v Kč 💰"); return false; }
+  let vs=null;
+  if(String(smallVal||"").trim()!==""){
+    vs=parseInt(smallVal,10);
+    if(!(vs>0&&vs<=9999)){ toast("Zadej platnou cenu malého piva v Kč 💰"); return false; }
+  }
+  if(sb){ const {error}=await adminRpc("admin_set_price",{p_price:v,p_small:vs},"uložení ceny"); if(error) return false; }
+  else { await sSet("beer_price",String(v),true); await sSet("beer_price_small",vs?String(vs):"",true); }
+  PRICE=v; PRICE_SMALL=vs||0; updatePriceUI(); return true;
 }
 
 // ---- meeting override ----
@@ -856,25 +1027,31 @@ async function loadSession(){
 }
 async function saveSession(iso){
   const stored = iso || null;
-  SESSION_OVERRIDE = stored;
-  if(sb){ await sb.from("suggestions").delete().eq("period",SESSION_KEY);
-    if(stored){ const {error}=await sb.from("suggestions").insert({period:SESSION_KEY,beer:stored}); if(error){ dbFail("uložení meetingu",error); } } }
+  if(sb){ const {error}=await adminRpc("admin_set_session",{p_iso:stored},"uložení meetingu"); if(error) return false; }
   else { await sSet("session_override", stored||"", true); }
+  SESSION_OVERRIDE = stored; return true;
 }
 
 // ====== ROZPITÁ PIVA ======
-function smallPrice(){ return Math.round(PRICE*3/5); }
-const MARK_LARGE='<svg class="mk" viewBox="0 0 8 18" aria-label="velké"><line x1="4" y1="1" x2="4" y2="17"/></svg>';
-const MARK_SMALL='<svg class="mk mk-small" viewBox="0 0 8 18" aria-label="malé"><line x1="1.4" y1="1.6" x2="6.6" y2="16.4"/><line x1="6.6" y1="1.6" x2="1.4" y2="16.4"/></svg>';
+function smallPrice(){ return PRICE_SMALL>0 ? PRICE_SMALL : Math.round(PRICE*3/5); }
+// Hospodské čárky po pětkách: 4 svislé a pátá je přeškrtne. Malé pivo má
+// jinou barvu a je o kus kratší (rozliší se i bez rozlišení barev).
 function tallyMarks(marks){
   if(!marks||!marks.length) return "";
-  // | = velké, křížek = malé; seskupení po 5 pomocí mezery
-  let s="",count=0;
-  marks.forEach((m,i)=>{
-    s+=(m&&m.s==="small")?MARK_SMALL:MARK_LARGE;
-    count++;
-    if(count%5===0 && i<marks.length-1) s+='<span class="mk-gap"></span>';
-  });
+  let s="";
+  for(let g=0; g<marks.length; g+=5){
+    const grp=marks.slice(g,g+5), n=grp.length, full=n===5;
+    const w=full?28:n*6+2;
+    const small=grp.filter(m=>m&&m.s==="small").length;
+    const lbl=n+" "+plBeer(n)+(small?", z toho "+small+" "+plSmall(small):"");
+    let body="";
+    grp.slice(0,4).forEach((m,i)=>{
+      const sm=m&&m.s==="small", x=4+i*6;
+      body+='<line class="'+(sm?"s":"l")+'" x1="'+x+'" y1="'+(sm?5:1.5)+'" x2="'+x+'" y2="16.5"/>';
+    });
+    if(full){ const sm=grp[4]&&grp[4].s==="small"; body+='<line class="'+(sm?"s":"l")+' strike" x1="0.5" y1="14.5" x2="27.5" y2="3.5"/>'; }
+    s+='<svg class="mk" width="'+w+'" height="18" viewBox="0 0 '+w+' 18" role="img" aria-label="'+lbl+'"><title>'+lbl+'</title>'+body+'</svg>';
+  }
   return s;
 }
 function tabMarks(rec){
@@ -886,11 +1063,24 @@ function marksTotal(marks){ return (marks||[]).reduce((s,m)=>s+markPrice(m),0); 
 // Pro síň slávy: malé pivo se počítá poměrem ceny (3/5), velké = 1
 function beerEquivalents(marks){ return (marks||[]).reduce((s,m)=>s+((m&&m.s==="small")?3/5:1),0); }
 function fmtBeers(x){ const r=Math.round(x*10)/10; return Number.isInteger(r)?String(r):r.toFixed(1).replace(".",","); }
+const plSmall=(n)=>n===1?"malé":(n>=2&&n<=4?"malá":"malých");
+// „8 piv (7 + 1 malé)“ – počet kusů s rozpadem, malá jen když nějaká jsou
+function fmtCount(large,small){
+  const n=large+small;
+  if(!small) return n+" "+plBeer(n);
+  if(!large) return n+" "+plSmall(n)+" "+plBeer(n);
+  return n+" "+plBeer(n)+" ("+large+" + "+small+" "+plSmall(small)+")";
+}
+// Řádek síně slávy bez počtu kusů (stará data) – odhad z přepočtu na velká
+function hallCounts(r){
+  if(r.large!=null||r.small!=null) return {large:r.large||0, small:r.small||0};
+  return {large:Math.round(r.beers||0), small:0};
+}
 async function loadTabs(){
   if(sb){
     try{ const {data,error}=await sb.from("tabs").select("name,beers,marks");
       if(error){ dbFail("načtení lístků",error); }
-      else { const m={}; data.forEach(r=>{ m[r.name]={beers:r.beers||0, marks:Array.isArray(r.marks)?r.marks:null}; }); return m; } }catch(e){ dbFail("načtení lístků",e); }
+      else { dbRecovered(); const m={}; data.forEach(r=>{ m[r.name]={beers:r.beers||0, marks:Array.isArray(r.marks)?r.marks:null}; }); return m; } }catch(e){ dbFail("načtení lístků",e); }
   }
   const raw=await sGet("tabs",true); let m={}; try{ m=raw?JSON.parse(raw):{}; }catch(e){ m={}; }
   const out={}; Object.keys(m||{}).forEach(k=>{ const v=m[k]; if(typeof v==="number") out[k]={beers:v,marks:null}; else out[k]={beers:(v&&v.beers)||0,marks:(v&&Array.isArray(v.marks))?v.marks:null}; });
@@ -909,6 +1099,7 @@ async function deleteTab(name){
   const plain={}; Object.keys(m).forEach(k=>{ plain[k]={beers:m[k].beers,marks:m[k].marks||[]}; });
   await sSet("tabs",JSON.stringify(plain),true); return true;
 }
+let EMPTY_OPEN=false;
 async function renderTabs(){
   await loadPrice();
   const tabs=await loadTabs(); const me=rememberedName().toLowerCase();
@@ -918,20 +1109,36 @@ async function renderTabs(){
   // zmizel z hlavní obrazovky včetně upozornění, že dochází
   if(!names.length){ list.innerHTML='<div class="tabs-empty">Zatím nikdo nepije 🥲 Založ si lístek a buď první.</div>'; $("#tabsTotal").textContent=""; await renderKeg(); return; }
   let totalBeers=0,totalKc=0,leaderName=null,leaderC=0;
-  names.forEach(n=>{
+  // Cizí lístky bez piv jen překáží – sbalíme je do jednoho řádku dole.
+  // Vlastní lístek (i prázdný) zůstává vidět, ať se dá hned čárkovat.
+  const isMine=n=>!!me && n.toLowerCase()===me;
+  const emptyNames=names.filter(n=>!tabMarks(tabs[n]).length && !isMine(n));
+  const shown=names.filter(n=>!emptyNames.includes(n));
+  if(!shown.length) list.innerHTML='<div class="tabs-empty">Zatím nikdo nepije 🥲 Založ si lístek a buď první.</div>';
+  const tabEl=(n)=>{
     const marks=tabMarks(tabs[n]); const c=marks.length; const tot=marksTotal(marks)||c*PRICE;
     totalBeers+=c; totalKc+=tot; if(c>leaderC){ leaderC=c; leaderName=n; }
-    const isMe=me && n.toLowerCase()===me;
+    const isMe=isMine(n);
     let lastTxt=""; const ts=marks.map(m=>m&&m.t).filter(Boolean); if(ts.length){ lastTxt="poslední "+fmtLastSeen(Math.max(...ts)); }
     const el=document.createElement("div"); el.className="tab"+(isMe?" mine":"");
-    el.innerHTML=`<div class="tab-row"><div class="tab-name"><span>🍻</span><span>${esc(n)}</span>${isMe?'<span class="star">ty</span>':''}</div><div class="tab-price">${c} ${plBeer(c)} · <b>${tot} Kč</b></div></div><div class="tab-marks">${tallyMarks(marks)||"&nbsp;"}</div>${lastTxt?'<div class="tab-last">'+lastTxt+'</div>':''}<div class="tab-actions"><button class="mini" data-act="minus" title="Vrátit poslední pivo">−</button><button class="mini plus" data-act="plus">+ 🍺 velké</button><button class="mini plus-small" data-act="plus-small">+ 🍺 malé</button><button class="mini pay" data-act="pay">Platím 💸</button></div>`;
+    el.innerHTML=`<div class="tab-row"><div class="tab-name"><span>🍻</span><span>${esc(n)}</span>${isMe?'<span class="star">ty</span>':''}</div><div class="tab-price">${c} ${plBeer(c)} · <b>${tot} Kč</b></div></div><div class="tab-marks">${tallyMarks(marks)||"&nbsp;"}</div>${lastTxt?'<div class="tab-last">'+lastTxt+'</div>':''}<div class="tab-actions"><button class="mini" data-act="minus" title="Vrátit poslední pivo" aria-label="Vrátit poslední pivo">−</button><button class="mini plus" data-act="plus">+ 🍺 velké</button><button class="mini plus-small" data-act="plus-small">+ 🍺 malé</button><button class="mini pay" data-act="pay">Platím 💸</button></div>`;
     el.querySelector('[data-act="plus"]').onclick=(ev)=>tabDelta(n,"large",ev);
     el.querySelector('[data-act="plus-small"]').onclick=(ev)=>tabDelta(n,"small",ev);
     el.querySelector('[data-act="minus"]').onclick=(ev)=>tabDelta(n,null,ev);
     el.querySelector('[data-act="pay"]').onclick=()=>payTab(n);
-    list.appendChild(el);
-  });
-  $("#tabsTotal").textContent="rozpito "+totalBeers+" "+plBeer(totalBeers)+" · "+totalKc+" Kč"+(leaderName&&leaderC>0?" · 👑 "+leaderName:"");
+    return el;
+  };
+  shown.forEach(n=>list.appendChild(tabEl(n)));
+  if(emptyNames.length){
+    const d=document.createElement("details"); d.className="tabs-idle"; d.open=EMPTY_OPEN;
+    d.innerHTML='<summary>💤 Prázdné lístky ('+emptyNames.length+'): '+emptyNames.map(esc).join(", ")+'</summary>';
+    const inner=document.createElement("div"); inner.className="tabs";
+    emptyNames.forEach(n=>inner.appendChild(tabEl(n)));
+    d.appendChild(inner);
+    d.addEventListener("toggle",()=>{ EMPTY_OPEN=d.open; });
+    list.appendChild(d);
+  }
+  $("#tabsTotal").textContent=!totalBeers?"":"rozpito "+totalBeers+" "+plBeer(totalBeers)+" · "+totalKc+" Kč"+(leaderName&&leaderC>0?" · 👑 "+leaderName:"");
   await renderKeg();
 }
 let tabBusy=false;
@@ -941,17 +1148,31 @@ async function tabDelta(name,size,ev){
   try{
     const tabs=await loadTabs();
     if(!(name in tabs)){ toast("Lístek už neexistuje 🤷"); await renderTabs(); return; }
-    let marks=tabMarks(tabs[name]).slice();
+    let marks=tabMarks(tabs[name]).slice(), removed=null;
     if(size==="large"){ marks.push({t:Date.now(),p:PRICE,s:"large"}); }
     else if(size==="small"){ marks.push({t:Date.now(),p:smallPrice(),s:"small"}); }
-    else { if(!marks.length){ toast("Lístek je prázdný"); return; } marks.pop(); }
+    else { if(!marks.length){ toast("Lístek je prázdný"); return; } removed=marks.pop(); }
     const ok=await setTab(name,marks.length,marks);
     if(!ok){ toast("Nepovedlo se uložit 😕"); return; }
     await renderTabs();
     if(size==="large"){ pourEffect(ev); playPraise("large"); toast("Načárkováno pro "+name+" 🍺 ("+marks.length+". pivo)"); }
     else if(size==="small"){ pourEffect(ev); playPraise("small"); toast("Malé načárkováno pro "+name+" × ("+marks.length+". pivo)"); }
-    else toast("Poslední pivo vráceno ("+name+": "+marks.length+")");
+    else toastAction("Vráceno 1 "+(removed&&removed.s==="small"?"malé ":"")+"pivo ("+name+")","Zpět",()=>undoMinus(name,removed),5000);
     if(size) await warnIfKegLow();
+  } finally { tabBusy=false; }
+}
+// „Zpět“ po mínusu: vrátí odebranou čárku i s původním časem a cenou
+async function undoMinus(name,mark){
+  if(!mark) return;
+  if(tabBusy){ setTimeout(()=>undoMinus(name,mark),150); return; }
+  tabBusy=true;
+  try{
+    const tabs=await loadTabs();
+    if(!(name in tabs)){ toast("Lístek už neexistuje – pivo nejde vrátit 🤷"); await renderTabs(); return; }
+    const marks=tabMarks(tabs[name]).slice(); marks.push(mark);
+    if(!(await setTab(name,marks.length,marks))){ toast("Nepovedlo se uložit 😕"); return; }
+    await renderTabs();
+    toast("Pivo je zpátky na lístku ↩️ ("+name+": "+marks.length+")");
   } finally { tabBusy=false; }
 }
 // Upozornění při načárkování, když v sudu zbývá méně než 10 %
@@ -970,7 +1191,7 @@ async function openTab(){
   let name=rememberedName();
   if(!name){ name=await requestName(); if(!name){ toast("Bez jména lístek nezaložím 😉"); return; } }
   const tabs=await loadTabs();
-  if(Object.keys(tabs).find(k=>k.toLowerCase()===name.toLowerCase())){ toast("Lístek už máš založený, čárkuj 🍺"); return; }
+  if(Object.keys(tabs).find(k=>normName(k)===normName(name))){ toast("Lístek už máš založený, čárkuj 🍺"); return; }
   const ok=await setTab(name,0,[]);
   if(!ok){ toast("Lístek se nepovedlo založit 😕"); return; }
   await renderTabs(); toast("Lístek založen — na zdraví, "+name+" 🍻");
@@ -984,7 +1205,7 @@ let PAY_TAB=null, PAY_MARKS=[], PAY_AMOUNT=0;
 async function payTab(name){
   await loadPrice();
   const tabs=await loadTabs(); const marks=tabMarks(tabs[name]); const c=marks.length;
-  if(c===0){ if(confirm("Lístek je prázdný — zavřít bez placení?")){ await deleteTab(name); await renderTabs(); toast("Lístek zavřen 👋"); } return; }
+  if(c===0){ if(await askConfirm("👋 Zavřít lístek?","Lístek „"+name+"“ je prázdný — zavřít bez placení?","Zavřít lístek",false)){ await deleteTab(name); await renderTabs(); toast("Lístek zavřen 👋"); } return; }
   const amount=marksTotal(marks)||c*PRICE;
   PAY_TAB=name; PAY_MARKS=marks.slice(); PAY_AMOUNT=amount;
   $("#tabPayName").textContent=name; $("#tabPaySum").textContent=c+" "+plBeer(c)+" = "+amount+" Kč";
@@ -1006,12 +1227,22 @@ $("#tabPaidBtn").onclick=async()=>{
   const nyni=tabMarks(tabs[name]);
   const zbytek=nyni.length>c ? nyni.slice(c) : [];
 
-  const w=beerEquivalents(marks);
-  const small=marks.filter(m=>m&&m.s==="small").length; const large=c-small;
-  await creditHall(name,w,amount);
-  await recordPayment({name,beers:c,small,large,eq:Math.round(w*10)/10,amount,ts:Date.now(),
-    mk:marks.map(m=>({t:(m&&m.t)||0,s:(m&&m.s==="small")?"small":"large"}))});
-  if(zbytek.length) await setTab(name,zbytek.length,zbytek); else await deleteTab(name);
+  if(sb){
+    // Platba, síň slávy i lístek v jedné transakci na straně DB
+    let res; try{ res=await sb.rpc("pay_tab",{p_name:name,p_marks:marks,p_amount:amount}); }catch(e){ res={error:e}; }
+    if(res.error){
+      if(missingFnErr(res.error)) dbStatus("⚠ V databázi chybí funkce „pay_tab“ – spusť migrace_v136.sql.","warn"); else dbFail("zaplacení lístku",res.error);
+      toast("Platbu se nepovedlo zapsat 😕 Zkus to znovu."); return;
+    }
+    if(!res.data || !res.data.ok){ $("#tabPayModal").style.display="none"; await renderTabs(); await renderHall(); toast("Lístek už neexistuje 🤷"); return; }
+  } else {
+    const w=beerEquivalents(marks);
+    const small=marks.filter(m=>m&&m.s==="small").length; const large=c-small;
+    await creditHall(name,w,amount,large,small);
+    await recordPayment({name,beers:c,small,large,eq:Math.round(w*10)/10,amount,ts:Date.now(),
+      mk:marks.map(m=>({t:(m&&m.t)||0,s:(m&&m.s==="small")?"small":"large"}))});
+    if(zbytek.length) await setTab(name,zbytek.length,zbytek); else await deleteTab(name);
+  }
   $("#tabPayModal").style.display="none";
   await renderTabs(); await renderHall();
   toast("Zaplaceno ✓ "+c+" "+plBeer(c)+" do síně slávy"
@@ -1022,16 +1253,11 @@ $("#tabPayModal").addEventListener("click",e=>{ if(e.target.id==="tabPayModal"){
 
 // ====== EVIDENCE PLATEB (neměnný ledger) ======
 const PAYMENT_KEY="__payment__";
+// Jen lokální režim – v DB platbu zapisuje funkce pay_tab
 async function recordPayment(rec){
   const blob=JSON.stringify(rec);
-  if(sb){
-    const {error}=await sb.from("suggestions").insert({period:PAYMENT_KEY,beer:blob,name:rec.name});
-    if(error){ dbFail("zápis platby",error); return null; }
-    return blob;
-  } else {
-    const raw=await sGet("payments",true); let arr=[]; try{ arr=raw?JSON.parse(raw):[]; }catch(e){ arr=[]; }
-    arr.push(blob); await sSet("payments",JSON.stringify(arr),true); return blob;
-  }
+  const raw=await sGet("payments",true); let arr=[]; try{ arr=raw?JSON.parse(raw):[]; }catch(e){ arr=[]; }
+  arr.push(blob); await sSet("payments",JSON.stringify(arr),true); return blob;
 }
 async function loadPayments(){
   let blobs=[];
@@ -1050,12 +1276,13 @@ async function loadPayments(){
 }
 // Mazání jednotlivé platby — dostupné jen z administrace.
 // Shodné záznamy prakticky nevzniknou (čas v ms + časy jednotlivých čárek).
+// V DB to dělá admin_delete_payment: smaže jeden záznam a zároveň (je-li platba
+// novější než obnova síně slávy) odečte piva i útratu ze síně slávy.
 async function deletePaymentRecord(rec){
   if(!rec || !rec._raw) return false;
   if(sb){
-    const {error}=await sb.from("suggestions").delete().eq("period",PAYMENT_KEY).eq("beer",rec._raw);
-    if(error){ dbFail("smazání platby",error); return false; }
-    return true;
+    const {error}=await adminRpc("admin_delete_payment",{p_raw:rec._raw},"smazání platby");
+    return !error;
   }
   const raw=await sGet("payments",true); let arr=[]; try{ arr=raw?JSON.parse(raw):[]; }catch(e){ arr=[]; }
   const i=arr.indexOf(rec._raw); if(i<0) return false;
@@ -1074,37 +1301,82 @@ function hallDuration(ts){
   const n=Math.max(0,Math.round((sod(Date.now())-sod(ts))/86400000));
   return n===0 ? "dnes" : n+" "+plDay(n);
 }
+// ---- přehled plateb: filtry, souhrn, stránkování ----
+const PAY_PAGE=50;
+let PAY_ALL=[], PAY_LIMIT=PAY_PAGE;
+const plPay=(n)=>n===1?"platba":(n>=2&&n<=4?"platby":"plateb");
+function payCounts(r){ const small=r.small||0; return {small, large:(r.large!=null)?r.large:((r.beers||0)-small)}; }
+// Platby podle aktuálních filtrů (jméno + období)
+function filteredPayments(){
+  const q=normName($("#payName").value), per=$("#payPeriod").value;
+  let from=0, to=Infinity;
+  if(per==="keg") from=KEG_START||0;
+  else if(per==="month"){ const d=new Date(); from=new Date(d.getFullYear(),d.getMonth(),1).getTime(); }
+  else if(per==="custom"){
+    const f=$("#payFrom").value, t=$("#payTo").value;
+    if(f) from=new Date(f+"T00:00:00").getTime();
+    if(t) to=new Date(t+"T00:00:00").getTime()+86400000;   // včetně celého dne „do“
+  }
+  return PAY_ALL.filter(r=>(r.ts||0)>=from && (r.ts||0)<to && (!q || normName(r.name).includes(q)));
+}
 async function renderPayments(){
-  const rows=await loadPayments(); const body=$("#payRows"); const sum=$("#paySum");
-  if(!rows.length){ body.innerHTML='<tr><td colspan="5"><div class="pay-empty">Zatím žádné platby 🍺</div></td></tr>'; sum.textContent=""; return; }
-  let totBeers=0,totKc=0;
-  body.innerHTML=rows.map((r,i)=>{
-    totBeers+=r.beers||0; totKc+=r.amount||0;
-    const small=r.small||0, large=(r.large!=null)?r.large:((r.beers||0)-small);
-    let breakdown=""; if(small>0){ breakdown=' <span class="pay-brk">('+large+'×velké, '+small+'×malé)</span>'; }
-    const dt=fmtDateParts(r.ts);
-    return '<tr><td class="dt">'+dt.d+' <span class="pay-t">'+dt.t+'</span></td><td class="nm">'+esc(r.name||"?")+'</td><td class="num">'+(r.beers||0)+breakdown+'</td><td class="amt">'+(r.amount||0)+' Kč</td>'
+  await loadKegStart();
+  PAY_ALL=await loadPayments();
+  drawPayments();
+}
+function drawPayments(){
+  const body=$("#payRows"), sum=$("#paySum");
+  const rows=filteredPayments(), shown=rows.slice(0,PAY_LIMIT);
+  const kegTs=KEG_START||0;
+  if(!rows.length){
+    body.innerHTML='<tr><td colspan="5"><div class="pay-empty">'+(PAY_ALL.length?"Filtru neodpovídá žádná platba 🔍":"Zatím žádné platby 🍺")+'</div></td></tr>';
+    sum.textContent=""; $("#payPeople").innerHTML=""; $("#payMoreBox").hidden=true; return;
+  }
+  body.innerHTML=shown.map((r,i)=>{
+    const c=payCounts(r);
+    const breakdown=c.small>0?' <span class="pay-brk">('+c.large+'× velké, '+c.small+'× malé)</span>':"";
+    const dt=fmtDateParts(r.ts), cur=kegTs && (r.ts||0)>=kegTs;
+    return '<tr'+(cur?' class="cur-keg" title="Platba za aktuální sud"':'')+'><td class="dt">'+dt.d+' <span class="pay-t">'+dt.t+'</span></td><td class="nm">'+esc(r.name||"?")+'</td><td class="num">'+(r.beers||0)+breakdown+'</td><td class="amt">'+(r.amount||0)+' Kč</td>'
       +'<td class="del"><button class="pay-del" data-i="'+i+'" title="Smazat platbu" aria-label="Smazat platbu">✕</button></td></tr>';
   }).join("");
-  body.querySelectorAll(".pay-del").forEach(b=>{ b.onclick=()=>askDeletePayment(rows[+b.dataset.i]); });
-  sum.innerHTML='Celkem <b>'+rows.length+'</b> '+(rows.length===1?"platba":(rows.length>=2&&rows.length<=4?"platby":"plateb"))+' · <b>'+totBeers+'</b> '+plBeer(totBeers)+' · <b>'+totKc+' Kč</b>';
+  body.querySelectorAll(".pay-del").forEach(b=>{ b.onclick=()=>askDeletePayment(shown[+b.dataset.i]); });
+  // souhrn (za všechny platby podle filtru, ne jen zobrazené)
+  let totBeers=0,totKc=0; const people={};
+  rows.forEach(r=>{ const c=payCounts(r); totBeers+=r.beers||0; totKc+=r.amount||0;
+    const p=people[r.name||"?"]||(people[r.name||"?"]={n:0,large:0,small:0,kc:0});
+    p.n++; p.large+=c.large; p.small+=c.small; p.kc+=r.amount||0; });
+  sum.innerHTML='<b>'+rows.length+'</b> '+plPay(rows.length)+' · <b>'+totBeers+'</b> '+plBeer(totBeers)+' · <b>'+totKc+' Kč</b>'
+    +(rows.length>shown.length?' · zobrazeno '+shown.length:'');
+  $("#payPeople").innerHTML=Object.keys(people).sort((a,b)=>(people[b].kc-people[a].kc)||a.localeCompare(b,"cs")).map(n=>{
+    const p=people[n];
+    return '<div class="pp-row"><span class="pp-n">'+esc(n)+'</span><span class="pp-v">'+p.n+' '+plPay(p.n)+' · '+fmtCount(p.large,p.small)+' · <b>'+p.kc+' Kč</b></span></div>';
+  }).join("");
+  $("#payMoreBox").hidden=rows.length<=shown.length;
+  $("#payMore").textContent="Načíst další ("+Math.min(PAY_PAGE,rows.length-shown.length)+" z "+(rows.length-shown.length)+")";
 }
+function payFilterChanged(){ PAY_LIMIT=PAY_PAGE; $("#payRange").hidden=$("#payPeriod").value!=="custom"; drawPayments(); }
 async function askDeletePayment(rec){
   if(!rec) return;
   await loadHallSince();
   // Platba starší než poslední obnova síně slávy už v současném pořadí není,
   // takže by odečet sebral piva, která tam za ni nikdy nebyla připsaná
   const vSini = HALL_SINCE ? (rec.ts||0) >= HALL_SINCE : true;
+  // Ze sudu se odečítá jen platba vzniklá po naražení aktuálního sudu (a jen její čárky od naražení)
+  await loadKegStart();
+  const zSudu = kegMarksOf(rec, KEG_START||0).length;
   const co = fmtDateTime(rec.ts)+" · "+(rec.name||"?")+"\n"+(rec.beers||0)+" "+plBeer(rec.beers||0)+" · "+(rec.amount||0)+" Kč";
-  if(!confirm("Smazat tuto platbu?\n\n"+co+"\n\n"
+  if(!await askConfirm("🗑️ Smazat platbu?",co+"\n\n"
       +(vSini ? "Piva i útrata se odečtou ze síně slávy."
               : "Síň slávy zůstane beze změny — platba je starší než její poslední obnova.")
-      +"\nZ počítadla sudu zmizí čárky udělané po jeho naražení. Tohle se nedá vrátit.")) return;
+      +"\n"+(zSudu ? "Z počítadla sudu se odečte "+zSudu+" "+plBeer(zSudu)+"."
+              : "Počítadlo sudu zůstane beze změny"+((rec.ts||0)<(KEG_START||0)?" — platba je starší než naražení sudu.":"."))
+      +"\nTohle se nedá vrátit.","Smazat platbu")) return;
   if(!(await deletePaymentRecord(rec))){ toast("Platbu se nepovedlo smazat 😕"); return; }
-  if(vSini){
+  if(vSini && !sb){
     const eq = (rec.eq!=null) ? rec.eq
       : (Array.isArray(rec.mk) && rec.mk.length ? beerEquivalents(rec.mk) : (rec.beers||0));
-    await creditHall(rec.name, -eq, -(rec.amount||0));
+    const sm=rec.small||0, lg=(rec.large!=null)?rec.large:((rec.beers||0)-sm);
+    await creditHall(rec.name, -eq, -(rec.amount||0), -lg, -sm);
   }
   await renderPayments(); await renderHall(); await renderTabs();
   toast("Platba smazána 🗑️");
@@ -1122,7 +1394,6 @@ function paymentsCSV(rows){
 
 // ====== SUD (počítadlo od poslední výměny) ======
 const KEG_KEY="__keg__";
-const KEG_LOG_KEY="__keg_log__";
 const L_LARGE=0.5, L_SMALL=0.3; // litry
 let KEG_START=null, KEG_NAME="", KEG_SIZE=0;
 async function loadKegStart(){
@@ -1141,47 +1412,55 @@ async function loadKegStart(){
     // Jinak by výpadek sítě resetoval sud (renderKeg běží každých 15 s).
     if(!ok) return KEG_START;
     if(KEG_START) return KEG_START; // sud jsme už jednou načtli – prázdné čtení je chyba, ne nový sud
-    if(sb){ // druhé čtení pro jistotu, ať prázdný sud nezaložíme kvůli souběhu se zápisem
-      try{ const {data,error}=await sb.from("suggestions").select("beer").eq("period",KEG_KEY).limit(1);
-        if(error || (data&&data.length)) return KEG_START; }catch(e){ return KEG_START; }
-    }
+    // S databází sud zakládá jen administrátor (anon nemá práva zápisu) – do té doby žádný sud
+    if(sb) return KEG_START;
     ts=Date.now(); nm=""; sz=0; await saveKegStart(ts,nm,sz); return ts;
   }
   KEG_START=ts; KEG_NAME=nm; KEG_SIZE=sz; return ts;
 }
+// Jen lokální režim bez databáze. V DB sud ukládá admin_save_keg – výměna
+// záznamu tam proběhne v jedné transakci, takže sud nikdy „nezmizí“ (8. 9. 2026).
 async function saveKegStart(ts,name,liters){
   KEG_START=ts; KEG_NAME=name||""; KEG_SIZE=parseFloat(liters)||0;
-  const blob=JSON.stringify({ts:ts,name:KEG_NAME,liters:KEG_SIZE});
+  await sSet("keg_start",JSON.stringify({ts:ts,name:KEG_NAME,liters:KEG_SIZE}),true);
+}
+// Nový sud (isNew) nebo oprava názvu a objemu stávajícího. Vrací true při úspěchu.
+// ts = čas naražení (ms); u nového sudu i konec předchozího. st = souhrn končícího sudu.
+async function adminSaveKeg(name,liters,isNew,st,ts){
+  const log=isNew&&st&&st.since ? JSON.stringify({from:st.since,to:ts||Date.now(),name:st.name||"",size:st.size||0,large:st.large,small:st.small,count:st.count,liters:Math.round(st.liters*10)/10}) : null;
   if(sb){
-    // POZOR na pořadí: nejdřív vložit nový záznam, teprve pak smazat staré.
-    // Kdyby se mazalo první, vznikne okno (jedno kolo po síti), ve kterém sud
-    // v databázi vůbec není – a jiné zařízení, které si zrovna načítá stav,
-    // by ho považovalo za nezaložený a přepsalo prázdným. Přesně tak zmizel
-    // název a objem sudu 8. 9. 2026 půl vteřiny po naražení.
-    const {error}=await sb.from("suggestions").insert({period:KEG_KEY,beer:blob});
-    if(error){ dbFail("uložení sudu",error); return; }
-    await sb.from("suggestions").delete().eq("period",KEG_KEY).neq("beer",blob);
+    const {data,error}=await adminRpc("admin_save_keg",{p_name:name,p_liters:liters,p_new:!!isNew,p_log:log,p_ts:ts||null},"uložení sudu");
+    if(error){ if(!isAuthErr(error)&&!missingFnErr(error)) toast("Sud se nepovedlo uložit: "+(error.message||"")); return false; }
+    KEG_START=Number(data)||KEG_START; KEG_NAME=name; KEG_SIZE=liters; return true;
   }
-  else { await sSet("keg_start",blob,true); }
+  if(log){ const raw=await sGet("keg_log",true); let a=[]; try{ a=raw?JSON.parse(raw):[]; }catch(e){ a=[]; }
+    a.push(log); await sSet("keg_log",JSON.stringify(a),true); }
+  await saveKegStart(ts||(isNew?Date.now():KEG_START),name,liters); return true;
+}
+// Čárky platby, které patří do sudu naraženého v čase since. Platba starší než
+// naražení do sudu nepatří vůbec (její čárky jsou z předchozího sudu).
+function kegMarksOf(r,since){
+  if(!r || !Array.isArray(r.mk) || (r.ts||0)<since) return [];
+  return r.mk.filter(m=>m && (m.t||0)>=since);
 }
 // Spočítá vypitá piva od naražení sudu. Rozhoduje výhradně čas udělání čárky,
 // ne to, jestli je pivo zaplacené – zaplacením se přesune do síně slávy,
 // ze sudu ale vypité zůstává. Čárky sbíráme z otevřených lístků i ze zaplacených.
-async function kegStats(){
+// until (volitelně): počítat jen čárky před tímto časem – souhrn končícího sudu.
+async function kegStats(until){
   await loadKegStart(); // vždy znovu – jinak se výměna sudu neprojeví na ostatních zařízeních
-  const since=KEG_START||0;
+  const since=KEG_START||0, end=until||Infinity;
   let large=0,small=0;
   const pays=await loadPayments();
   pays.forEach(r=>{
     // Jen záznamy s rozpisem čárek: každá má vlastní čas, takže se platba
     // správně rozdělí mezi dva sudy. Starší platby bez časů čárek se do sudu
     // nepočítají – nejde u nich určit, ke kterému sudu piva patřila.
-    if(Array.isArray(r.mk)) r.mk.forEach(m=>{
-      if(m && (m.t||0)>=since){ if(m.s==="small") small++; else large++; } });
+    kegMarksOf(r,since).forEach(m=>{ if((m.t||0)>=end) return; if(m.s==="small") small++; else large++; });
   });
   const tabs=await loadTabs();
   Object.keys(tabs).forEach(n=>{ tabMarks(tabs[n]).forEach(m=>{
-    if(m&&(m.t||0)>=since){ if(m.s==="small") small++; else large++; } }); });
+    if(m&&(m.t||0)>=since&&(m.t||0)<end){ if(m.s==="small") small++; else large++; } }); });
   const count=large+small;
   const liters=large*L_LARGE+small*L_SMALL;
   const size=KEG_SIZE||0;
@@ -1234,46 +1513,29 @@ async function renderKeg(){
   }
 }
 function fmtLiters(x){ const r=Math.round(x*10)/10; return Number.isInteger(r)?String(r):r.toFixed(1).replace(".",","); }
-// Uzavření sudu se zapíše do historie (neměnné, jako platby)
-async function logKeg(st){
-  const blob=JSON.stringify({from:st.since,to:Date.now(),name:st.name||"",size:st.size||0,large:st.large,small:st.small,count:st.count,liters:Math.round(st.liters*10)/10});
-  if(sb){ await sb.from("suggestions").insert({period:KEG_LOG_KEY,beer:blob}); }
-  else { const raw=await sGet("keg_log",true); let a=[]; try{ a=raw?JSON.parse(raw):[]; }catch(e){ a=[]; }
-    a.push(blob); await sSet("keg_log",JSON.stringify(a),true); }
-}
 
 // ====== SÍŇ SLÁVY ======
 async function loadHall(){
   if(sb){
-    try{ const {data,error}=await sb.from("hall").select("name,beers,paid").order("paid",{ascending:false}).range(0,9999);
+    try{ const {data,error}=await sb.from("hall").select("name,beers,paid,large,small").order("paid",{ascending:false}).range(0,9999);
       if(error){ dbFail("načtení síně slávy",error); }
-      else { const m={}; data.forEach(r=>{ m[r.name]={beers:r.beers||0,paid:r.paid||0}; }); return m; } }catch(e){ dbFail("načtení síně slávy",e); }
+      else { const m={}; data.forEach(r=>{ m[r.name]={beers:r.beers||0,paid:r.paid||0,large:r.large,small:r.small}; }); return m; } }catch(e){ dbFail("načtení síně slávy",e); }
   }
   const raw=await sGet("hall",true); let m={}; try{ m=raw?JSON.parse(raw):{}; }catch(e){ m={}; }
   return (m&&typeof m==="object")?m:{};
 }
-async function creditHall(name,dBeers,dPaid){
+async function creditHall(name,dBeers,dPaid,dLarge,dSmall){
   // Malé pivo je 3/5 piva a to se v plovoucí čárce nedá zapsat přesně,
   // takže se přírůstek i výsledek zaokrouhlují — jinak by se z 10 malých
   // stalo 5,999999999999999 piva.
+  // Jen lokální režim – v databázi to dělají funkce pay_tab / admin_delete_payment atomicky.
   dBeers=Math.round(dBeers*10)/10; dPaid=Math.round(dPaid);
-  if(sb){
-    // Atomický přírůstek na straně DB (žádná ztráta při souběžných platbách).
-    // Vyžaduje funkci hall_credit v Supabase – viz SQL v dokumentaci/chatu.
-    try{
-      const {error}=await sb.rpc("hall_credit",{p_name:name,p_beers:dBeers,p_paid:dPaid});
-      if(!error) return;
-      console.warn("hall_credit RPC nedostupná, používám fallback:",error.message||error);
-    }catch(e){ console.warn("hall_credit RPC selhala, fallback:",e); }
-  }
-  // Fallback (NEatomické – při souběhu dvou plateb může jedna přepsat druhou)
-  const h=await loadHall(); const cur=h[name]||{beers:0,paid:0};
+  const m=await loadHall(); const cur=m[name]||{beers:0,paid:0,large:0,small:0}; const cc=hallCounts(cur);
   const beers=Math.max(0,Math.round(((cur.beers||0)+dBeers)*10)/10);
   const paid=Math.max(0,Math.round((cur.paid||0)+dPaid));
-  if(sb){
-    if(beers===0&&paid===0){ await sb.from("hall").delete().eq("name",name); }
-    else { const {error}=await sb.from("hall").upsert({name,beers,paid},{onConflict:"name"}); if(error){ dbFail("zápis do síně slávy",error); } }
-  } else { const m=await loadHall(); if(beers===0&&paid===0) delete m[name]; else m[name]={beers,paid}; await sSet("hall",JSON.stringify(m),true); }
+  const large=Math.max(0,cc.large+(dLarge||0)), small=Math.max(0,cc.small+(dSmall||0));
+  if(beers===0&&paid===0&&!large&&!small) delete m[name]; else m[name]={beers,paid,large,small};
+  await sSet("hall",JSON.stringify(m),true);
 }
 // ---- odkdy se síň slávy počítá (datum poslední obnovy) ----
 const HALL_SINCE_KEY="__hall_since__";
@@ -1285,8 +1547,9 @@ async function loadHallSince(){
   else { try{ v=await sGet("hall_since",true); ok=true; }catch(e){} }
   let ts=parseInt(v,10);
   if(!ts||isNaN(ts)){
-    // POZOR: zakládáme jen když čtení opravdu prošlo, jinak by výpadek sítě datum přepsal
-    if(!ok) return HALL_SINCE;
+    // POZOR: zakládáme jen když čtení opravdu prošlo, jinak by výpadek sítě datum přepsal.
+    // V databázi datum doplňuje migrace / admin_reset_hall (anon nemá práva zápisu).
+    if(!ok || sb) return HALL_SINCE;
     // Poprvé: odhadneme podle nejstarší platby, jinak bereme dnešek
     let first=0;
     try{ const p=await loadPayments(); if(p.length) first=Math.min(...p.map(r=>r.ts||0)); }catch(e){}
@@ -1295,58 +1558,107 @@ async function loadHallSince(){
   }
   HALL_SINCE=ts; return ts;
 }
-async function saveHallSince(ts){
-  HALL_SINCE=ts;
-  if(sb){ await sb.from("suggestions").delete().eq("period",HALL_SINCE_KEY);
-    const {error}=await sb.from("suggestions").insert({period:HALL_SINCE_KEY,beer:String(ts)});
-    if(error){ dbFail("uložení data síně slávy",error); } }
-  else { await sSet("hall_since",String(ts),true); }
-}
+async function saveHallSince(ts){ HALL_SINCE=ts; await sSet("hall_since",String(ts),true); }   // jen lokálně
 async function resetHall(){
-  if(sb){ await sb.from("hall").delete().gte("beers",0); }
-  else { await sSet("hall","{}",true); }
-  await saveHallSince(Date.now());
+  if(sb){ const {error}=await adminRpc("admin_reset_hall",{},"vynulování síně slávy"); if(error) return false; HALL_SINCE=null; await loadHallSince(); return true; }
+  await sSet("hall","{}",true); await saveHallSince(Date.now()); return true;
 }
 async function renderHall(){
   const h=await loadHall(); const list=$("#hallList");
   await loadHallSince();
   const since=$("#hallSince");
   if(since) since.textContent = HALL_SINCE ? "🗓️ vedeno od "+fmtDate(HALL_SINCE)+" · "+hallDuration(HALL_SINCE) : "";
-  const names=Object.keys(h).sort((a,b)=>(h[b].paid-h[a].paid)||(h[b].beers-h[a].beers)||a.localeCompare(b,"cs"));
+  // řazení podle útraty v Kč, při shodě podle počtu kusů
+  const cnt=n=>{ const c=hallCounts(h[n]); return c.large+c.small; };
+  const names=Object.keys(h).sort((a,b)=>(h[b].paid-h[a].paid)||(cnt(b)-cnt(a))||a.localeCompare(b,"cs"));
   if(!names.length){ list.innerHTML='<div class="tabs-empty">Síň slávy zatím zeje prázdnotou. Zaplať lístek a zapiš se do dějin. 🏆</div>'; $("#hallTotal").textContent=""; WA_HALL=""; return; }
-  const medals=["🥇","🥈","🥉"]; let tb=0,tk=0; list.innerHTML="";
-  names.forEach((n,i)=>{ const r=h[n]; tb+=r.beers; tk+=r.paid;
+  const medals=["🥇","🥈","🥉"]; let tl=0,ts=0,tk=0; list.innerHTML="";
+  names.forEach((n,i)=>{ const r=h[n]; const c=hallCounts(r); tl+=c.large; ts+=c.small; tk+=r.paid;
     const el=document.createElement("div"); el.className="hall-row"+(i<3?" top":"");
-    el.innerHTML=`<span class="hall-rank">${medals[i]||(i+1+".")}</span><span class="hall-name">${esc(n)}</span><span class="hall-stat">${fmtBeers(r.beers)} 🍺 · <b>${r.paid} Kč</b></span>`;
+    el.innerHTML=`<span class="hall-rank">${medals[i]||(i+1+".")}</span><span class="hall-name">${esc(n)}</span><span class="hall-stat">${fmtCount(c.large,c.small)} · <b>${r.paid} Kč</b></span>`;
     list.appendChild(el); });
-  $("#hallTotal").textContent="celkem "+fmtBeers(tb)+" "+plBeer(Math.round(tb))+" · "+tk+" Kč";
+  $("#hallTotal").textContent="celkem "+fmtCount(tl,ts)+" · "+tk+" Kč";
 
   let msg="🏆 Síň slávy — Studovna u Drobka\n";
   if(HALL_SINCE) msg+="🗓️ vedeno od "+fmtDate(HALL_SINCE)+" ("+hallDuration(HALL_SINCE)+")\n";
-  msg+="\n"+names.map((n,i)=>(medals[i]||(i+1)+".")+" "+n+" — "+fmtBeers(h[n].beers)+" 🍺 · "+h[n].paid+" Kč").join("\n");
-  msg+="\n\nCelkem "+fmtBeers(tb)+" "+plBeer(Math.round(tb))+" · "+tk+" Kč 🍻";
+  msg+="\n"+names.map((n,i)=>{ const c=hallCounts(h[n]); return (medals[i]||(i+1)+".")+" "+n+" — "+fmtCount(c.large,c.small)+" · "+h[n].paid+" Kč"; }).join("\n");
+  msg+="\n\nCelkem "+fmtCount(tl,ts)+" · "+tk+" Kč 🍻";
   WA_HALL=msg;
 }
 
 // ---- jméno ----
+// Porovnání jmen bez diakritiky, velikosti písmen a vícenásobných mezer
+function normName(s){ return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/\s+/g," ").trim(); }
+function editDist(a,b){
+  if(Math.abs(a.length-b.length)>1) return 2;
+  const d=[]; for(let i=0;i<=a.length;i++){ d[i]=[i]; } for(let j=0;j<=b.length;j++) d[0][j]=j;
+  for(let i=1;i<=a.length;i++) for(let j=1;j<=b.length;j++)
+    d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  return d[a.length][b.length];
+}
+let KNOWN_NAMES=[];
+// Jména z plateb, síně slávy a otevřených lístků – pro našeptávač a slučování
+async function refreshKnownNames(){
+  const set=new Set();
+  try{ Object.keys(await loadHall()).forEach(n=>set.add(n)); }catch(e){}
+  try{ Object.keys(await loadTabs()).forEach(n=>set.add(n)); }catch(e){}
+  try{
+    if(sb){ const {data}=await sb.from("suggestions").select("name").eq("period",PAYMENT_KEY).range(0,99999); (data||[]).forEach(r=>{ if(r.name) set.add(r.name); }); }
+    else (await loadPayments()).forEach(r=>{ if(r.name) set.add(r.name); });
+  }catch(e){}
+  KNOWN_NAMES=[...set].filter(Boolean).sort((a,b)=>a.localeCompare(b,"cs"));
+  const dl=$("#knownNames"); if(dl) dl.innerHTML=KNOWN_NAMES.map(n=>'<option value="'+esc(n).replace(/"/g,"&quot;")+'">').join("");
+  return KNOWN_NAMES;
+}
+// Existující jméno, které se od zadaného liší jen diakritikou/velikostí písmen,
+// případně jedním překlepem (u jmen od 4 znaků). Přesná shoda = null.
+function similarName(v){
+  if(KNOWN_NAMES.includes(v)) return null;
+  const nv=normName(v);
+  const same=KNOWN_NAMES.find(n=>normName(n)===nv); if(same) return same;
+  if(nv.length<4) return null;
+  return KNOWN_NAMES.find(n=>{ const nn=normName(n); return nn.length>=4 && editDist(nn,nv)===1; })||null;
+}
 function rememberedName(){ try{ return (localStorage.getItem("studovna_name")||"").trim(); }catch(e){ return ""; } }
 let nameResolve=null;
 function requestName(){
   return new Promise(res=>{ nameResolve=res; const inp=$("#nameInput"); inp.value=rememberedName();
+    NAME_WARNED=null; $("#nameWarn").innerHTML=""; refreshKnownNames();
     $("#nameModal").style.display="flex"; setTimeout(()=>inp.focus(),60); });
 }
 function resolveName(val){ $("#nameModal").style.display="none"; const r=nameResolve; nameResolve=null; if(r) r(val); }
-$("#nameSave").onclick=()=>{ const v=$("#nameInput").value.trim().slice(0,30); if(!v){ toast("Napiš nějaké jméno 🙂"); return; }
-  try{ localStorage.setItem("studovna_name",v); }catch(e){} resolveName(v); };
+function acceptName(v){ try{ localStorage.setItem("studovna_name",v); }catch(e){} resolveName(v); }
+let NAME_WARNED=null;
+$("#nameSave").onclick=()=>{ const v=$("#nameInput").value.trim().replace(/\s+/g," ").slice(0,30); if(!v){ toast("Napiš nějaké jméno 🙂"); return; }
+  // Podobné existující jméno (Lukas × Lukáš) – jednou upozorníme, druhé Uložit už projde
+  const sim=similarName(v);
+  if(sim && NAME_WARNED!==v){
+    NAME_WARNED=v;
+    $("#nameWarn").innerHTML='Myslíš <b>'+esc(sim)+'</b>? Takové jméno už v síni slávy nebo v platbách je.'
+      +'<div class="nw-actions"><button class="nw-yes" type="button">Ano, jsem '+esc(sim)+'</button><button class="nw-no" type="button">Ne, jsem '+esc(v)+'</button></div>';
+    $("#nameWarn .nw-yes").onclick=()=>acceptName(sim);
+    $("#nameWarn .nw-no").onclick=()=>acceptName(v);
+    return;
+  }
+  acceptName(v); };
+$("#nameInput").addEventListener("input",()=>{ NAME_WARNED=null; $("#nameWarn").innerHTML=""; });
 $("#nameCancel").onclick=()=>resolveName(null);
 $("#nameModal").addEventListener("click",e=>{ if(e.target.id==="nameModal") resolveName(null); });
 $("#nameInput").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#nameSave").click(); });
 
 // ---- toast ----
 let toastT;
-function toast(msg){ const el=$("#toast"); el.classList.remove("warn"); el.textContent=msg; el.classList.add("show");
+function toast(msg){ const el=$("#toast"); el.classList.remove("warn","act"); el.textContent=msg; el.classList.add("show");
   clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove("show"),2200); }
-function toastWarn(html,ms){ const el=$("#toast"); el.innerHTML=html;
+// Toast s tlačítkem (např. „Zpět“). Po vypršení se akce zahodí.
+function toastAction(msg,label,fn,ms){
+  const el=$("#toast"); el.classList.remove("warn");
+  el.innerHTML='<span>'+esc(msg)+'</span><button class="toast-act" type="button">'+esc(label)+'</button>';
+  el.classList.add("show","act");
+  el.querySelector(".toast-act").onclick=()=>{ clearTimeout(toastT); el.classList.remove("show","act"); fn(); };
+  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove("show","act"), ms||5000);
+}
+function toastWarn(html,ms){ const el=$("#toast"); el.classList.remove("act"); el.innerHTML=html;
   el.classList.add("show","warn");
   clearTimeout(toastT); toastT=setTimeout(()=>{ el.classList.remove("show"); setTimeout(()=>el.classList.remove("warn"),300); }, ms||4200); }
 
@@ -1389,72 +1701,269 @@ $("#waShareHall").onclick=async()=>{
   if(!WA_HALL){ toast("Síň slávy je zatím prázdná 🏆"); return; }
   window.open("https://wa.me/?text="+encodeURIComponent(WA_HALL),"_blank");
 };
+function renderSoundBtn(){
+  const b=$("#soundBtn"); b.textContent=SOUND_ON?"🔊":"🔇";
+  b.setAttribute("aria-pressed",SOUND_ON?"true":"false");
+  b.title="Zvuky zap/vyp – teď "+(SOUND_ON?"zapnuté":"vypnuté");
+}
 $("#soundBtn").onclick=()=>{ SOUND_ON=!SOUND_ON; try{ localStorage.setItem("studovna_sound",SOUND_ON?"1":"0"); }catch(e){}
-  $("#soundBtn").textContent=SOUND_ON?"🔊":"🔇"; if(SOUND_ON){ unlockSpeech(); playPraise("large"); } };
-$("#soundBtn").textContent=SOUND_ON?"🔊":"🔇";
+  renderSoundBtn(); toast(SOUND_ON?"Zvuky zapnuté 🔊":"Zvuky vypnuté 🔇"); if(SOUND_ON){ unlockSpeech(); playPraise("large"); } };
+renderSoundBtn();
+
+// ====== VLASTNÍ DIALOG (náhrada prompt/confirm) ======
+// askDialog({title, hint, body, fields:[{name,label,type,value,placeholder,attrs,validate}], ok, cancel, danger, check})
+// → Promise s hodnotami polí (objekt), nebo null při zrušení.
+// validate(v, všechny) vrací text chyby u pole; check(hodnoty) může být async
+// a vrátit chybu celého formuláře – dialog pak zůstane otevřený.
+let DLG=null;
+function askDialog(o){
+  if(DLG) DLG.finish(null);
+  return new Promise(res=>{
+    $("#dlgTitle").textContent=o.title||"";
+    $("#dlgHint").innerHTML=o.hint||""; $("#dlgHint").style.display=o.hint?"":"none";
+    $("#dlgBody").textContent=o.body||"";
+    $("#dlgErr").textContent="";
+    const ok=$("#dlgOk"); ok.textContent=o.ok||"OK"; ok.className=o.danger?"btn-danger":"btn-gold"; ok.disabled=false;
+    $("#dlgCancel").textContent=o.cancel||"Zrušit";
+    const fields=o.fields||[];
+    $("#dlgFields").innerHTML=fields.map((f,i)=>{
+      const a=f.attrs||{}; let extra="";
+      Object.keys(a).forEach(k=>{ extra+=' '+k+'="'+esc(String(a[k])).replace(/"/g,"&quot;")+'"'; });
+      return '<div class="dlg-field" data-f="'+i+'"><label for="dlgF'+i+'">'+esc(f.label||"")+'</label>'
+        +'<input id="dlgF'+i+'" name="'+esc(f.name)+'" type="'+(f.type||"text")+'"'
+        +' value="'+esc(f.value!=null?String(f.value):"").replace(/"/g,"&quot;")+'"'
+        +' placeholder="'+esc(f.placeholder||"").replace(/"/g,"&quot;")+'"'+extra+'>'
+        +'<div class="dlg-ferr"></div></div>';
+    }).join("");
+    const inputs=[...document.querySelectorAll("#dlgFields input")];
+    const values=()=>{ const v={}; fields.forEach((f,i)=>{ v[f.name]=inputs[i].value.trim(); }); return v; };
+    inputs.forEach(inp=>inp.addEventListener("input",()=>{ inp.parentNode.classList.remove("bad"); inp.parentNode.querySelector(".dlg-ferr").textContent=""; }));
+    const prevFocus=document.activeElement;
+    const finish=(val)=>{ if(DLG!==state) return; DLG=null; $("#dlgModal").style.display="none";
+      document.removeEventListener("keydown",onKey,true);
+      try{ if(prevFocus&&prevFocus.focus) prevFocus.focus(); }catch(e){}
+      res(val); };
+    const onKey=(e)=>{ if(e.key==="Escape"){ e.preventDefault(); e.stopPropagation(); finish(null); } };
+    const state={finish}; DLG=state;
+    $("#dlgForm").onsubmit=async(e)=>{
+      e.preventDefault();
+      const v=values(); let bad=false;
+      fields.forEach((f,i)=>{
+        const err=f.validate?f.validate(v[f.name],v):null;
+        const box=inputs[i].parentNode; box.classList.toggle("bad",!!err); box.querySelector(".dlg-ferr").textContent=err||"";
+        if(err&&!bad){ bad=true; inputs[i].focus(); }
+      });
+      if(bad) return;
+      if(o.check){
+        ok.disabled=true; $("#dlgErr").textContent="";
+        let err=null; try{ err=await o.check(v); }catch(x){ err="Něco se pokazilo 😕"; }
+        ok.disabled=false;
+        if(DLG!==state) return;
+        if(err){ $("#dlgErr").textContent=err; if(inputs[0]){ inputs[0].focus(); inputs[0].select&&inputs[0].select(); } return; }
+      }
+      finish(v);
+    };
+    $("#dlgCancel").onclick=()=>finish(null);
+    $("#dlgModal").onclick=(e)=>{ if(e.target.id==="dlgModal") finish(null); };
+    document.addEventListener("keydown",onKey,true);
+    $("#dlgModal").style.display="flex";
+    setTimeout(()=>{ (inputs[0]||ok).focus(); },60);
+  });
+}
+async function askConfirm(title,body,ok,danger){
+  return !!(await askDialog({title,body,ok:ok||"Ano",danger:danger!==false}));
+}
+
+// ====== PŘIHLÁŠENÍ DO ADMINISTRACE ======
+// Heslo se ověřuje v databázi (bcrypt, funkce admin_login). V prohlížeči ho
+// držíme jen v paměti a v sessionStorage (zmizí se zavřením panelu), max. 30 min
+// od poslední akce. Každá admin operace ho posílá RPC funkci, která ho ověří znovu.
+const ADMIN_SS="studovna_admin", ADMIN_TTL=30*60*1000;
+let ADMIN_PW=null, ADMIN_EXP=0;
+function adminStore(){ try{ sessionStorage.setItem(ADMIN_SS,JSON.stringify({pw:ADMIN_PW,exp:ADMIN_EXP})); }catch(e){} }
+function adminForget(){ ADMIN_PW=null; ADMIN_EXP=0; try{ sessionStorage.removeItem(ADMIN_SS); }catch(e){} }
+function adminPw(){
+  if(!ADMIN_PW){ try{ const o=JSON.parse(sessionStorage.getItem(ADMIN_SS)||"null"); if(o&&o.pw){ ADMIN_PW=o.pw; ADMIN_EXP=o.exp||0; } }catch(e){} }
+  if(!ADMIN_PW || Date.now()>ADMIN_EXP){ adminForget(); return null; }
+  ADMIN_EXP=Date.now()+ADMIN_TTL; adminStore();       // posuneme platnost od poslední akce
+  return ADMIN_PW;
+}
+function isAuthErr(error){ return !!error && (error.code==="28P01" || /heslo/i.test(error.message||"")); }
+function missingFnErr(error){ return !!error && (error.code==="PGRST202" || /could not find the function|does not exist/i.test(error.message||"")); }
+async function adminVerify(pw){
+  if(!pw) return "Zadej heslo";
+  if(!sb) return null;                                   // lokální režim bez DB – není co chránit
+  try{
+    const {data,error}=await sb.rpc("admin_login",{p_pw:pw});
+    if(error) return missingFnErr(error) ? "V databázi chybí funkce admin_login – spusť migrace_v136.sql." : "Chyba databáze: "+(error.message||error);
+    return data===true ? null : "Špatné heslo 🔒";
+  }catch(e){ return "Heslo se nepodařilo ověřit – zkontroluj připojení."; }
+}
+async function adminEnsure(){
+  if(adminPw()) return true;
+  const v=await askDialog({title:"🔒 Administrace",hint:"Zadej heslo administrátora.",ok:"Přihlásit",
+    fields:[{name:"pw",label:"Heslo",type:"password",attrs:{autocomplete:"current-password"},validate:v=>v?null:"Zadej heslo"}],
+    check:v=>adminVerify(v.pw)});
+  if(!v) return false;
+  ADMIN_PW=v.pw; ADMIN_EXP=Date.now()+ADMIN_TTL; adminStore(); return true;
+}
+function closeAdminUI(){ ["adminModal","paymentsModal"].forEach(id=>{ const m=document.getElementById(id); if(m) m.style.display="none"; }); }
+// Zavolá admin RPC s heslem. Vrací {data} nebo {error}; chyby rovnou ohlásí.
+async function adminRpc(fn,params,kde){
+  const pw=adminPw();
+  if(!pw){ closeAdminUI(); toast("Přihlášení vypršelo – otevři administraci znovu 🔒"); return {error:{message:"nepřihlášen"}}; }
+  let res;
+  try{ res=await sb.rpc(fn,Object.assign({p_pw:pw},params||{})); }catch(e){ res={error:e}; }
+  if(res.error){
+    if(isAuthErr(res.error)){ adminForget(); closeAdminUI(); toast("Heslo už neplatí – přihlas se znovu 🔒"); }
+    else if(missingFnErr(res.error)) dbStatus("⚠ V databázi chybí funkce „"+fn+"“ – spusť migrace_v136.sql.","warn");
+    else dbFail(kde,res.error);
+    return {error:res.error};
+  }
+  return {data:res.data};
+}
 
 // ---- admin ----
 async function applySessionFromInputs(){
   const dv=$("#sessDate").value, tv=$("#sessTime").value; let target=null;
-  if(dv&&tv){ const [Y,M,D]=dv.split("-").map(Number); const [h,m]=tv.split(":").map(Number);
-    const d=new Date(Y,(M||1)-1,(D||1),(h||0),(m||0),0,0);
-    if(!isNaN(d.getTime())){ if(d.getTime()<=Date.now()){ toast("Datum je v minulosti – beru běžnou středu 18:00"); } else target=d; } }
-  if(target && target.getTime()!==nextWed().getTime()){ await saveSession(target.toISOString()); } else { await saveSession(null); }
+  if(!dv||!tv){ toast("Vyplň datum i čas meetingu 📅"); return false; }
+  const [Y,M,D]=dv.split("-").map(Number); const [h,m]=tv.split(":").map(Number);
+  const d=new Date(Y,(M||1)-1,(D||1),(h||0),(m||0),0,0);
+  if(isNaN(d.getTime())){ toast("Neplatné datum 📅"); return false; }
+  // Minulý termín by se tiše posunul o týdny dopředu – radši ho odmítneme
+  if(d.getTime()<=Date.now()){ toast("Termín je v minulosti – vyber budoucí 📅"); return false; }
+  target=d;
+  if(target && target.getTime()!==nextWed().getTime()){ return await saveSession(target.toISOString()); } else { return await saveSession(null); }
 }
 $("#adminBtn").onclick=async()=>{
-  const pw=window.prompt("Heslo administrátora:"); if(pw===null) return;
-  if(pw!=="drobek"){ toast("Špatné heslo 🔒"); return; }
+  if(!(await adminEnsure())) return;
   await loadSession(); await loadPrice();
-  const base=nextSession(); $("#sessDate").value=toDateInput(base); $("#sessTime").value=toTimeInput(base); $("#priceInput").value=PRICE;
+  const base=nextSession(); $("#sessDate").min=toDateInput(new Date()); $("#sessDate").value=toDateInput(base); $("#sessTime").value=toTimeInput(base); $("#priceInput").value=PRICE;
+  $("#priceSmallInput").value=PRICE_SMALL||""; $("#priceSmallInput").placeholder=Math.round(PRICE*3/5)+" (3/5)";
   $("#adminModal").style.display="flex";
   await loadKegStart(); await renderKeg();
 };
+// Dialog s údaji o sudu (nový i oprava) – validace názvu, objemu a času naražení
+function toDateTimeInput(d){ return toDateInput(d)+"T"+toTimeInput(d); }
+function parseLiters(v){ const x=parseFloat(String(v||"").replace(",",".")); return isNaN(x)?NaN:x; }
+function kegDialog(o){
+  const prev=o.prevTs||0;
+  return askDialog({title:o.title,hint:o.hint,ok:o.ok,
+    fields:[
+      {name:"name",label:"Název piva",value:o.name||"",placeholder:"např. Plzeň 12°",attrs:{maxlength:60,autocomplete:"off"},
+        validate:v=>!v?"Zadej název piva":(v.length>60?"Nejvýš 60 znaků":null)},
+      {name:"liters",label:"Objem sudu v litrech",value:o.liters?String(o.liters).replace(".",","):"",placeholder:"např. 50",attrs:{inputmode:"decimal",autocomplete:"off"},
+        validate:v=>{ const x=parseLiters(v); return !v?"Zadej objem":(!(x>0)?"Objem musí být kladné číslo":(x>1000?"Víc než 1000 l? To asi ne 🙂":null)); }},
+      {name:"when",label:"Datum a čas naražení",type:"datetime-local",value:toDateTimeInput(new Date(o.ts||Date.now())),
+        attrs:{max:toDateTimeInput(new Date()),min:prev?toDateTimeInput(new Date(prev)):""},
+        validate:v=>{ if(!v) return "Zadej datum a čas";
+          const t=new Date(v).getTime(); if(isNaN(t)) return "Neplatné datum";
+          if(t>Date.now()+60000) return "Naražení nesmí být v budoucnosti";
+          if(prev && t<prev) return "Nemůže být před naražením předchozího sudu ("+fmtDateTime(prev)+")";
+          return null; }}
+    ]});
+}
 $("#kegNewBtn").onclick=async()=>{
-  const st=await kegStats();
-  const beer=window.prompt("Jaké pivo je v novém sudu?",st.name||"");
-  if(beer===null) return;
-  const nm=beer.trim();
-  if(!nm){ toast("Název piva nesmí být prázdný 🍺"); return; }
-  const sizeDef=st.size?String(st.size):"50";
-  const sizeRaw=window.prompt("Velikost sudu v litrech:",sizeDef);
-  if(sizeRaw===null) return;
-  const sz=parseFloat(String(sizeRaw).replace(",","."));
-  if(!sz||isNaN(sz)||sz<=0||sz>1000){ toast("Zadej platný objem v litrech 🛢️"); return; }
+  await loadKegStart();
+  const v=await kegDialog({title:"🛢️ Nový sud",hint:"Počítadlo se vynuluje a začne počítat od času naražení.",ok:"Pokračovat",
+    name:"",liters:KEG_SIZE||50,ts:Date.now(),prevTs:KEG_START});
+  if(!v) return;
+  const nm=v.name, sz=parseLiters(v.liters);
+  // naražení na minutu přesně; teď = přesný čas, ať se neztratí čárky z poslední minuty
+  let ts=new Date(v.when).getTime(); if(Date.now()-ts<60000) ts=Date.now();
+  const st=await kegStats(ts);
   const summary=st.count+" "+plBeer(st.count)+" ("+st.large+"× velké, "+st.small+"× malé, "+fmtLiters(st.liters)+" l)";
-  if(!confirm("Narazit nový sud?\n\n"+nm+" · "+fmtLiters(sz)+" l\n\nNa předchozím sudu se vypilo: "+summary+"\nPočítadlo se vynuluje a začne počítat od teď.")) return;
-  await logKeg(st);
-  await saveKegStart(Date.now(),nm,sz);
+  if(!(await askConfirm("🛢️ Narazit nový sud?",nm+" · "+fmtLiters(sz)+" l · naražen "+fmtDateTime(ts)
+      +(st.since?"\n\nNa předchozím sudu"+(st.name?" ("+st.name+")":"")+" se vypilo: "+summary:"")
+      +"\nPočítadlo se vynuluje.","Narazit",false))) return;
+  if(!(await adminSaveKeg(nm,sz,true,st,ts))) return;
   await renderKeg();
   toast("Naražen nový sud: "+nm+" "+fmtLiters(sz)+" l 🛢️");
 };
 $("#kegEditBtn").onclick=async()=>{
-  // Oprava názvu a objemu už naraženého sudu – čas naražení i počítadlo zůstávají.
+  // Oprava údajů už naraženého sudu. Změna času naražení přepočítá počítadlo.
   await loadKegStart();
   if(!KEG_START){ toast("Sud zatím není naražený 🛢️"); return; }
-  const beer=window.prompt("Jaké pivo je v sudu?",KEG_NAME||"");
-  if(beer===null) return;
-  const nm=beer.trim();
-  if(!nm){ toast("Název piva nesmí být prázdný 🍺"); return; }
-  const sizeRaw=window.prompt("Velikost sudu v litrech:",KEG_SIZE?String(KEG_SIZE):"30");
-  if(sizeRaw===null) return;
-  const sz=parseFloat(String(sizeRaw).replace(",","."));
-  if(!sz||isNaN(sz)||sz<=0||sz>1000){ toast("Zadej platný objem v litrech 🛢️"); return; }
-  await saveKegStart(KEG_START,nm,sz);
+  const v=await kegDialog({title:"✏️ Údaje o sudu",hint:"Oprava názvu, objemu a času naražení. Když změníš čas, počítadlo se přepočítá od nového času.",ok:"Uložit",
+    name:KEG_NAME,liters:KEG_SIZE||30,ts:KEG_START});
+  if(!v) return;
+  const nm=v.name, sz=parseLiters(v.liters);
+  const t=new Date(v.when).getTime();
+  // Pole má přesnost na minuty – beze změny minuty necháme původní přesný čas
+  const ts=(Math.floor(t/60000)===Math.floor(KEG_START/60000)) ? null : t;
+  if(!(await adminSaveKeg(nm,sz,false,null,ts))) return;
   await renderKeg();
   toast("Údaje o sudu upraveny: "+nm+" "+fmtLiters(sz)+" l ✏️");
 };
-$("#sessSaveBtn").onclick=async()=>{ const btn=$("#sessSaveBtn"); btn.disabled=true; await applySessionFromInputs(); btn.disabled=false;
+// Nejbližší úterý 18:00 v budoucnu (dnes, pokud je úterý a 18:00 ještě nebylo)
+function nextWeekday(dow,h,m){
+  const now=new Date(), d=new Date(now);
+  d.setDate(now.getDate()+((dow-now.getDay()+7)%7)); d.setHours(h,m,0,0);
+  if(d<=now) d.setDate(d.getDate()+7);
+  return d;
+}
+$("#sessTueBtn").onclick=()=>{ const d=nextWeekday(2,18,0); $("#sessDate").value=toDateInput(d); $("#sessTime").value=toTimeInput(d); };
+$("#sessSaveBtn").onclick=async()=>{ const btn=$("#sessSaveBtn"); btn.disabled=true; const ok=await applySessionFromInputs(); btn.disabled=false;
+  if(!ok) return;
   tick(); $("#adminModal").style.display="none"; toast("Termín meetingu uložen 📅"); };
-$("#priceSaveBtn").onclick=async()=>{ const btn=$("#priceSaveBtn"); btn.disabled=true; const ok=await savePrice($("#priceInput").value); btn.disabled=false;
-  if(ok){ await renderTabs(); $("#adminModal").style.display="none"; toast("Cena piva nastavena na "+PRICE+" Kč 💰"); } };
-$("#hallResetBtn").onclick=async()=>{ if(!confirm("Vynulovat síň slávy? Smaže se celá historie útrat."))return; await resetHall(); await renderHall(); toast("Síň slávy vynulována ✨"); };
+$("#priceSaveBtn").onclick=async()=>{ const btn=$("#priceSaveBtn"); btn.disabled=true; const ok=await savePrice($("#priceInput").value,$("#priceSmallInput").value); btn.disabled=false;
+  if(ok){ await renderTabs(); $("#adminModal").style.display="none"; toast("Cena nastavena: velké "+PRICE+" Kč, malé "+smallPrice()+" Kč 💰"); } };
+$("#hallResetBtn").onclick=async()=>{ if(!(await askConfirm("🏆 Vynulovat síň slávy?","Smaže se celé pořadí i útraty a síň slávy se začne vést od dneška. Evidence plateb zůstane.","Vynulovat")))return; if(!(await resetHall())) return; await renderHall(); toast("Síň slávy vynulována ✨"); };
 $("#adminCancel").onclick=()=>{ $("#adminModal").style.display="none"; };
+// Sloučení jmen: platby, síň slávy i otevřený lístek zdroje přejdou na cíl
+async function mergeNames(from,to){
+  if(sb){ const {data,error}=await adminRpc("admin_merge_names",{p_from:from,p_to:to},"sloučení jmen"); return error?null:data; }
+  const out={payments:0,hall:false,tab:"none"};
+  const raw=await sGet("payments",true); let arr=[]; try{ arr=raw?JSON.parse(raw):[]; }catch(e){ arr=[]; }
+  arr=arr.map(b=>{ try{ const o=JSON.parse(b); if(o&&o.name===from){ o.name=to; out.payments++; return JSON.stringify(o); } }catch(e){} return b; });
+  await sSet("payments",JSON.stringify(arr),true);
+  const h=await loadHall();
+  if(h[from]){ const c=hallCounts(h[from]); await creditHall(to,h[from].beers||0,h[from].paid||0,c.large,c.small);
+    const h2=await loadHall(); delete h2[from]; await sSet("hall",JSON.stringify(h2),true); out.hall=true; }
+  const tabs=await loadTabs();
+  if(tabs[from]){ const fm=tabMarks(tabs[from]);
+    const all=(tabs[to]?tabMarks(tabs[to]):[]).concat(fm).sort((a,b)=>((a&&a.t)||0)-((b&&b.t)||0));
+    out.tab=tabs[to]?"merged":"renamed"; await deleteTab(from); await setTab(to,all.length,all); }
+  return out;
+}
+$("#mergeBtn").onclick=async()=>{
+  await refreshKnownNames();
+  const v=await askDialog({title:"🔀 Sloučit jména",
+    hint:"Všechno od <b>zdroje</b> (platby, síň slávy, otevřený lístek) se převede na <b>cíl</b>. Zdroj pak zmizí.",
+    ok:"Pokračovat",
+    fields:[{name:"from",label:"Zdroj (zmizí)",placeholder:"např. Lukas",attrs:{list:"knownNames",autocomplete:"off",maxlength:30},
+              validate:v=>!v?"Vyber jméno":(KNOWN_NAMES.includes(v)?null:"Takové jméno v datech není")},
+            {name:"to",label:"Cíl (zůstane)",placeholder:"např. Lukáš",attrs:{list:"knownNames",autocomplete:"off",maxlength:30},
+              validate:(v,a)=>!v?"Zadej cílové jméno":(v===a.from?"Cíl musí být jiné jméno":null)}]});
+  if(!v) return;
+  if(!(await askConfirm("🔀 Opravdu sloučit?","„"+v.from+"“ → „"+v.to+"“\n\nPlatby, síň slávy i otevřený lístek se převedou na „"+v.to+"“. Nedá se to vrátit.","Sloučit"))) return;
+  const r=await mergeNames(v.from,v.to);
+  if(!r) return;
+  if(rememberedName()===v.from){ try{ localStorage.setItem("studovna_name",v.to); }catch(e){} }
+  await renderTabs(); await renderHall(); await refreshKnownNames();
+  toast("Sloučeno: "+r.payments+" "+(r.payments===1?"platba":(r.payments>=2&&r.payments<=4?"platby":"plateb"))+(r.hall?", síň slávy":"")+(r.tab!=="none"?", lístek":"")+" → "+v.to+" 🔀");
+};
+$("#adminLogout").onclick=()=>{ adminForget(); closeAdminUI(); toast("Odhlášeno z administrace 🔒"); };
+$("#pwChangeBtn").onclick=async()=>{
+  if(!sb){ toast("Heslo se nastavuje jen s databází 🔑"); return; }
+  const v=await askDialog({title:"🔑 Nové heslo",hint:"Heslo se v databázi uloží jen jako bcrypt hash.",ok:"Změnit heslo",
+    fields:[{name:"pw",label:"Nové heslo (aspoň 6 znaků)",type:"password",attrs:{autocomplete:"new-password"},validate:v=>v.length>=6?null:"Aspoň 6 znaků"},
+            {name:"pw2",label:"Nové heslo znovu",type:"password",attrs:{autocomplete:"new-password"},validate:(v,a)=>v===a.pw?null:"Hesla se neshodují"}]});
+  if(!v) return;
+  const {error}=await adminRpc("admin_change_password",{p_new:v.pw},"změna hesla");
+  if(error) return;
+  ADMIN_PW=v.pw; ADMIN_EXP=Date.now()+ADMIN_TTL; adminStore(); toast("Heslo změněno 🔑");
+};
 $("#adminModal").addEventListener("click",e=>{ if(e.target.id==="adminModal") $("#adminModal").style.display="none"; });
-$("#ledgerBtn").onclick=async()=>{ $("#payRows").innerHTML='<tr><td colspan="5"><div class="pay-empty">Načítám…</div></td></tr>'; $("#paymentsModal").style.display="flex"; await renderPayments(); };
+$("#ledgerBtn").onclick=async()=>{ $("#payRows").innerHTML='<tr><td colspan="5"><div class="pay-empty">Načítám…</div></td></tr>'; PAY_LIMIT=PAY_PAGE;
+  $("#paymentsModal").style.display="flex"; refreshKnownNames(); await renderPayments(); };
+["payName","payFrom","payTo"].forEach(id=>$("#"+id).addEventListener("input",payFilterChanged));
+$("#payPeriod").addEventListener("change",payFilterChanged);
+$("#payMore").onclick=()=>{ PAY_LIMIT+=PAY_PAGE; drawPayments(); };
 $("#paymentsClose").onclick=()=>{ $("#paymentsModal").style.display="none"; };
 $("#paymentsModal").addEventListener("click",e=>{ if(e.target.id==="paymentsModal") $("#paymentsModal").style.display="none"; });
 $("#payCsvBtn").onclick=async()=>{
-  const rows=await loadPayments();
+  const rows=filteredPayments();             // export respektuje filtr (všechny stránky)
   if(!rows.length){ toast("Žádné platby k exportu"); return; }
   const csv=paymentsCSV(rows);
   const d=new Date(); const stamp=d.getFullYear()+p2(d.getMonth()+1)+p2(d.getDate());
@@ -1555,17 +2064,20 @@ function makeQRInto(target,text,size){
 })();
 
 // ====== SEZNAM ZMĚN (generováno z git historie při deployi) ======
+// Verze aplikace – JEDINÝ zdroj pravdy. Při vydání změny ji zvyš ručně;
+// deploy (.github/workflows/ftp-deploy.yml) si ji odsud přečte do changelog.json.
+// Dřív se verze počítala z počtu commitů, takže neodpovídala kódu (v1.33 vs. „v1.35“).
+const APP_VERSION_CODE = "v1.36";
 const CHANGELOG_URL = "changelog.json";
-let CHANGELOG = [], APP_VERSION = "";
+let CHANGELOG = [], APP_VERSION = APP_VERSION_CODE;
 async function loadChangelog(){
   try{
     const r = await fetch(CHANGELOG_URL, {cache:"no-store"});
     if(!r.ok) throw new Error("changelog nedostupný");
     const data = await r.json();
-    // starší tvar souboru byl holé pole, novější má i číslo verze
-    if(Array.isArray(data)){ CHANGELOG=data; APP_VERSION=""; }
-    else { CHANGELOG=Array.isArray(data.entries)?data.entries:[]; APP_VERSION=data.version||""; }
-  }catch(e){ CHANGELOG=[]; APP_VERSION=""; }
+    // starší tvar souboru byl holé pole, novější má i číslo verze (to ale bereme z kódu)
+    CHANGELOG = Array.isArray(data) ? data : (Array.isArray(data.entries) ? data.entries : []);
+  }catch(e){ CHANGELOG=[]; }
   return CHANGELOG;
 }
 function renderChangelog(){
@@ -1587,8 +2099,7 @@ async function initChangelog(){
   await loadChangelog();
   const el = $("#footVer");
   if(el){
-    if(!CHANGELOG.length) el.textContent="seznam změn";
-    else el.textContent = (APP_VERSION ? APP_VERSION+" · " : "poslední změna ") + CHANGELOG[0].date;
+    el.textContent = APP_VERSION + (CHANGELOG.length ? " · "+CHANGELOG[0].date : " · seznam změn");
   }
   showNews();
 }
@@ -1598,7 +2109,7 @@ async function initChangelog(){
 // Co už bylo viděno, si pamatuje localStorage – nic se neukládá do databáze.
 const NEWS_KEY = "studovna_seen_ver";
 const NEWS_MAX = 6; // víc než tolik novinek najednou nikdo nečte
-// "v1.35" -> 135, ať se dají verze porovnat číslem
+// "v1.36" -> 136, ať se dají verze porovnat číslem
 function verNum(v){ const m=/^v(\d+)\.(\d+)$/.exec(String(v||"").trim()); return m?parseInt(m[1],10)*100+parseInt(m[2],10):0; }
 function newsSeen(){ try{ return localStorage.getItem(NEWS_KEY)||""; }catch(e){ return "__nelze__"; } }
 function markNewsSeen(v){ try{ localStorage.setItem(NEWS_KEY,v); }catch(e){} }
@@ -1636,16 +2147,46 @@ $("#changelogModal").addEventListener("click", e=>{ if(e.target.id==="changelogM
   await loadSession(); await loadPrice();
   if(sb){
     try{ const {error}=await sb.from("tabs").select("name").limit(1);
-      if(error){ dbFail("test připojení",error); } else { dbStatus("✓ Připojeno k databázi – data se ukládají a sdílí.","ok"); } }catch(e){ dbFail("test připojení",e); }
+      if(error){ dbFail("test připojení",error); } else { dbStatus(null,"ok"); } }catch(e){ dbFail("test připojení",e); }
   } else { dbStatus(); }
   await renderTabs(); await renderHall(); tick(); initChangelog();
+  startRealtime();
 })();
 tick(); setInterval(tick,1000);
-setInterval(()=>{ if(tabBusy) return;
-  // loadSession() dřív jezdilo uvnitř ankety – bez něj by se změna termínu
-  // na ostatních zařízeních neprojevila, dokud je někdo nenačte znovu
-  loadSession().then(()=>{ renderTabs(); renderHall(); });
-}, 15000);
+
+// ====== AUTOMATICKÁ OBNOVA DAT ======
+// Hlavní cesta je Supabase Realtime (změna v tabulce → překreslení na všech
+// zařízeních). Záloha: načtení při návratu do aplikace (visibilitychange),
+// po obnovení sítě a pravidelně – každých 15 s bez Realtime, jinak po minutě.
+let RT_OK=false, REFRESH_T=null, REFRESHING=false, REFRESH_AGAIN=false, LAST_REFRESH=Date.now();
+function scheduleRefresh(ms){ clearTimeout(REFRESH_T); REFRESH_T=setTimeout(refreshAll, ms||0); }
+async function refreshAll(){
+  if(document.hidden) return;                          // na pozadí nic, dožene se při návratu
+  if(tabBusy || REFRESHING){ REFRESH_AGAIN=true; scheduleRefresh(400); return; }
+  REFRESHING=true; REFRESH_AGAIN=false;
+  try{
+    // loadSession() – bez něj by se změna termínu na ostatních zařízeních neprojevila
+    await loadSession(); tick();
+    await renderTabs(); await renderHall();
+    if($("#paymentsModal").style.display==="flex") await renderPayments();
+    LAST_REFRESH=Date.now();
+  }catch(e){} finally{ REFRESHING=false; }
+}
+function startRealtime(){
+  if(!sb || !sb.channel) return;
+  try{
+    const ch=sb.channel("studovna-zmeny");
+    ["tabs","hall","suggestions"].forEach(t=>ch.on("postgres_changes",{event:"*",schema:"public",table:t},()=>scheduleRefresh(250)));
+    ch.subscribe(status=>{
+      const was=RT_OK; RT_OK=(status==="SUBSCRIBED");
+      if(RT_OK && !was) scheduleRefresh(0);            // po (znovu)připojení doženeme, co jsme propásli
+    });
+  }catch(e){ RT_OK=false; }
+}
+setInterval(()=>{ if(Date.now()-LAST_REFRESH >= (RT_OK?60000:15000)-500) refreshAll(); }, 15000);
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) scheduleRefresh(0); });
+window.addEventListener("online",()=>{ dbStatus(null,"ok"); scheduleRefresh(0); });
+window.addEventListener("offline",()=>{ dbStatus("⚠ Jsi offline – změny se neuloží, dokud se nepřipojíš.","warn"); DB_WARN_TRANSIENT=true; });
 </script>
 </body>
 </html>
