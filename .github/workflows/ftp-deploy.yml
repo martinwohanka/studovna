@@ -53,6 +53,7 @@ jobs:
           mv changelog.tmp.json changelog.json
           head -c 600 changelog.json; echo
 
+      # SQL migrace se spouští ručně v Supabase a na web nepatří (*.sql je v exclude níže)
       - name: Nahrát soubory přes FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -66,3 +67,4 @@ jobs:
             **/.git*/**
             **/.github/**
             changelog-cs.json
+            **/*.sql
