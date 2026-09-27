@@ -258,8 +258,14 @@
   .modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:20px;
     background:rgba(5,6,9,.7);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
   .modal-card{width:100%;max-width:460px;background:rgba(18,21,27,.96);border:1px solid var(--line-2);border-radius:var(--r-lg);
-    padding:24px 24px 20px;box-shadow:0 30px 80px rgba(0,0,0,.65);max-height:90vh;overflow-y:auto;}
+    padding:24px 24px 20px;box-shadow:0 30px 80px rgba(0,0,0,.65);max-height:90vh;max-height:90dvh;overflow-y:auto;
+    overscroll-behavior:contain;}
   .modal-card h3{font-family:'Space Grotesk',sans-serif;font-weight:700;letter-spacing:-.01em;font-size:22px;margin-bottom:4px;}
+  /* Nadpis a spodní tlačítka zůstávají na místě, scrolluje jen obsah mezi nimi –
+     na nízkých displejích se tak Zavřít neořízne. Záporné okraje = padding karty. */
+  .modal-card > h3:first-child{position:sticky;top:-24px;z-index:4;margin:-24px -24px 4px;padding:24px 24px 8px;background:#12151b}
+  .modal-card .modal-actions:last-child{position:sticky;bottom:-20px;z-index:4;margin:18px -24px -20px;padding:12px 24px 20px;
+    background:#12151b;border-top:1px solid var(--line)}
   .modal-hint{color:var(--txt-2);font-size:13px;line-height:1.55;margin-bottom:14px}
   .modal-hint b{color:var(--amber);font-weight:600}
   #nameInput{width:100%;font-family:'Inter',sans-serif;font-size:16px;font-weight:500;color:var(--txt);
@@ -389,7 +395,36 @@
     table.pay-table td.del{grid-column:3;grid-row:1/3;position:static;
       background:none;box-shadow:none;width:auto;padding-left:4px}
     .pay-brk{font-size:11px}
+    /* na telefonu žádný vnořený scroll – posouvá se celá karta (hlavička a Zavřít drží) */
+    .pay-scroll{max-height:none;overflow:visible}
+    .pay-filters #payPeriod{flex:1 1 100%}
+    table.pay-table tbody tr.cur-keg{box-shadow:inset 3px 0 0 var(--amber)}
+    table.pay-table tbody tr.cur-keg td:first-child{box-shadow:none}
   }
+  table.pay-table th.num{text-align:right}
+  .pay-filters{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 10px}
+  .pay-filters input,.pay-filters select{font-family:'Inter',sans-serif;font-size:15px;color:var(--txt);color-scheme:dark;
+    background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-height:42px}
+  .pay-filters input:focus,.pay-filters select:focus{outline:none;border-color:var(--amber)}
+  .pay-filters select option{background:#12151b}
+  #payName{flex:1 1 160px;min-width:0}
+  #payPeriod{flex:0 1 180px}
+  .pay-range{display:flex;align-items:center;gap:6px;flex:1 1 100%}
+  .pay-range[hidden]{display:none}
+  .pay-range input{flex:1;min-width:0}
+  .pay-range span{color:var(--txt-2)}
+  .pay-people{margin:0 0 12px;border:1px solid var(--line);border-radius:var(--r-sm);padding:0 12px}
+  .pay-people summary{cursor:pointer;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;color:var(--amber);padding:10px 0}
+  .pay-people[open]{padding-bottom:8px}
+  .pp-row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid rgba(255,255,255,.05);font-size:13.5px}
+  .pp-row .pp-n{font-weight:600}
+  .pp-row .pp-v{color:var(--txt-2);text-align:right;font-variant-numeric:tabular-nums}
+  .pp-row .pp-v b{color:var(--green)}
+  table.pay-table tbody tr.cur-keg td:first-child{box-shadow:inset 3px 0 0 var(--amber)}
+  table.pay-table tbody tr.cur-keg{background:rgba(245,185,66,.06)}
+  table.pay-table tbody tr.cur-keg:nth-child(even){background:rgba(245,185,66,.09)}
+  .pay-keg-mark{border-left:3px solid var(--amber);padding-left:5px;color:var(--txt)}
+  .pay-more{text-align:center;margin-top:10px}
   .pay-note{margin-top:12px;color:var(--txt-2);font-size:12px;line-height:1.5}
   .pay-note b{color:var(--txt);font-weight:600}
 
@@ -609,17 +644,36 @@
     <div class="modal-card pay-card">
       <h3>📒 Přehled plateb</h3>
       <p class="modal-hint">Evidence všech proběhlých plateb. Mazat záznamy jde <b>jen tady v administraci</b> — běžní uživatelé je nikde neodstraní.</p>
+      <div class="pay-filters">
+        <input type="search" id="payName" list="knownNames" placeholder="🔍 Jméno…" autocomplete="off" aria-label="Filtr podle jména">
+        <select id="payPeriod" aria-label="Období">
+          <option value="all">Celé období</option>
+          <option value="keg">Aktuální sud</option>
+          <option value="month">Tento měsíc</option>
+          <option value="custom">Vlastní rozsah…</option>
+        </select>
+        <div class="pay-range" id="payRange" hidden>
+          <input type="date" id="payFrom" aria-label="Od"><span>–</span><input type="date" id="payTo" aria-label="Do">
+        </div>
+      </div>
       <div class="pay-tools">
         <span class="pay-sum" id="paySum"></span>
         <button class="pay-csv" id="payCsvBtn" type="button">⬇️ Export CSV</button>
       </div>
+      <details class="pay-people" id="payPeopleBox">
+        <summary>👥 Souhrn podle osob</summary>
+        <div id="payPeople"></div>
+      </details>
       <div class="pay-scroll">
         <table class="pay-table">
           <thead><tr><th>Datum a čas</th><th>Jméno</th><th class="num">Piv</th><th class="num">Útrata</th><th></th></tr></thead>
           <tbody id="payRows"></tbody>
         </table>
       </div>
-      <p class="pay-note">Sloupec „Piv" ukazuje počet kusů (z toho malá jako křížek). Útrata je skutečně zaplacená částka v Kč. Křížkem vpravo platbu smažeš — <b>odečte se i ze síně slávy</b> a z počítadla sudu.</p>
+      <div class="pay-more" id="payMoreBox" hidden><button class="ledger-open" id="payMore" type="button">Načíst dalších 50</button></div>
+      <p class="pay-note">Sloupec „Piv“ ukazuje počet kusů, v závorce rozpad na velká a malá. Útrata je skutečně zaplacená částka v Kč.
+        Platby <span class="pay-keg-mark">aktuálního sudu</span> mají vlevo jantarový proužek. Export CSV obsahuje všechny platby podle filtru.
+        Tlačítkem ✕ platbu smažeš — <b>odečte se ze síně slávy</b> (pokud je novější než její poslední obnova) a z počítadla sudu (jen platby po naražení aktuálního sudu).</p>
       <div class="modal-actions">
         <button class="btn-ghost" id="paymentsClose">Zavřít</button>
       </div>
@@ -1116,7 +1170,7 @@ let PAY_TAB=null, PAY_MARKS=[], PAY_AMOUNT=0;
 async function payTab(name){
   await loadPrice();
   const tabs=await loadTabs(); const marks=tabMarks(tabs[name]); const c=marks.length;
-  if(c===0){ if(confirm("Lístek je prázdný — zavřít bez placení?")){ await deleteTab(name); await renderTabs(); toast("Lístek zavřen 👋"); } return; }
+  if(c===0){ if(await askConfirm("👋 Zavřít lístek?","Lístek „"+name+"“ je prázdný — zavřít bez placení?","Zavřít lístek",false)){ await deleteTab(name); await renderTabs(); toast("Lístek zavřen 👋"); } return; }
   const amount=marksTotal(marks)||c*PRICE;
   PAY_TAB=name; PAY_MARKS=marks.slice(); PAY_AMOUNT=amount;
   $("#tabPayName").textContent=name; $("#tabPaySum").textContent=c+" "+plBeer(c)+" = "+amount+" Kč";
@@ -1212,21 +1266,60 @@ function hallDuration(ts){
   const n=Math.max(0,Math.round((sod(Date.now())-sod(ts))/86400000));
   return n===0 ? "dnes" : n+" "+plDay(n);
 }
+// ---- přehled plateb: filtry, souhrn, stránkování ----
+const PAY_PAGE=50;
+let PAY_ALL=[], PAY_LIMIT=PAY_PAGE;
+const plPay=(n)=>n===1?"platba":(n>=2&&n<=4?"platby":"plateb");
+function payCounts(r){ const small=r.small||0; return {small, large:(r.large!=null)?r.large:((r.beers||0)-small)}; }
+// Platby podle aktuálních filtrů (jméno + období)
+function filteredPayments(){
+  const q=normName($("#payName").value), per=$("#payPeriod").value;
+  let from=0, to=Infinity;
+  if(per==="keg") from=KEG_START||0;
+  else if(per==="month"){ const d=new Date(); from=new Date(d.getFullYear(),d.getMonth(),1).getTime(); }
+  else if(per==="custom"){
+    const f=$("#payFrom").value, t=$("#payTo").value;
+    if(f) from=new Date(f+"T00:00:00").getTime();
+    if(t) to=new Date(t+"T00:00:00").getTime()+86400000;   // včetně celého dne „do“
+  }
+  return PAY_ALL.filter(r=>(r.ts||0)>=from && (r.ts||0)<to && (!q || normName(r.name).includes(q)));
+}
 async function renderPayments(){
-  const rows=await loadPayments(); const body=$("#payRows"); const sum=$("#paySum");
-  if(!rows.length){ body.innerHTML='<tr><td colspan="5"><div class="pay-empty">Zatím žádné platby 🍺</div></td></tr>'; sum.textContent=""; return; }
-  let totBeers=0,totKc=0;
-  body.innerHTML=rows.map((r,i)=>{
-    totBeers+=r.beers||0; totKc+=r.amount||0;
-    const small=r.small||0, large=(r.large!=null)?r.large:((r.beers||0)-small);
-    let breakdown=""; if(small>0){ breakdown=' <span class="pay-brk">('+large+'×velké, '+small+'×malé)</span>'; }
-    const dt=fmtDateParts(r.ts);
-    return '<tr><td class="dt">'+dt.d+' <span class="pay-t">'+dt.t+'</span></td><td class="nm">'+esc(r.name||"?")+'</td><td class="num">'+(r.beers||0)+breakdown+'</td><td class="amt">'+(r.amount||0)+' Kč</td>'
+  await loadKegStart();
+  PAY_ALL=await loadPayments();
+  drawPayments();
+}
+function drawPayments(){
+  const body=$("#payRows"), sum=$("#paySum");
+  const rows=filteredPayments(), shown=rows.slice(0,PAY_LIMIT);
+  const kegTs=KEG_START||0;
+  if(!rows.length){
+    body.innerHTML='<tr><td colspan="5"><div class="pay-empty">'+(PAY_ALL.length?"Filtru neodpovídá žádná platba 🔍":"Zatím žádné platby 🍺")+'</div></td></tr>';
+    sum.textContent=""; $("#payPeople").innerHTML=""; $("#payMoreBox").hidden=true; return;
+  }
+  body.innerHTML=shown.map((r,i)=>{
+    const c=payCounts(r);
+    const breakdown=c.small>0?' <span class="pay-brk">('+c.large+'× velké, '+c.small+'× malé)</span>':"";
+    const dt=fmtDateParts(r.ts), cur=kegTs && (r.ts||0)>=kegTs;
+    return '<tr'+(cur?' class="cur-keg" title="Platba za aktuální sud"':'')+'><td class="dt">'+dt.d+' <span class="pay-t">'+dt.t+'</span></td><td class="nm">'+esc(r.name||"?")+'</td><td class="num">'+(r.beers||0)+breakdown+'</td><td class="amt">'+(r.amount||0)+' Kč</td>'
       +'<td class="del"><button class="pay-del" data-i="'+i+'" title="Smazat platbu" aria-label="Smazat platbu">✕</button></td></tr>';
   }).join("");
-  body.querySelectorAll(".pay-del").forEach(b=>{ b.onclick=()=>askDeletePayment(rows[+b.dataset.i]); });
-  sum.innerHTML='Celkem <b>'+rows.length+'</b> '+(rows.length===1?"platba":(rows.length>=2&&rows.length<=4?"platby":"plateb"))+' · <b>'+totBeers+'</b> '+plBeer(totBeers)+' · <b>'+totKc+' Kč</b>';
+  body.querySelectorAll(".pay-del").forEach(b=>{ b.onclick=()=>askDeletePayment(shown[+b.dataset.i]); });
+  // souhrn (za všechny platby podle filtru, ne jen zobrazené)
+  let totBeers=0,totKc=0; const people={};
+  rows.forEach(r=>{ const c=payCounts(r); totBeers+=r.beers||0; totKc+=r.amount||0;
+    const p=people[r.name||"?"]||(people[r.name||"?"]={n:0,large:0,small:0,kc:0});
+    p.n++; p.large+=c.large; p.small+=c.small; p.kc+=r.amount||0; });
+  sum.innerHTML='<b>'+rows.length+'</b> '+plPay(rows.length)+' · <b>'+totBeers+'</b> '+plBeer(totBeers)+' · <b>'+totKc+' Kč</b>'
+    +(rows.length>shown.length?' · zobrazeno '+shown.length:'');
+  $("#payPeople").innerHTML=Object.keys(people).sort((a,b)=>(people[b].kc-people[a].kc)||a.localeCompare(b,"cs")).map(n=>{
+    const p=people[n];
+    return '<div class="pp-row"><span class="pp-n">'+esc(n)+'</span><span class="pp-v">'+p.n+' '+plPay(p.n)+' · '+fmtCount(p.large,p.small)+' · <b>'+p.kc+' Kč</b></span></div>';
+  }).join("");
+  $("#payMoreBox").hidden=rows.length<=shown.length;
+  $("#payMore").textContent="Načíst další ("+Math.min(PAY_PAGE,rows.length-shown.length)+" z "+(rows.length-shown.length)+")";
 }
+function payFilterChanged(){ PAY_LIMIT=PAY_PAGE; $("#payRange").hidden=$("#payPeriod").value!=="custom"; drawPayments(); }
 async function askDeletePayment(rec){
   if(!rec) return;
   await loadHallSince();
@@ -1237,12 +1330,12 @@ async function askDeletePayment(rec){
   await loadKegStart();
   const zSudu = kegMarksOf(rec, KEG_START||0).length;
   const co = fmtDateTime(rec.ts)+" · "+(rec.name||"?")+"\n"+(rec.beers||0)+" "+plBeer(rec.beers||0)+" · "+(rec.amount||0)+" Kč";
-  if(!confirm("Smazat tuto platbu?\n\n"+co+"\n\n"
+  if(!await askConfirm("🗑️ Smazat platbu?",co+"\n\n"
       +(vSini ? "Piva i útrata se odečtou ze síně slávy."
               : "Síň slávy zůstane beze změny — platba je starší než její poslední obnova.")
       +"\n"+(zSudu ? "Z počítadla sudu se odečte "+zSudu+" "+plBeer(zSudu)+"."
               : "Počítadlo sudu zůstane beze změny"+((rec.ts||0)<(KEG_START||0)?" — platba je starší než naražení sudu.":"."))
-      +"\nTohle se nedá vrátit.")) return;
+      +"\nTohle se nedá vrátit.","Smazat platbu")) return;
   if(!(await deletePaymentRecord(rec))){ toast("Platbu se nepovedlo smazat 😕"); return; }
   if(vSini && !sb){
     const eq = (rec.eq!=null) ? rec.eq
@@ -1297,40 +1390,42 @@ async function saveKegStart(ts,name,liters){
   await sSet("keg_start",JSON.stringify({ts:ts,name:KEG_NAME,liters:KEG_SIZE}),true);
 }
 // Nový sud (isNew) nebo oprava názvu a objemu stávajícího. Vrací true při úspěchu.
-async function adminSaveKeg(name,liters,isNew,st){
-  const log=isNew&&st ? JSON.stringify({from:st.since,to:Date.now(),name:st.name||"",size:st.size||0,large:st.large,small:st.small,count:st.count,liters:Math.round(st.liters*10)/10}) : null;
+// ts = čas naražení (ms); u nového sudu i konec předchozího. st = souhrn končícího sudu.
+async function adminSaveKeg(name,liters,isNew,st,ts){
+  const log=isNew&&st&&st.since ? JSON.stringify({from:st.since,to:ts||Date.now(),name:st.name||"",size:st.size||0,large:st.large,small:st.small,count:st.count,liters:Math.round(st.liters*10)/10}) : null;
   if(sb){
-    const {data,error}=await adminRpc("admin_save_keg",{p_name:name,p_liters:liters,p_new:!!isNew,p_log:log},"uložení sudu");
-    if(error) return false;
+    const {data,error}=await adminRpc("admin_save_keg",{p_name:name,p_liters:liters,p_new:!!isNew,p_log:log,p_ts:ts||null},"uložení sudu");
+    if(error){ if(!isAuthErr(error)&&!missingFnErr(error)) toast("Sud se nepovedlo uložit: "+(error.message||"")); return false; }
     KEG_START=Number(data)||KEG_START; KEG_NAME=name; KEG_SIZE=liters; return true;
   }
   if(log){ const raw=await sGet("keg_log",true); let a=[]; try{ a=raw?JSON.parse(raw):[]; }catch(e){ a=[]; }
     a.push(log); await sSet("keg_log",JSON.stringify(a),true); }
-  await saveKegStart(isNew?Date.now():KEG_START,name,liters); return true;
+  await saveKegStart(ts||(isNew?Date.now():KEG_START),name,liters); return true;
 }
-// Spočítá vypitá piva od naražení sudu. Rozhoduje výhradně čas udělání čárky,
-// ne to, jestli je pivo zaplacené – zaplacením se přesune do síně slávy,
-// ze sudu ale vypité zůstává. Čárky sbíráme z otevřených lístků i ze zaplacených.
 // Čárky platby, které patří do sudu naraženého v čase since. Platba starší než
 // naražení do sudu nepatří vůbec (její čárky jsou z předchozího sudu).
 function kegMarksOf(r,since){
   if(!r || !Array.isArray(r.mk) || (r.ts||0)<since) return [];
   return r.mk.filter(m=>m && (m.t||0)>=since);
 }
-async function kegStats(){
+// Spočítá vypitá piva od naražení sudu. Rozhoduje výhradně čas udělání čárky,
+// ne to, jestli je pivo zaplacené – zaplacením se přesune do síně slávy,
+// ze sudu ale vypité zůstává. Čárky sbíráme z otevřených lístků i ze zaplacených.
+// until (volitelně): počítat jen čárky před tímto časem – souhrn končícího sudu.
+async function kegStats(until){
   await loadKegStart(); // vždy znovu – jinak se výměna sudu neprojeví na ostatních zařízeních
-  const since=KEG_START||0;
+  const since=KEG_START||0, end=until||Infinity;
   let large=0,small=0;
   const pays=await loadPayments();
   pays.forEach(r=>{
     // Jen záznamy s rozpisem čárek: každá má vlastní čas, takže se platba
     // správně rozdělí mezi dva sudy. Starší platby bez časů čárek se do sudu
     // nepočítají – nejde u nich určit, ke kterému sudu piva patřila.
-    kegMarksOf(r,since).forEach(m=>{ if(m.s==="small") small++; else large++; });
+    kegMarksOf(r,since).forEach(m=>{ if((m.t||0)>=end) return; if(m.s==="small") small++; else large++; });
   });
   const tabs=await loadTabs();
   Object.keys(tabs).forEach(n=>{ tabMarks(tabs[n]).forEach(m=>{
-    if(m&&(m.t||0)>=since){ if(m.s==="small") small++; else large++; } }); });
+    if(m&&(m.t||0)>=since&&(m.t||0)<end){ if(m.s==="small") small++; else large++; } }); });
   const count=large+small;
   const liters=large*L_LARGE+small*L_SMALL;
   const size=KEG_SIZE||0;
@@ -1708,36 +1803,55 @@ $("#adminBtn").onclick=async()=>{
   $("#adminModal").style.display="flex";
   await loadKegStart(); await renderKeg();
 };
+// Dialog s údaji o sudu (nový i oprava) – validace názvu, objemu a času naražení
+function toDateTimeInput(d){ return toDateInput(d)+"T"+toTimeInput(d); }
+function parseLiters(v){ const x=parseFloat(String(v||"").replace(",",".")); return isNaN(x)?NaN:x; }
+function kegDialog(o){
+  const prev=o.prevTs||0;
+  return askDialog({title:o.title,hint:o.hint,ok:o.ok,
+    fields:[
+      {name:"name",label:"Název piva",value:o.name||"",placeholder:"např. Plzeň 12°",attrs:{maxlength:60,autocomplete:"off"},
+        validate:v=>!v?"Zadej název piva":(v.length>60?"Nejvýš 60 znaků":null)},
+      {name:"liters",label:"Objem sudu v litrech",value:o.liters?String(o.liters).replace(".",","):"",placeholder:"např. 50",attrs:{inputmode:"decimal",autocomplete:"off"},
+        validate:v=>{ const x=parseLiters(v); return !v?"Zadej objem":(!(x>0)?"Objem musí být kladné číslo":(x>1000?"Víc než 1000 l? To asi ne 🙂":null)); }},
+      {name:"when",label:"Datum a čas naražení",type:"datetime-local",value:toDateTimeInput(new Date(o.ts||Date.now())),
+        attrs:{max:toDateTimeInput(new Date()),min:prev?toDateTimeInput(new Date(prev)):""},
+        validate:v=>{ if(!v) return "Zadej datum a čas";
+          const t=new Date(v).getTime(); if(isNaN(t)) return "Neplatné datum";
+          if(t>Date.now()+60000) return "Naražení nesmí být v budoucnosti";
+          if(prev && t<prev) return "Nemůže být před naražením předchozího sudu ("+fmtDateTime(prev)+")";
+          return null; }}
+    ]});
+}
 $("#kegNewBtn").onclick=async()=>{
-  const st=await kegStats();
-  const beer=window.prompt("Jaké pivo je v novém sudu?",st.name||"");
-  if(beer===null) return;
-  const nm=beer.trim();
-  if(!nm){ toast("Název piva nesmí být prázdný 🍺"); return; }
-  const sizeDef=st.size?String(st.size):"50";
-  const sizeRaw=window.prompt("Velikost sudu v litrech:",sizeDef);
-  if(sizeRaw===null) return;
-  const sz=parseFloat(String(sizeRaw).replace(",","."));
-  if(!sz||isNaN(sz)||sz<=0||sz>1000){ toast("Zadej platný objem v litrech 🛢️"); return; }
+  await loadKegStart();
+  const v=await kegDialog({title:"🛢️ Nový sud",hint:"Počítadlo se vynuluje a začne počítat od času naražení.",ok:"Pokračovat",
+    name:"",liters:KEG_SIZE||50,ts:Date.now(),prevTs:KEG_START});
+  if(!v) return;
+  const nm=v.name, sz=parseLiters(v.liters);
+  // naražení na minutu přesně; teď = přesný čas, ať se neztratí čárky z poslední minuty
+  let ts=new Date(v.when).getTime(); if(Date.now()-ts<60000) ts=Date.now();
+  const st=await kegStats(ts);
   const summary=st.count+" "+plBeer(st.count)+" ("+st.large+"× velké, "+st.small+"× malé, "+fmtLiters(st.liters)+" l)";
-  if(!confirm("Narazit nový sud?\n\n"+nm+" · "+fmtLiters(sz)+" l\n\nNa předchozím sudu se vypilo: "+summary+"\nPočítadlo se vynuluje a začne počítat od teď.")) return;
-  if(!(await adminSaveKeg(nm,sz,true,st))) return;
+  if(!(await askConfirm("🛢️ Narazit nový sud?",nm+" · "+fmtLiters(sz)+" l · naražen "+fmtDateTime(ts)
+      +(st.since?"\n\nNa předchozím sudu"+(st.name?" ("+st.name+")":"")+" se vypilo: "+summary:"")
+      +"\nPočítadlo se vynuluje.","Narazit",false))) return;
+  if(!(await adminSaveKeg(nm,sz,true,st,ts))) return;
   await renderKeg();
   toast("Naražen nový sud: "+nm+" "+fmtLiters(sz)+" l 🛢️");
 };
 $("#kegEditBtn").onclick=async()=>{
-  // Oprava názvu a objemu už naraženého sudu – čas naražení i počítadlo zůstávají.
+  // Oprava údajů už naraženého sudu. Změna času naražení přepočítá počítadlo.
   await loadKegStart();
   if(!KEG_START){ toast("Sud zatím není naražený 🛢️"); return; }
-  const beer=window.prompt("Jaké pivo je v sudu?",KEG_NAME||"");
-  if(beer===null) return;
-  const nm=beer.trim();
-  if(!nm){ toast("Název piva nesmí být prázdný 🍺"); return; }
-  const sizeRaw=window.prompt("Velikost sudu v litrech:",KEG_SIZE?String(KEG_SIZE):"30");
-  if(sizeRaw===null) return;
-  const sz=parseFloat(String(sizeRaw).replace(",","."));
-  if(!sz||isNaN(sz)||sz<=0||sz>1000){ toast("Zadej platný objem v litrech 🛢️"); return; }
-  if(!(await adminSaveKeg(nm,sz,false))) return;
+  const v=await kegDialog({title:"✏️ Údaje o sudu",hint:"Oprava názvu, objemu a času naražení. Když změníš čas, počítadlo se přepočítá od nového času.",ok:"Uložit",
+    name:KEG_NAME,liters:KEG_SIZE||30,ts:KEG_START});
+  if(!v) return;
+  const nm=v.name, sz=parseLiters(v.liters);
+  const t=new Date(v.when).getTime();
+  // Pole má přesnost na minuty – beze změny minuty necháme původní přesný čas
+  const ts=(Math.floor(t/60000)===Math.floor(KEG_START/60000)) ? null : t;
+  if(!(await adminSaveKeg(nm,sz,false,null,ts))) return;
   await renderKeg();
   toast("Údaje o sudu upraveny: "+nm+" "+fmtLiters(sz)+" l ✏️");
 };
@@ -1754,7 +1868,7 @@ $("#sessSaveBtn").onclick=async()=>{ const btn=$("#sessSaveBtn"); btn.disabled=t
   tick(); $("#adminModal").style.display="none"; toast("Termín meetingu uložen 📅"); };
 $("#priceSaveBtn").onclick=async()=>{ const btn=$("#priceSaveBtn"); btn.disabled=true; const ok=await savePrice($("#priceInput").value,$("#priceSmallInput").value); btn.disabled=false;
   if(ok){ await renderTabs(); $("#adminModal").style.display="none"; toast("Cena nastavena: velké "+PRICE+" Kč, malé "+smallPrice()+" Kč 💰"); } };
-$("#hallResetBtn").onclick=async()=>{ if(!confirm("Vynulovat síň slávy? Smaže se celá historie útrat."))return; if(!(await resetHall())) return; await renderHall(); toast("Síň slávy vynulována ✨"); };
+$("#hallResetBtn").onclick=async()=>{ if(!(await askConfirm("🏆 Vynulovat síň slávy?","Smaže se celé pořadí i útraty a síň slávy se začne vést od dneška. Evidence plateb zůstane.","Vynulovat")))return; if(!(await resetHall())) return; await renderHall(); toast("Síň slávy vynulována ✨"); };
 $("#adminCancel").onclick=()=>{ $("#adminModal").style.display="none"; };
 // Sloučení jmen: platby, síň slávy i otevřený lístek zdroje přejdou na cíl
 async function mergeNames(from,to){
@@ -1801,11 +1915,15 @@ $("#pwChangeBtn").onclick=async()=>{
   ADMIN_PW=v.pw; ADMIN_EXP=Date.now()+ADMIN_TTL; adminStore(); toast("Heslo změněno 🔑");
 };
 $("#adminModal").addEventListener("click",e=>{ if(e.target.id==="adminModal") $("#adminModal").style.display="none"; });
-$("#ledgerBtn").onclick=async()=>{ $("#payRows").innerHTML='<tr><td colspan="5"><div class="pay-empty">Načítám…</div></td></tr>'; $("#paymentsModal").style.display="flex"; await renderPayments(); };
+$("#ledgerBtn").onclick=async()=>{ $("#payRows").innerHTML='<tr><td colspan="5"><div class="pay-empty">Načítám…</div></td></tr>'; PAY_LIMIT=PAY_PAGE;
+  $("#paymentsModal").style.display="flex"; refreshKnownNames(); await renderPayments(); };
+["payName","payFrom","payTo"].forEach(id=>$("#"+id).addEventListener("input",payFilterChanged));
+$("#payPeriod").addEventListener("change",payFilterChanged);
+$("#payMore").onclick=()=>{ PAY_LIMIT+=PAY_PAGE; drawPayments(); };
 $("#paymentsClose").onclick=()=>{ $("#paymentsModal").style.display="none"; };
 $("#paymentsModal").addEventListener("click",e=>{ if(e.target.id==="paymentsModal") $("#paymentsModal").style.display="none"; });
 $("#payCsvBtn").onclick=async()=>{
-  const rows=await loadPayments();
+  const rows=filteredPayments();             // export respektuje filtr (všechny stránky)
   if(!rows.length){ toast("Žádné platby k exportu"); return; }
   const csv=paymentsCSV(rows);
   const d=new Date(); const stamp=d.getFullYear()+p2(d.getMonth()+1)+p2(d.getDate());

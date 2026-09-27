@@ -221,18 +221,22 @@ begin
   perform public._set_setting('__session__', p_iso);
 end $$;
 
--- Sud: p_new = true → nový sud (čas naražení = teď, starý se zapíše do historie),
---      p_new = false → jen oprava názvu a objemu, čas naražení zůstává.
+-- Sud: p_new = true → nový sud (starý se zapíše do historie),
+--      p_new = false → oprava údajů stávajícího sudu.
+-- p_ts = čas naražení v ms; null = teď (nový sud) / beze změny (oprava).
 -- p_log je JSON se souhrnem končícího sudu (počítá ho klient).
+drop function if exists public.admin_save_keg(text, text, numeric, boolean, text);
 create or replace function public.admin_save_keg(p_pw text, p_name text, p_liters numeric,
-                                                 p_new boolean, p_log text default null)
+                                                 p_new boolean, p_log text default null,
+                                                 p_ts bigint default null)
 returns bigint
 language plpgsql security definer
 set search_path = public
 as $$
 declare
-  v_ts  bigint;
-  v_old text;
+  v_ts     bigint;
+  v_old    text;
+  v_old_ts bigint;
 begin
   perform public._admin_require(p_pw);
   p_name := btrim(coalesce(p_name, ''));
@@ -243,22 +247,33 @@ begin
     raise exception 'Neplatný objem sudu';
   end if;
 
+  if p_ts is not null and (p_ts <= 0 or p_ts > public._now_ms() + 300000) then
+    raise exception 'Čas naražení nesmí být v budoucnosti';
+  end if;
+
+  v_old := public._get_setting('__keg__');
+  if v_old is not null then
+    if left(btrim(v_old), 1) = '{' then
+      v_old_ts := (v_old::jsonb ->> 'ts')::bigint;
+    else
+      v_old_ts := btrim(v_old)::bigint;             -- starší formát: jen timestamp
+    end if;
+  end if;
+
   if p_new then
-    v_ts := public._now_ms();
+    v_ts := coalesce(p_ts, public._now_ms());
+    if v_old_ts is not null and v_ts < v_old_ts then
+      raise exception 'Nový sud nemůže být naražen dřív než ten předchozí';
+    end if;
     if p_log is not null then
       perform p_log::jsonb;                        -- jen validace
       insert into public.suggestions(period, beer) values ('__keg_log__', p_log);
     end if;
   else
-    v_old := public._get_setting('__keg__');
-    if v_old is null then
+    if v_old_ts is null then
       raise exception 'Sud zatím není naražený';
     end if;
-    if left(btrim(v_old), 1) = '{' then
-      v_ts := (v_old::jsonb ->> 'ts')::bigint;
-    else
-      v_ts := btrim(v_old)::bigint;                 -- starší formát: jen timestamp
-    end if;
+    v_ts := coalesce(p_ts, v_old_ts);
   end if;
 
   perform public._set_setting('__keg__',
@@ -452,7 +467,7 @@ grant execute on function public.admin_change_password(text, text)              
 grant execute on function public.admin_set_price(text, int, int)                      to anon, authenticated;
 grant execute on function public.admin_merge_names(text, text, text)                  to anon, authenticated;
 grant execute on function public.admin_set_session(text, text)                        to anon, authenticated;
-grant execute on function public.admin_save_keg(text, text, numeric, boolean, text)   to anon, authenticated;
+grant execute on function public.admin_save_keg(text, text, numeric, boolean, text, bigint) to anon, authenticated;
 grant execute on function public.admin_reset_hall(text)                               to anon, authenticated;
 grant execute on function public.admin_delete_payment(text, text)                     to anon, authenticated;
 grant execute on function public.pay_tab(text, jsonb, int)                            to anon, authenticated;
