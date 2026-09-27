@@ -138,6 +138,7 @@
   .count .keg-line b{color:var(--amber);font-weight:700}
   .count .keg-line .keg-when{color:var(--txt);font-weight:600;white-space:nowrap}
   .count .keg-line .keg-empty{color:var(--red)}
+  .count .keg-line .nw{white-space:nowrap}   /* „zbývá ≈ 14 piv“ se nesmí rozdělit */
   .count .keg-bar{margin:9px auto 7px;max-width:420px;height:7px;border-radius:999px;
     background:rgba(255,255,255,.07);overflow:hidden}
   .count .keg-bar span{display:block;height:100%;border-radius:999px;background:var(--grad);transition:width .4s ease}
@@ -1496,7 +1497,7 @@ async function renderKeg(){
       head+= st.over ? ' · <b class="keg-empty">dopito, +'+fmtLiters(st.overL)+' l nad objem sudu</b>'
         : (st.pct>=100 ? ' · <b class="keg-empty">sud dopito</b>'
         : (st.pct>=80 ? ' · <b class="keg-empty">sud je téměř dopitý</b>'
-        : ' · zbývá <b>≈ '+st.leftBeers+' '+plBeer(st.leftBeers)+'</b> ('+fmtLiters(st.leftL)+' l)'));
+        : ' · <span class="nw">zbývá <b>≈ '+st.leftBeers+' '+plBeer(st.leftBeers)+'</b></span> <span class="nw">('+fmtLiters(st.leftL)+' l)</span>'));
       bar='<div class="keg-bar'+cls+'"><span style="width:'+st.pct.toFixed(1)+'%"></span></div>';
     }
     const foot='<div class="keg-foot">vytočeno <b>'+st.count+' '+plBeer(st.count)+'</b> ('
@@ -2067,7 +2068,7 @@ function makeQRInto(target,text,size){
 // Verze aplikace – JEDINÝ zdroj pravdy. Při vydání změny ji zvyš ručně;
 // deploy (.github/workflows/ftp-deploy.yml) si ji odsud přečte do changelog.json.
 // Dřív se verze počítala z počtu commitů, takže neodpovídala kódu (v1.33 vs. „v1.35“).
-const APP_VERSION_CODE = "v1.36";
+const APP_VERSION_CODE = "v1.37";
 const CHANGELOG_URL = "changelog.json";
 let CHANGELOG = [], APP_VERSION = APP_VERSION_CODE;
 async function loadChangelog(){
