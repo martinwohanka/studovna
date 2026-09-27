@@ -8,7 +8,7 @@ Jednostránková webová appka (rozpitá piva, síň slávy, sud, platby přes Q
 
 ## Databáze (Supabase)
 
-Schéma, funkce a oprávnění jsou v `migrace_v136.sql` – spouští se ručně v Supabase → SQL Editor. Heslo administrace je v databázi jen jako bcrypt hash; nastavení/změna hesla je popsaná na konci téhož souboru. Všechny admin operace jdou přes RPC funkce, které heslo ověřují; anon klíč smí jen číst a čárkovat.
+Schéma, funkce a oprávnění jsou v SQL migracích – spouští se ručně v Supabase → SQL Editor, **v tomto pořadí**: `migrace_v136.sql` (heslo, admin funkce, RLS), `migrace_v138.sql` (atomické čárkování). Když spouštíš znovu v136, pusť po ní i v138, jinak zůstane povolený přímý zápis do lístků. Na web se SQL soubory nenahrávají. Heslo administrace je v databázi jen jako bcrypt hash; nastavení/změna hesla je popsaná na konci téhož souboru. Všechny admin operace jdou přes RPC funkce, které heslo ověřují; anon klíč smí jen číst a čárkovat.
 
 ## Automatický deploy na FTP
 

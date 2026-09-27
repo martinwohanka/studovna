@@ -1094,6 +1094,16 @@ async function setTab(name,beers,marks){
   const plain={}; Object.keys(m).forEach(k=>{ plain[k]={beers:m[k].beers,marks:m[k].marks||[]}; });
   await sSet("tabs",JSON.stringify(plain),true); return true;
 }
+// Založení prázdného lístku. V DB prostý insert (lístky smí anon jen zakládat
+// a mazat prázdné – upsert by potřeboval právo na úpravu, které od v1.38 nemá).
+async function createTab(name){
+  if(sb){
+    const {error}=await sb.from("tabs").insert({name,beers:0,marks:[]});
+    if(error){ if(error.code==="23505") return "exists"; dbFail("založení lístku",error); return false; }
+    return true;
+  }
+  return setTab(name,0,[]);
+}
 async function deleteTab(name){
   if(sb){ const {error}=await sb.from("tabs").delete().eq("name",name); if(error){ dbFail("smazání lístku",error); return false; } return true; }
   const m=await loadTabs(); delete m[name];
@@ -1143,10 +1153,35 @@ async function renderTabs(){
   await renderKeg();
 }
 let tabBusy=false;
+// Atomické čárkování v databázi (migrace_v138.sql): každá čárka je jeden zápis,
+// takže se při souběžném čárkování nic neztratí; čas a cenu určuje server.
+// Bez těch funkcí v DB (nebo v lokálním režimu) vrací null → použije se starý
+// způsob „načti lístek, uprav, ulož celý“.
+let TAB_RPC=true;
+async function tabRpc(fn,params){
+  if(!sb || !TAB_RPC) return null;
+  let res; try{ res=await sb.rpc(fn,params); }catch(e){ res={error:e}; }
+  if(res.error){
+    if(missingFnErr(res.error)){ TAB_RPC=false; return null; }
+    dbFail("čárkování",res.error); return {error:res.error};
+  }
+  return {data:res.data||{}};
+}
 async function tabDelta(name,size,ev){
   // size: "large" | "small" | null (= remove last)
   if(tabBusy) return; tabBusy=true;
   try{
+    const r = size ? await tabRpc("tab_mark",{p_name:name,p_size:size}) : await tabRpc("tab_unmark",{p_name:name});
+    if(r){
+      if(r.error){ toast("Nepovedlo se uložit 😕"); return; }
+      const d=r.data;
+      if(!d.ok){ toast("Lístek už neexistuje 🤷"); await renderTabs(); return; }
+      if(!size && !d.removed){ toast("Lístek je prázdný"); return; }
+      await renderTabs();
+      await afterDelta(name,size,ev,d.count,d.removed,{undo:d.undo});
+      return;
+    }
+    // starý způsob (lokální režim / DB bez migrace v1.38)
     const tabs=await loadTabs();
     if(!(name in tabs)){ toast("Lístek už neexistuje 🤷"); await renderTabs(); return; }
     let marks=tabMarks(tabs[name]).slice(), removed=null;
@@ -1156,21 +1191,33 @@ async function tabDelta(name,size,ev){
     const ok=await setTab(name,marks.length,marks);
     if(!ok){ toast("Nepovedlo se uložit 😕"); return; }
     await renderTabs();
-    if(size==="large"){ pourEffect(ev); playPraise("large"); toast("Načárkováno pro "+name+" 🍺 ("+marks.length+". pivo)"); }
-    else if(size==="small"){ pourEffect(ev); playPraise("small"); toast("Malé načárkováno pro "+name+" × ("+marks.length+". pivo)"); }
-    else toastAction("Vráceno 1 "+(removed&&removed.s==="small"?"malé ":"")+"pivo ("+name+")","Zpět",()=>undoMinus(name,removed),5000);
-    if(size) await warnIfKegLow();
+    await afterDelta(name,size,ev,marks.length,removed,{mark:removed});
   } finally { tabBusy=false; }
 }
-// „Zpět“ po mínusu: vrátí odebranou čárku i s původním časem a cenou
-async function undoMinus(name,mark){
-  if(!mark) return;
-  if(tabBusy){ setTimeout(()=>undoMinus(name,mark),150); return; }
+async function afterDelta(name,size,ev,count,removed,undo){
+  if(size==="large"){ pourEffect(ev); playPraise("large"); toast("Načárkováno pro "+name+" 🍺 ("+count+". pivo)"); }
+  else if(size==="small"){ pourEffect(ev); playPraise("small"); toast("Malé načárkováno pro "+name+" × ("+count+". pivo)"); }
+  else toastAction("Vráceno 1 "+(removed&&removed.s==="small"?"malé ":"")+"pivo ("+name+")","Zpět",()=>undoMinus(name,undo),5000);
+  if(size) await warnIfKegLow();
+}
+// „Zpět“ po mínusu: vrátí odebranou čárku i s původním časem a cenou.
+// S DB to jde přes jednorázový kód z tab_unmark, jinak přímo vrácením čárky.
+async function undoMinus(name,u){
+  if(!u || !(u.undo||u.mark)) return;
+  if(tabBusy){ setTimeout(()=>undoMinus(name,u),150); return; }
   tabBusy=true;
   try{
+    if(u.undo){
+      const r=await tabRpc("tab_restore",{p_undo:u.undo});
+      if(!r || r.error){ toast("Nepovedlo se uložit 😕"); return; }
+      if(!r.data.ok){ toast(r.data.reason==="gone"?"Lístek už neexistuje – pivo nejde vrátit 🤷":"Na Zpět už je pozdě ⌛"); await renderTabs(); return; }
+      await renderTabs();
+      toast("Pivo je zpátky na lístku ↩️ ("+name+": "+r.data.count+")");
+      return;
+    }
     const tabs=await loadTabs();
     if(!(name in tabs)){ toast("Lístek už neexistuje – pivo nejde vrátit 🤷"); await renderTabs(); return; }
-    const marks=tabMarks(tabs[name]).slice(); marks.push(mark);
+    const marks=tabMarks(tabs[name]).slice(); marks.push(u.mark);
     if(!(await setTab(name,marks.length,marks))){ toast("Nepovedlo se uložit 😕"); return; }
     await renderTabs();
     toast("Pivo je zpátky na lístku ↩️ ("+name+": "+marks.length+")");
@@ -1193,7 +1240,8 @@ async function openTab(){
   if(!name){ name=await requestName(); if(!name){ toast("Bez jména lístek nezaložím 😉"); return; } }
   const tabs=await loadTabs();
   if(Object.keys(tabs).find(k=>normName(k)===normName(name))){ toast("Lístek už máš založený, čárkuj 🍺"); return; }
-  const ok=await setTab(name,0,[]);
+  const ok=await createTab(name);
+  if(ok==="exists"){ await renderTabs(); toast("Lístek už máš založený, čárkuj 🍺"); return; }
   if(!ok){ toast("Lístek se nepovedlo založit 😕"); return; }
   await renderTabs(); toast("Lístek založen — na zdraví, "+name+" 🍻");
 }
@@ -2068,7 +2116,7 @@ function makeQRInto(target,text,size){
 // Verze aplikace – JEDINÝ zdroj pravdy. Při vydání změny ji zvyš ručně;
 // deploy (.github/workflows/ftp-deploy.yml) si ji odsud přečte do changelog.json.
 // Dřív se verze počítala z počtu commitů, takže neodpovídala kódu (v1.33 vs. „v1.35“).
-const APP_VERSION_CODE = "v1.37";
+const APP_VERSION_CODE = "v1.38";
 const CHANGELOG_URL = "changelog.json";
 let CHANGELOG = [], APP_VERSION = APP_VERSION_CODE;
 async function loadChangelog(){
