@@ -1089,7 +1089,16 @@ async function loadTabs(){
 }
 async function setTab(name,beers,marks){
   if(sb){ const {error}=await sb.from("tabs").upsert({name,beers,marks:marks||[]},{onConflict:"name"});
-    if(error){ dbFail("uložení lístku",error); return false; } return true; }
+    if(error){
+      // Starý způsob po migraci v1.38 práva nemá – databáze už čárkuje funkcemi,
+      // stránka to jen ještě neví. Příště to rovnou zkusí přes ně.
+      if(error.code==="42501" || /permission denied/i.test(error.message||"")){
+        TAB_RPC_MISSING_AT=0;
+        dbStatus("⚠ Databáze se právě aktualizovala – zkus to prosím znovu. Když to nepomůže, obnov stránku.","warn");
+        DB_WARN_TRANSIENT=true;
+      } else dbFail("uložení lístku",error);
+      return false; }
+    return true; }
   const m=await loadTabs(); m[name]={beers,marks:marks||[]};
   const plain={}; Object.keys(m).forEach(k=>{ plain[k]={beers:m[k].beers,marks:m[k].marks||[]}; });
   await sSet("tabs",JSON.stringify(plain),true); return true;
@@ -1157,30 +1166,38 @@ let tabBusy=false;
 // takže se při souběžném čárkování nic neztratí; čas a cenu určuje server.
 // Bez těch funkcí v DB (nebo v lokálním režimu) vrací null → použije se starý
 // způsob „načti lístek, uprav, ulož celý“.
-let TAB_RPC=true;
+// Chybějící funkci si NEpamatujeme natrvalo – migraci může někdo spustit, zatímco
+// je stránka otevřená, a pak by stránka zůstala u starého způsobu, na který už
+// po migraci nemá práva („permission denied for table tabs“). Zkusíme to znovu
+// nejpozději po 20 s.
+let TAB_RPC_MISSING_AT=0;
 async function tabRpc(fn,params){
-  if(!sb || !TAB_RPC) return null;
+  if(!sb || (TAB_RPC_MISSING_AT && Date.now()-TAB_RPC_MISSING_AT<20000)) return null;
   let res; try{ res=await sb.rpc(fn,params); }catch(e){ res={error:e}; }
   if(res.error){
-    if(missingFnErr(res.error)){ TAB_RPC=false; return null; }
+    if(missingFnErr(res.error)){ TAB_RPC_MISSING_AT=Date.now(); return null; }
     dbFail("čárkování",res.error); return {error:res.error};
   }
+  TAB_RPC_MISSING_AT=0;
   return {data:res.data||{}};
 }
 async function tabDelta(name,size,ev){
   // size: "large" | "small" | null (= remove last)
   if(tabBusy) return; tabBusy=true;
   try{
-    const r = size ? await tabRpc("tab_mark",{p_name:name,p_size:size}) : await tabRpc("tab_unmark",{p_name:name});
-    if(r){
-      if(r.error){ toast("Nepovedlo se uložit 😕"); return; }
+    // true = vyřízeno funkcí v DB, false = funkce v DB není → starý způsob
+    const viaRpc=async()=>{
+      const r = size ? await tabRpc("tab_mark",{p_name:name,p_size:size}) : await tabRpc("tab_unmark",{p_name:name});
+      if(!r) return false;
+      if(r.error){ toast("Nepovedlo se uložit 😕"); return true; }
       const d=r.data;
-      if(!d.ok){ toast("Lístek už neexistuje 🤷"); await renderTabs(); return; }
-      if(!size && !d.removed){ toast("Lístek je prázdný"); return; }
+      if(!d.ok){ toast("Lístek už neexistuje 🤷"); await renderTabs(); return true; }
+      if(!size && !d.removed){ toast("Lístek je prázdný"); return true; }
       await renderTabs();
       await afterDelta(name,size,ev,d.count,d.removed,{undo:d.undo});
-      return;
-    }
+      return true;
+    };
+    if(await viaRpc()) return;
     // starý způsob (lokální režim / DB bez migrace v1.38)
     const tabs=await loadTabs();
     if(!(name in tabs)){ toast("Lístek už neexistuje 🤷"); await renderTabs(); return; }
@@ -1189,7 +1206,11 @@ async function tabDelta(name,size,ev){
     else if(size==="small"){ marks.push({t:Date.now(),p:smallPrice(),s:"small"}); }
     else { if(!marks.length){ toast("Lístek je prázdný"); return; } removed=marks.pop(); }
     const ok=await setTab(name,marks.length,marks);
-    if(!ok){ toast("Nepovedlo se uložit 😕"); return; }
+    if(!ok){
+      // Migrace v1.38 mezitím proběhla (setTab narazil na práva) → stejné ťuknutí hned znovu přes DB
+      if(!TAB_RPC_MISSING_AT && await viaRpc()){ dbStatus(null,"ok"); return; }
+      toast("Nepovedlo se uložit 😕"); return;
+    }
     await renderTabs();
     await afterDelta(name,size,ev,marks.length,removed,{mark:removed});
   } finally { tabBusy=false; }
@@ -2116,7 +2137,7 @@ function makeQRInto(target,text,size){
 // Verze aplikace – JEDINÝ zdroj pravdy. Při vydání změny ji zvyš ručně;
 // deploy (.github/workflows/ftp-deploy.yml) si ji odsud přečte do changelog.json.
 // Dřív se verze počítala z počtu commitů, takže neodpovídala kódu (v1.33 vs. „v1.35“).
-const APP_VERSION_CODE = "v1.38";
+const APP_VERSION_CODE = "v1.39";
 const CHANGELOG_URL = "changelog.json";
 let CHANGELOG = [], APP_VERSION = APP_VERSION_CODE;
 async function loadChangelog(){

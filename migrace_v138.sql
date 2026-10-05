@@ -165,3 +165,6 @@ revoke update on public.tabs from anon, authenticated;
 grant  select, insert, delete on public.tabs to anon, authenticated;
 
 commit;
+
+-- Ať API (PostgREST) nové funkce zná hned, ne až po obnovení své mezipaměti
+notify pgrst, 'reload schema';
