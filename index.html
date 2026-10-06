@@ -889,7 +889,7 @@ function playCheer(){
 }
 
 // ====== HLASOVÉ HLÁŠKY ======
-// Velké pivo má vlastní nahrávku, malé svoji.
+// Velké pivo má vlastní nahrávku, malé svoji, mínus (vrácení piva) taky.
 // Pořadí: nahrávka → hlas prohlížeče → písknutí. Smazáním nahrávky se
 // appka vrátí k hlasu prohlížeče, nahrazením souboru se přehraje nová.
 const PRAISE_TEXT = "Čauviny!";     // záloha pro hlas prohlížeče
@@ -906,7 +906,8 @@ function makeClip(url){
 }
 const CLIP_LARGE = makeClip("hlaska.mp3");
 const CLIP_SMALL = makeClip("hlaska-male.mp3");
-const ALL_CLIPS = [CLIP_LARGE, CLIP_SMALL];
+const CLIP_MINUS = makeClip("hlaska-minus.mp3");
+const ALL_CLIPS = [CLIP_LARGE, CLIP_SMALL, CLIP_MINUS];
 function playClip(c){
   if(!c || !c.ok || !c.el) return false;
   try{
@@ -961,6 +962,8 @@ function speakPraise(){
     return true;
   }catch(e){ return false; }
 }
+// Mínus má jen nahrávku – bez ní (nenačtená, chybí) je potichu
+function playMinus(){ if(SOUND_ON) playClip(CLIP_MINUS); }
 function playPraise(size){
   if(!SOUND_ON) return;
   if(playClip(size==="small" ? CLIP_SMALL : CLIP_LARGE)) return;
@@ -1218,7 +1221,7 @@ async function tabDelta(name,size,ev){
 async function afterDelta(name,size,ev,count,removed,undo){
   if(size==="large"){ pourEffect(ev); playPraise("large"); toast("Načárkováno pro "+name+" 🍺 ("+count+". pivo)"); }
   else if(size==="small"){ pourEffect(ev); playPraise("small"); toast("Malé načárkováno pro "+name+" × ("+count+". pivo)"); }
-  else toastAction("Vráceno 1 "+(removed&&removed.s==="small"?"malé ":"")+"pivo ("+name+")","Zpět",()=>undoMinus(name,undo),5000);
+  else { playMinus(); toastAction("Vráceno 1 "+(removed&&removed.s==="small"?"malé ":"")+"pivo ("+name+")","Zpět",()=>undoMinus(name,undo),5000); }
   if(size) await warnIfKegLow();
 }
 // „Zpět“ po mínusu: vrátí odebranou čárku i s původním časem a cenou.
@@ -2137,7 +2140,7 @@ function makeQRInto(target,text,size){
 // Verze aplikace – JEDINÝ zdroj pravdy. Při vydání změny ji zvyš ručně;
 // deploy (.github/workflows/ftp-deploy.yml) si ji odsud přečte do changelog.json.
 // Dřív se verze počítala z počtu commitů, takže neodpovídala kódu (v1.33 vs. „v1.35“).
-const APP_VERSION_CODE = "v1.39";
+const APP_VERSION_CODE = "v1.40";
 const CHANGELOG_URL = "changelog.json";
 let CHANGELOG = [], APP_VERSION = APP_VERSION_CODE;
 async function loadChangelog(){
