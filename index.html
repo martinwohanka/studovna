@@ -484,6 +484,28 @@
   .news-msg{margin-top:5px;color:var(--txt);font-size:14px;line-height:1.5}
 
   ::selection{background:rgba(245,185,66,.3)}
+
+  /* ===== výkon a odezva na dotykových zařízeních (iPhone) ===== */
+  /* bez čekání na dvojklik-zoom; tlačítka se při podržení neoznačují jako text */
+  button,summary,.ver{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  /* okamžitá vizuální odezva na dotyk */
+  .mini:active,.btn:active,.btn-gold:active,.btn-green:active,.btn-danger:active,.btn-ghost:active,.toast-act:active{
+    transform:scale(.96);filter:brightness(.9);transition-duration:.05s}
+  /* čárky čekající na zápis do DB jsou na chvilku průhlednější */
+  .tab-marks.pend .mk:last-child{opacity:.55}
+  @media (hover:none){
+    /* iOS drží :hover i po dotyku → tlačítko by zůstalo „zvednuté“ */
+    .mini:hover,.btn:hover,.btn-gold:hover,.btn-green:hover,.btn-danger:hover,.sess-save:hover,.keg-new:hover,
+    .ledger-open:hover,.wa-share:hover,.pay-csv:hover,.admin-btn:hover,.tab:hover{transform:none;box-shadow:none}
+    .tab:hover{background:var(--card);border-color:var(--line)}
+    .tab.mine:hover{border-color:rgba(245,185,66,.55);box-shadow:0 0 0 3px rgba(245,185,66,.12)}
+    /* Rozmazané pozadí (backdrop-filter) nad pohyblivými bublinkami musí Safari
+       přepočítávat každý snímek – na telefonu ho nahradíme plnou tmavou barvou. */
+    .hero,.count,.panel{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(19,21,26,.94)}
+    .toast{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(20,23,29,.97)}
+    .modal{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(5,6,9,.86)}
+    .bub i{animation:none}
+  }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -1123,14 +1145,25 @@ async function deleteTab(name){
   await sSet("tabs",JSON.stringify(plain),true); return true;
 }
 let EMPTY_OPEN=false;
+// Poslední známý stav lístků. Ťuknutí ho mění hned (bez čekání na síť),
+// databáze se dopisuje na pozadí přes frontu TAB_Q.
+let TABS={};
 async function renderTabs(){
   await loadPrice();
-  const tabs=await loadTabs(); const me=rememberedName().toLowerCase();
+  const tabs=await loadTabs();
+  // Dokud fronta zapisuje, necháme lokální stav – jinak by čerstvé čárky na chvíli zmizely
+  if(!TAB_Q.length && !TAB_Q_RUN) TABS=tabs;
+  drawTabs();
+  await renderKeg();
+}
+// Vykreslení lístků jen z TABS – žádná síť, volá se po každém ťuknutí
+function drawTabs(){
+  const tabs=TABS; const me=rememberedName().toLowerCase();
   const list=$("#tabsList"); list.innerHTML="";
   const names=Object.keys(tabs).sort((a,b)=>a.localeCompare(b,"cs"));
   // Sud se vykresluje i bez otevřených lístků — jinak by po zaplacení všech
   // zmizel z hlavní obrazovky včetně upozornění, že dochází
-  if(!names.length){ list.innerHTML='<div class="tabs-empty">Zatím nikdo nepije 🥲 Založ si lístek a buď první.</div>'; $("#tabsTotal").textContent=""; await renderKeg(); return; }
+  if(!names.length){ list.innerHTML='<div class="tabs-empty">Zatím nikdo nepije 🥲 Založ si lístek a buď první.</div>'; $("#tabsTotal").textContent=""; return; }
   let totalBeers=0,totalKc=0,leaderName=null,leaderC=0;
   // Cizí lístky bez piv jen překáží – sbalíme je do jednoho řádku dole.
   // Vlastní lístek (i prázdný) zůstává vidět, ať se dá hned čárkovat.
@@ -1144,7 +1177,7 @@ async function renderTabs(){
     const isMe=isMine(n);
     let lastTxt=""; const ts=marks.map(m=>m&&m.t).filter(Boolean); if(ts.length){ lastTxt="poslední "+fmtLastSeen(Math.max(...ts)); }
     const el=document.createElement("div"); el.className="tab"+(isMe?" mine":"");
-    el.innerHTML=`<div class="tab-row"><div class="tab-name"><span>🍻</span><span>${esc(n)}</span>${isMe?'<span class="star">ty</span>':''}</div><div class="tab-price">${c} ${plBeer(c)} · <b>${tot} Kč</b></div></div><div class="tab-marks">${tallyMarks(marks)||"&nbsp;"}</div>${lastTxt?'<div class="tab-last">'+lastTxt+'</div>':''}<div class="tab-actions"><button class="mini" data-act="minus" title="Vrátit poslední pivo" aria-label="Vrátit poslední pivo">−</button><button class="mini plus" data-act="plus">+ 🍺 velké</button><button class="mini plus-small" data-act="plus-small">+ 🍺 malé</button><button class="mini pay" data-act="pay">Platím 💸</button></div>`;
+    el.innerHTML=`<div class="tab-row"><div class="tab-name"><span>🍻</span><span>${esc(n)}</span>${isMe?'<span class="star">ty</span>':''}</div><div class="tab-price">${c} ${plBeer(c)} · <b>${tot} Kč</b></div></div><div class="tab-marks${marks.some(m=>m&&m.pend)?" pend":""}">${tallyMarks(marks)||"&nbsp;"}</div>${lastTxt?'<div class="tab-last">'+lastTxt+'</div>':''}<div class="tab-actions"><button class="mini" data-act="minus" title="Vrátit poslední pivo" aria-label="Vrátit poslední pivo">−</button><button class="mini plus" data-act="plus">+ 🍺 velké</button><button class="mini plus-small" data-act="plus-small">+ 🍺 malé</button><button class="mini pay" data-act="pay">Platím 💸</button></div>`;
     el.querySelector('[data-act="plus"]').onclick=(ev)=>tabDelta(n,"large",ev);
     el.querySelector('[data-act="plus-small"]').onclick=(ev)=>tabDelta(n,"small",ev);
     el.querySelector('[data-act="minus"]').onclick=(ev)=>tabDelta(n,null,ev);
@@ -1162,7 +1195,6 @@ async function renderTabs(){
     list.appendChild(d);
   }
   $("#tabsTotal").textContent=!totalBeers?"":"rozpito "+totalBeers+" "+plBeer(totalBeers)+" · "+totalKc+" Kč"+(leaderName&&leaderC>0?" · 👑 "+leaderName:"");
-  await renderKeg();
 }
 let tabBusy=false;
 // Atomické čárkování v databázi (migrace_v138.sql): každá čárka je jeden zápis,
@@ -1184,73 +1216,98 @@ async function tabRpc(fn,params){
   TAB_RPC_MISSING_AT=0;
   return {data:res.data||{}};
 }
-async function tabDelta(name,size,ev){
-  // size: "large" | "small" | null (= remove last)
-  if(tabBusy) return; tabBusy=true;
-  try{
-    // true = vyřízeno funkcí v DB, false = funkce v DB není → starý způsob
-    const viaRpc=async()=>{
-      const r = size ? await tabRpc("tab_mark",{p_name:name,p_size:size}) : await tabRpc("tab_unmark",{p_name:name});
-      if(!r) return false;
-      if(r.error){ toast("Nepovedlo se uložit 😕"); return true; }
-      const d=r.data;
-      if(!d.ok){ toast("Lístek už neexistuje 🤷"); await renderTabs(); return true; }
-      if(!size && !d.removed){ toast("Lístek je prázdný"); return true; }
-      await renderTabs();
-      await afterDelta(name,size,ev,d.count,d.removed,{undo:d.undo});
-      return true;
-    };
-    if(await viaRpc()) return;
-    // starý způsob (lokální režim / DB bez migrace v1.38)
-    const tabs=await loadTabs();
-    if(!(name in tabs)){ toast("Lístek už neexistuje 🤷"); await renderTabs(); return; }
-    let marks=tabMarks(tabs[name]).slice(), removed=null;
-    if(size==="large"){ marks.push({t:Date.now(),p:PRICE,s:"large"}); }
-    else if(size==="small"){ marks.push({t:Date.now(),p:smallPrice(),s:"small"}); }
-    else { if(!marks.length){ toast("Lístek je prázdný"); return; } removed=marks.pop(); }
-    const ok=await setTab(name,marks.length,marks);
-    if(!ok){
-      // Migrace v1.38 mezitím proběhla (setTab narazil na práva) → stejné ťuknutí hned znovu přes DB
-      if(!TAB_RPC_MISSING_AT && await viaRpc()){ dbStatus(null,"ok"); return; }
-      toast("Nepovedlo se uložit 😕"); return;
-    }
-    await renderTabs();
-    await afterDelta(name,size,ev,marks.length,removed,{mark:removed});
-  } finally { tabBusy=false; }
+// ====== ČÁRKOVÁNÍ: okamžitá odezva + fronta zápisů ======
+// Ťuknutí hned upraví TABS, překreslí lístek, zahraje hlášku a ukáže toast.
+// Zápis do databáze jde do fronty a provádí se postupně na pozadí, takže se
+// ani rychlé ťuknutí za ťuknutím neztratí (dřív se během čekání zahazovalo).
+// Když zápis selže, stav se znovu načte z databáze a ukáže se hláška.
+const TAB_Q=[]; let TAB_Q_RUN=false, TAB_Q_FAILED=false;
+function tabEnqueue(op){
+  op.done=new Promise(r=>{ op.resolve=r; });
+  TAB_Q.push(op); runTabQueue(); return op;
 }
-async function afterDelta(name,size,ev,count,removed,undo){
-  if(size==="large"){ pourEffect(ev); playPraise("large"); toast("Načárkováno pro "+name+" 🍺 ("+count+". pivo)"); }
-  else if(size==="small"){ pourEffect(ev); playPraise("small"); toast("Malé načárkováno pro "+name+" × ("+count+". pivo)"); }
-  else { playMinus(); toastAction("Vráceno 1 "+(removed&&removed.s==="small"?"malé ":"")+"pivo ("+name+")","Zpět",()=>undoMinus(name,undo),5000); }
-  if(size) await warnIfKegLow();
+function tabQueueIdle(){ return TAB_Q.length||TAB_Q_RUN ? Promise.all(TAB_Q.map(o=>o.done)).then(()=>tabQueueIdle()) : Promise.resolve(); }
+async function runTabQueue(){
+  if(TAB_Q_RUN) return;
+  TAB_Q_RUN=true; tabBusy=true;
+  try{
+    while(TAB_Q.length){
+      const op=TAB_Q[0]; let res;
+      try{ res=await execTabOp(op); }catch(e){ res={ok:false}; }
+      TAB_Q.shift();
+      if(!res.ok){ TAB_Q_FAILED=true; toast(res.msg||"Nepovedlo se uložit 😕"); }
+      op.resolve(res);
+    }
+  } finally { TAB_Q_RUN=false; tabBusy=false; }
+  if(TAB_Q_FAILED){ TAB_Q_FAILED=false; await renderTabs(); }   // vrátit skutečný stav z DB
+  else { drawTabs(); scheduleRefresh(1500); }                 // jen sladit s ostatními zařízeními
+}
+// Jeden zápis do DB. Vrací {ok, msg?, undo?, mark?}
+async function execTabOp(op){
+  const name=op.name;
+  const viaRpc=async()=>{
+    const r = op.kind==="mark" ? await tabRpc("tab_mark",{p_name:name,p_size:op.size})
+            : op.kind==="unmark" ? await tabRpc("tab_unmark",{p_name:name})
+            : (op.undo ? await tabRpc("tab_restore",{p_undo:op.undo}) : null);
+    if(!r) return null;
+    if(r.error) return {ok:false};
+    const d=r.data;
+    if(!d.ok) return {ok:false, msg: d.reason==="expired" ? "Na Zpět už je pozdě ⌛" : "Lístek už neexistuje 🤷"};
+    if(op.kind==="unmark" && !d.removed) return {ok:false, msg:"Lístek je prázdný"};
+    if(op.kind==="mark" && op.mark && d.mark){ Object.assign(op.mark,d.mark); delete op.mark.pend; }
+    return {ok:true, undo:d.undo, mark:d.removed};
+  };
+  let r=await viaRpc(); if(r) return r;
+  // starý způsob (lokální režim / DB bez migrace v1.38)
+  const tabs=await loadTabs();
+  if(!(name in tabs)) return {ok:false, msg:"Lístek už neexistuje 🤷"};
+  const marks=tabMarks(tabs[name]).slice(); let removed=null;
+  if(op.kind==="mark"){ const m=Object.assign({},op.mark); delete m.pend; marks.push(m); }
+  else if(op.kind==="unmark"){ if(!marks.length) return {ok:false, msg:"Lístek je prázdný"}; removed=marks.pop(); }
+  else marks.push(op.mark);
+  if(!(await setTab(name,marks.length,marks))){
+    // Migrace v1.38 mezitím proběhla (setTab narazil na práva) → hned znovu přes DB
+    if(!TAB_RPC_MISSING_AT && (r=await viaRpc())){ dbStatus(null,"ok"); return r; }
+    return {ok:false};
+  }
+  if(op.kind==="mark" && op.mark) delete op.mark.pend;
+  return {ok:true, mark:removed};
+}
+function setLocalMarks(name,marks){ TABS[name]=Object.assign({},TABS[name],{beers:marks.length,marks}); drawTabs(); renderKeg(false); }
+function tabDelta(name,size,ev){
+  // size: "large" | "small" | null (= remove last)
+  if(!(name in TABS)){ toast("Lístek už neexistuje 🤷"); scheduleRefresh(0); return; }
+  const marks=tabMarks(TABS[name]).slice();
+  if(size){
+    const mark={t:Date.now(), p:size==="small"?smallPrice():PRICE, s:size, pend:true};
+    marks.push(mark); setLocalMarks(name,marks);
+    pourEffect(ev); playPraise(size);
+    toast(size==="small" ? "Malé načárkováno pro "+name+" × ("+marks.length+". pivo)" : "Načárkováno pro "+name+" 🍺 ("+marks.length+". pivo)");
+    warnIfKegLow();
+    tabEnqueue({kind:"mark", name, size, mark});
+    return;
+  }
+  if(!marks.length){ toast("Lístek je prázdný"); return; }
+  const removed=marks.pop(); setLocalMarks(name,marks);
+  playMinus();
+  const op=tabEnqueue({kind:"unmark", name, removed});
+  toastAction("Vráceno 1 "+(removed&&removed.s==="small"?"malé ":"")+"pivo ("+name+")","Zpět",()=>undoMinus(name,op),5000);
 }
 // „Zpět“ po mínusu: vrátí odebranou čárku i s původním časem a cenou.
-// S DB to jde přes jednorázový kód z tab_unmark, jinak přímo vrácením čárky.
-async function undoMinus(name,u){
-  if(!u || !(u.undo||u.mark)) return;
-  if(tabBusy){ setTimeout(()=>undoMinus(name,u),150); return; }
-  tabBusy=true;
-  try{
-    if(u.undo){
-      const r=await tabRpc("tab_restore",{p_undo:u.undo});
-      if(!r || r.error){ toast("Nepovedlo se uložit 😕"); return; }
-      if(!r.data.ok){ toast(r.data.reason==="gone"?"Lístek už neexistuje – pivo nejde vrátit 🤷":"Na Zpět už je pozdě ⌛"); await renderTabs(); return; }
-      await renderTabs();
-      toast("Pivo je zpátky na lístku ↩️ ("+name+": "+r.data.count+")");
-      return;
-    }
-    const tabs=await loadTabs();
-    if(!(name in tabs)){ toast("Lístek už neexistuje – pivo nejde vrátit 🤷"); await renderTabs(); return; }
-    const marks=tabMarks(tabs[name]).slice(); marks.push(u.mark);
-    if(!(await setTab(name,marks.length,marks))){ toast("Nepovedlo se uložit 😕"); return; }
-    await renderTabs();
-    toast("Pivo je zpátky na lístku ↩️ ("+name+": "+marks.length+")");
-  } finally { tabBusy=false; }
+// S DB přes jednorázový kód z tab_unmark, jinak přímo vrácením čárky.
+async function undoMinus(name,op){
+  const res=await op.done;                  // mínus se mohl ještě zapisovat
+  if(!res || !res.ok) return;               // nepovedl se → není co vracet (hláška už byla)
+  if(!(name in TABS)){ toast("Lístek už neexistuje – pivo nejde vrátit 🤷"); return; }
+  const mark=Object.assign({}, res.mark||op.removed);
+  setLocalMarks(name, tabMarks(TABS[name]).concat([mark]));
+  toast("Pivo je zpátky na lístku ↩️ ("+name+": "+tabMarks(TABS[name]).length+")");
+  tabEnqueue({kind:"restore", name, undo:res.undo, mark});
 }
 // Upozornění při načárkování, když v sudu zbývá méně než 10 %
 async function warnIfKegLow(){
   try{
-    const st=await kegStats();
+    const st=await kegStats(undefined,false);      // z mezipaměti, bez sítě
     if(!st.size) return; // sud bez zadaného objemu neumíme hlídat
     if(st.pct>=90){
       toastWarn('🛑 <b>DROBEK asi zapomněl narazit nový sud !!!</b> 😡',5200);
@@ -1276,6 +1333,7 @@ $("#openTabBtn").onclick=openTab;
 // načárkuje další pivo, zůstane nezaplacené na lístku.
 let PAY_TAB=null, PAY_MARKS=[], PAY_AMOUNT=0;
 async function payTab(name){
+  await tabQueueIdle();                     // QR musí zahrnout i právě načárkovaná piva
   await loadPrice();
   const tabs=await loadTabs(); const marks=tabMarks(tabs[name]); const c=marks.length;
   if(c===0){ if(await askConfirm("👋 Zavřít lístek?","Lístek „"+name+"“ je prázdný — zavřít bez placení?","Zavřít lístek",false)){ await deleteTab(name); await renderTabs(); toast("Lístek zavřen 👋"); } return; }
@@ -1317,6 +1375,7 @@ $("#tabPaidBtn").onclick=async()=>{
     if(zbytek.length) await setTab(name,zbytek.length,zbytek); else await deleteTab(name);
   }
   $("#tabPayModal").style.display="none";
+  PAY_DIRTY=true;                           // zaplacené čárky se přesunuly do evidence plateb
   await renderTabs(); await renderHall();
   toast("Zaplaceno ✓ "+c+" "+plBeer(c)+" do síně slávy"
     +(zbytek.length?" · "+zbytek.length+" "+plBeer(zbytek.length)+" zůstalo na lístku":""));
@@ -1336,8 +1395,8 @@ async function loadPayments(){
   let blobs=[];
   if(sb){
     try{ const {data,error}=await sb.from("suggestions").select("beer").eq("period",PAYMENT_KEY).range(0,99999);
-      if(error){ dbFail("načtení plateb",error); return []; }
-      blobs=(data||[]).map(r=>r.beer); }catch(e){ dbFail("načtení plateb",e); return []; }
+      if(error){ dbFail("načtení plateb",error); return PAY_CACHE||[]; }
+      blobs=(data||[]).map(r=>r.beer); }catch(e){ dbFail("načtení plateb",e); return PAY_CACHE||[]; }
   } else {
     const raw=await sGet("payments",true); try{ blobs=raw?JSON.parse(raw):[]; }catch(e){ blobs=[]; }
   }
@@ -1345,7 +1404,16 @@ async function loadPayments(){
   // _raw si neseme kvůli mazání konkrétní platby v administraci
   blobs.forEach(b=>{ try{ const o=JSON.parse(b); if(o&&o.ts){ o._raw=b; out.push(o); } }catch(e){} });
   out.sort((a,b)=>b.ts-a.ts); // nejnovější nahoře
+  PAY_CACHE=out; PAY_AT=Date.now(); PAY_DIRTY=false;
   return out;
+}
+// Evidence plateb pro počítadlo sudu. Je to největší dotaz (celá historie),
+// tak ji znovu stahujeme jen po změně (Realtime / vlastní platba) nebo po minutě.
+let PAY_CACHE=null, PAY_AT=0, PAY_DIRTY=true;
+async function paymentsCached(allowNet){
+  if(PAY_CACHE && (!allowNet || (!PAY_DIRTY && Date.now()-PAY_AT<60000))) return PAY_CACHE;
+  if(!allowNet) return PAY_CACHE||[];
+  return loadPayments();
 }
 // Mazání jednotlivé platby — dostupné jen z administrace.
 // Shodné záznamy prakticky nevzniknou (čas v ms + časy jednotlivých čárek).
@@ -1353,6 +1421,7 @@ async function loadPayments(){
 // novější než obnova síně slávy) odečte piva i útratu ze síně slávy.
 async function deletePaymentRecord(rec){
   if(!rec || !rec._raw) return false;
+  PAY_DIRTY=true;
   if(sb){
     const {error}=await adminRpc("admin_delete_payment",{p_raw:rec._raw},"smazání platby");
     return !error;
@@ -1520,18 +1589,19 @@ function kegMarksOf(r,since){
 // ne to, jestli je pivo zaplacené – zaplacením se přesune do síně slávy,
 // ze sudu ale vypité zůstává. Čárky sbíráme z otevřených lístků i ze zaplacených.
 // until (volitelně): počítat jen čárky před tímto časem – souhrn končícího sudu.
-async function kegStats(until){
-  await loadKegStart(); // vždy znovu – jinak se výměna sudu neprojeví na ostatních zařízeních
+// fresh=false: jen z mezipaměti (po ťuknutí), bez jediného dotazu na síť.
+async function kegStats(until,fresh){
+  if(fresh!==false) await loadKegStart(); // znovu – jinak se výměna sudu neprojeví na ostatních zařízeních
   const since=KEG_START||0, end=until||Infinity;
   let large=0,small=0;
-  const pays=await loadPayments();
+  const pays=await paymentsCached(fresh!==false);
   pays.forEach(r=>{
     // Jen záznamy s rozpisem čárek: každá má vlastní čas, takže se platba
     // správně rozdělí mezi dva sudy. Starší platby bez časů čárek se do sudu
     // nepočítají – nejde u nich určit, ke kterému sudu piva patřila.
     kegMarksOf(r,since).forEach(m=>{ if((m.t||0)>=end) return; if(m.s==="small") small++; else large++; });
   });
-  const tabs=await loadTabs();
+  const tabs=TABS;                       // aktuální stav lístků (renderTabs ho právě načetl)
   Object.keys(tabs).forEach(n=>{ tabMarks(tabs[n]).forEach(m=>{
     if(m&&(m.t||0)>=since&&(m.t||0)<end){ if(m.s==="small") small++; else large++; } }); });
   const count=large+small;
@@ -1545,8 +1615,8 @@ async function kegStats(until){
   const over=size?(liters-size)>0.05:false;
   return {large,small,count,liters,since,name:KEG_NAME,size,leftL,leftBeers,pct,over,overL};
 }
-async function renderKeg(){
-  const st=await kegStats();
+async function renderKeg(fresh){
+  const st=await kegStats(undefined,fresh);
   const big=$("#kegBig"), sub=$("#kegSub"), since=$("#kegSince");
   if(big){
     big.textContent=st.count+" "+plBeer(st.count)+" · "+fmtLiters(st.liters)+" l";
@@ -1756,13 +1826,15 @@ const DAY_CADENCE=[
   {pre:"Každý",day:"pátek"},
   {pre:"Každou",day:"sobotu"},
 ];
+// Zápis jen při změně – tick běží každou sekundu a zbytečné přepisy stojí výkon
+function setHTML(el,html){ if(el.__h!==html){ el.__h=html; el.innerHTML=html; } }
 function tick(){
   const target=nextSession(); const whenEl=document.getElementById("sessionWhen");
   if(whenEl){ const rest=target.getDate()+". "+(target.getMonth()+1)+". "+target.getFullYear()+" · "+p2(target.getHours())+":"+p2(target.getMinutes());
-    whenEl.innerHTML='📅 <span class="sess-day">'+DAY_NAMES[target.getDay()]+'</span> '+rest; }
+    setHTML(whenEl,'📅 <span class="sess-day">'+DAY_NAMES[target.getDay()]+'</span> '+rest); }
   const chip=document.getElementById("sessChip");
   if(chip){ const c=DAY_CADENCE[target.getDay()]; const t=target.getHours()+":"+p2(target.getMinutes());
-    chip.innerHTML='🍺 '+c.pre+' <b>'+c.day+'</b> od '+t; }
+    setHTML(chip,'🍺 '+c.pre+' <b>'+c.day+'</b> od '+t); }
   const diff=target-new Date();
   if(diff<=0){ $("#clock").textContent="Je čas! 🍺"; return; }
   const dd=Math.floor(diff/86400000),hh=Math.floor(diff%86400000/3600000),mm=Math.floor(diff%3600000/60000),ss=Math.floor(diff%60000/1000);
@@ -1985,6 +2057,7 @@ $("#hallResetBtn").onclick=async()=>{ if(!(await askConfirm("🏆 Vynulovat sí�
 $("#adminCancel").onclick=()=>{ $("#adminModal").style.display="none"; };
 // Sloučení jmen: platby, síň slávy i otevřený lístek zdroje přejdou na cíl
 async function mergeNames(from,to){
+  PAY_DIRTY=true;
   if(sb){ const {data,error}=await adminRpc("admin_merge_names",{p_from:from,p_to:to},"sloučení jmen"); return error?null:data; }
   const out={payments:0,hall:false,tab:"none"};
   const raw=await sGet("payments",true); let arr=[]; try{ arr=raw?JSON.parse(raw):[]; }catch(e){ arr=[]; }
@@ -2065,7 +2138,9 @@ function makeQRInto(target,text,size){
 (function beerBubbles(){
   const wrap=document.getElementById("beerBg"); if(!wrap) return;
   try{ if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return; }catch(e){}
-  const n = window.innerWidth < 520 ? 34 : 52;
+  // na dotykových zařízeních méně bublinek (každá je vlastní animovaná vrstva)
+  let touch=false; try{ touch=window.matchMedia("(hover: none)").matches; }catch(e){}
+  const n = touch ? 14 : (window.innerWidth < 520 ? 34 : 52);
   const frag=document.createDocumentFragment();
   for(let i=0;i<n;i++){
     const size = 5 + Math.random()*11;                // 5–16 px
@@ -2140,7 +2215,7 @@ function makeQRInto(target,text,size){
 // Verze aplikace – JEDINÝ zdroj pravdy. Při vydání změny ji zvyš ručně;
 // deploy (.github/workflows/ftp-deploy.yml) si ji odsud přečte do changelog.json.
 // Dřív se verze počítala z počtu commitů, takže neodpovídala kódu (v1.33 vs. „v1.35“).
-const APP_VERSION_CODE = "v1.40";
+const APP_VERSION_CODE = "v1.41";
 const CHANGELOG_URL = "changelog.json";
 let CHANGELOG = [], APP_VERSION = APP_VERSION_CODE;
 async function loadChangelog(){
@@ -2249,7 +2324,10 @@ function startRealtime(){
   if(!sb || !sb.channel) return;
   try{
     const ch=sb.channel("studovna-zmeny");
-    ["tabs","hall","suggestions"].forEach(t=>ch.on("postgres_changes",{event:"*",schema:"public",table:t},()=>scheduleRefresh(250)));
+    ["tabs","hall","suggestions"].forEach(t=>ch.on("postgres_changes",{event:"*",schema:"public",table:t},()=>{
+      if(t==="suggestions") PAY_DIRTY=true;          // mohla přibýt/zmizet platba
+      scheduleRefresh(250);
+    }));
     ch.subscribe(status=>{
       const was=RT_OK; RT_OK=(status==="SUBSCRIBED");
       if(RT_OK && !was) scheduleRefresh(0);            // po (znovu)připojení doženeme, co jsme propásli
