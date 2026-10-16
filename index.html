@@ -914,33 +914,54 @@ function playCheer(){
 // Velké pivo má vlastní nahrávku, malé svoji, mínus (vrácení piva) taky.
 // Pořadí: nahrávka → hlas prohlížeče → písknutí. Smazáním nahrávky se
 // appka vrátí k hlasu prohlížeče, nahrazením souboru se přehraje nová.
+//
+// Nahrávky hrajeme přes Web Audio (předem dekódované do paměti), ne přes <audio>:
+//  - hraje okamžitě a od začátku (<audio> na iPhonu startuje pozdě a usekne začátek),
+//  - nevznikne „přehrávač“ Studovna u Drobka na zamčené obrazovce iPhonu.
 const PRAISE_TEXT = "Čauviny!";     // záloha pro hlas prohlížeče
-let AUDIO_UNLOCKING=false;
+// iOS (Safari 16.4+): krátké zvuky aplikace – nepřeruší hudbu, nezobrazí se
+// jako přehrávání, řídí se přepínačem ticha jako zvuky jiných aplikací
+try{ if(navigator.audioSession) navigator.audioSession.type="ambient"; }catch(e){}
 function makeClip(url){
-  const c={el:null, ok:false};
+  const c={url, buf:null, ok:false, raw:null};
   try{
-    const a=new Audio(url); a.preload="auto";
-    a.addEventListener("canplaythrough",()=>{ c.ok=true; },{once:true});
-    a.addEventListener("error",()=>{ c.ok=false; },{once:true});
-    c.el=a;
+    fetch(url).then(r=>r.ok?r.arrayBuffer():Promise.reject(r.status))
+      .then(ab=>{ c.raw=ab; decodeClip(c); }).catch(()=>{});
   }catch(e){}
   return c;
+}
+function decodeClip(c){
+  const ac=audioCtx(); if(!ac || !c.raw || c.buf) return;
+  const raw=c.raw; c.raw=null;
+  const done=b=>{ c.buf=b; c.ok=true; };
+  try{ const p=ac.decodeAudioData(raw,done,()=>{}); if(p&&p.then) p.then(done).catch(()=>{}); }catch(e){}
 }
 const CLIP_LARGE = makeClip("hlaska.mp3");
 const CLIP_SMALL = makeClip("hlaska-male.mp3");
 const CLIP_MINUS = makeClip("hlaska-minus.mp3");
-const ALL_CLIPS = [CLIP_LARGE, CLIP_SMALL, CLIP_MINUS];
+let CLIP_SRC=null;
 function playClip(c){
-  if(!c || !c.ok || !c.el) return false;
+  const ac=audioCtx();
+  if(!c || !c.buf || !ac) return false;
   try{
-    AUDIO_UNLOCKING=false;                 // doběhlé odemykání už ať do přehrávání nesahá
-    ALL_CLIPS.forEach(o=>{ try{ if(o.el){ o.el.pause(); o.el.currentTime=0; } }catch(e){} });
-    c.el.muted=false;                      // hlášky se při rychlém čárkování nehromadí
-    const p=c.el.play();
-    if(p&&p.catch) p.catch(()=>{});
+    if(ac.state!=="running"){ const p=ac.resume(); if(p&&p.catch) p.catch(()=>{}); }
+    try{ if(CLIP_SRC) CLIP_SRC.stop(); }catch(e){}        // hlášky se při rychlém čárkování nehromadí
+    const src=ac.createBufferSource(); src.buffer=c.buf; src.connect(ac.destination);
+    src.start(0); CLIP_SRC=src;
     return true;
   }catch(e){ return false; }
 }
+// iPhone pustí zvuk až po skutečné akci uživatele – za tu ale nebere
+// přiložení prstu (pointerdown), jen jeho zvednutí (touchend / click).
+// Odemykáme proto při každém takovém dotyku, dokud zvuk neběží.
+function unlockAudio(){
+  const ac=audioCtx(); if(!ac) return;
+  if(ac.state!=="running"){
+    try{ const p=ac.resume(); if(p&&p.catch) p.catch(()=>{}); }catch(e){}
+    try{ const b=ac.createBuffer(1,1,22050), s=ac.createBufferSource(); s.buffer=b; s.connect(ac.destination); s.start(0); }catch(e){}
+  }
+}
+["touchend","click","keydown"].forEach(t=>{ try{ document.addEventListener(t,unlockAudio,{capture:true,passive:true}); }catch(e){} });
 let VOICES = [];
 function refreshVoices(){ try{ VOICES=window.speechSynthesis.getVoices()||[]; }catch(e){ VOICES=[]; } }
 if("speechSynthesis" in window){
@@ -948,29 +969,6 @@ if("speechSynthesis" in window){
   try{ window.speechSynthesis.addEventListener("voiceschanged",refreshVoices); }catch(e){}
 }
 function czechVoice(){ return VOICES.find(v=>/^cs([-_]|$)/i.test(v.lang||"")) || null; }
-// iOS pustí zvuk až po dotyku, tak ho odemkneme prvním kliknutím kdekoliv
-let SPEECH_READY=false;
-function unlockSpeech(){
-  if(!SPEECH_READY && ("speechSynthesis" in window)){
-    try{ const u=new SpeechSynthesisUtterance(" "); u.volume=0; window.speechSynthesis.speak(u); SPEECH_READY=true; }catch(e){}
-  }
-  ALL_CLIPS.forEach(c=>{
-    try{
-      if(!c.el || !c.el.paused) return;
-      AUDIO_UNLOCKING=true;
-      c.el.muted=true;
-      const p=c.el.play();
-      // Odemknutí doběhne asynchronně — nesmí zastavit hlášku, která se mezitím spustila
-      const reset=()=>{
-        if(AUDIO_UNLOCKING){ try{ c.el.pause(); c.el.currentTime=0; }catch(e){} }
-        try{ c.el.muted=false; }catch(e){}
-      };
-      if(p&&p.then) p.then(reset).catch(reset); else reset();
-    }catch(e){}
-  });
-  setTimeout(()=>{ AUDIO_UNLOCKING=false; },1500);
-}
-try{ document.addEventListener("pointerdown",unlockSpeech,{capture:true,once:true}); }catch(e){}
 function speakPraise(){
   if(!("speechSynthesis" in window)) return false;
   try{
@@ -1156,46 +1154,60 @@ async function renderTabs(){
   drawTabs();
   await renderKeg();
 }
-// Vykreslení lístků jen z TABS – žádná síť, volá se po každém ťuknutí
+// Vykreslení lístků jen z TABS – žádná síť, volá se po každém ťuknutí.
+// Mění se jen bloky, jejichž obsah se opravdu změnil. Kdyby se při každém
+// obnovení vyměnila všechna tlačítka, iPhone zahodí ťuknutí, které dopadne
+// na tlačítko zrovna ve chvíli výměny (typicky hned po otevření aplikace,
+// kdy se data načítají několikrát po sobě).
+let TABS_DRAWN=[];   // [{k, html, el}] – co je právě vykreslené
+const EMPTY_TABS_HTML='<div class="tabs-empty">Zatím nikdo nepije 🥲 Založ si lístek a buď první.</div>';
+function htmlToEl(html){ const t=document.createElement("template"); t.innerHTML=html; return t.content.firstElementChild; }
+function setText(el,txt){ if(el && el.textContent!==txt) el.textContent=txt; }
 function drawTabs(){
   const tabs=TABS; const me=rememberedName().toLowerCase();
-  const list=$("#tabsList"); list.innerHTML="";
+  const list=$("#tabsList");
   const names=Object.keys(tabs).sort((a,b)=>a.localeCompare(b,"cs"));
-  // Sud se vykresluje i bez otevřených lístků — jinak by po zaplacení všech
-  // zmizel z hlavní obrazovky včetně upozornění, že dochází
-  if(!names.length){ list.innerHTML='<div class="tabs-empty">Zatím nikdo nepije 🥲 Založ si lístek a buď první.</div>'; $("#tabsTotal").textContent=""; return; }
   let totalBeers=0,totalKc=0,leaderName=null,leaderC=0;
   // Cizí lístky bez piv jen překáží – sbalíme je do jednoho řádku dole.
   // Vlastní lístek (i prázdný) zůstává vidět, ať se dá hned čárkovat.
   const isMine=n=>!!me && n.toLowerCase()===me;
   const emptyNames=names.filter(n=>!tabMarks(tabs[n]).length && !isMine(n));
   const shown=names.filter(n=>!emptyNames.includes(n));
-  if(!shown.length) list.innerHTML='<div class="tabs-empty">Zatím nikdo nepije 🥲 Založ si lístek a buď první.</div>';
-  const tabEl=(n)=>{
+  const tabHtml=(n)=>{
     const marks=tabMarks(tabs[n]); const c=marks.length; const tot=marksTotal(marks)||c*PRICE;
     totalBeers+=c; totalKc+=tot; if(c>leaderC){ leaderC=c; leaderName=n; }
     const isMe=isMine(n);
     let lastTxt=""; const ts=marks.map(m=>m&&m.t).filter(Boolean); if(ts.length){ lastTxt="poslední "+fmtLastSeen(Math.max(...ts)); }
-    const el=document.createElement("div"); el.className="tab"+(isMe?" mine":"");
-    el.innerHTML=`<div class="tab-row"><div class="tab-name"><span>🍻</span><span>${esc(n)}</span>${isMe?'<span class="star">ty</span>':''}</div><div class="tab-price">${c} ${plBeer(c)} · <b>${tot} Kč</b></div></div><div class="tab-marks${marks.some(m=>m&&m.pend)?" pend":""}">${tallyMarks(marks)||"&nbsp;"}</div>${lastTxt?'<div class="tab-last">'+lastTxt+'</div>':''}<div class="tab-actions"><button class="mini" data-act="minus" title="Vrátit poslední pivo" aria-label="Vrátit poslední pivo">−</button><button class="mini plus" data-act="plus">+ 🍺 velké</button><button class="mini plus-small" data-act="plus-small">+ 🍺 malé</button><button class="mini pay" data-act="pay">Platím 💸</button></div>`;
-    el.querySelector('[data-act="plus"]').onclick=(ev)=>tabDelta(n,"large",ev);
-    el.querySelector('[data-act="plus-small"]').onclick=(ev)=>tabDelta(n,"small",ev);
-    el.querySelector('[data-act="minus"]').onclick=(ev)=>tabDelta(n,null,ev);
-    el.querySelector('[data-act="pay"]').onclick=()=>payTab(n);
-    return el;
+    return `<div class="tab${isMe?" mine":""}" data-name="${esc(n).replace(/"/g,"&quot;")}"><div class="tab-row"><div class="tab-name"><span>🍻</span><span>${esc(n)}</span>${isMe?'<span class="star">ty</span>':''}</div><div class="tab-price">${c} ${plBeer(c)} · <b>${tot} Kč</b></div></div><div class="tab-marks${marks.some(m=>m&&m.pend)?" pend":""}">${tallyMarks(marks)||"&nbsp;"}</div>${lastTxt?'<div class="tab-last">'+lastTxt+'</div>':''}<div class="tab-actions"><button class="mini" data-act="minus" title="Vrátit poslední pivo" aria-label="Vrátit poslední pivo">−</button><button class="mini plus" data-act="plus">+ 🍺 velké</button><button class="mini plus-small" data-act="plus-small">+ 🍺 malé</button><button class="mini pay" data-act="pay">Platím 💸</button></div></div>`;
   };
-  shown.forEach(n=>list.appendChild(tabEl(n)));
+  // Sud se vykresluje i bez otevřených lístků (renderKeg) — tady jen lístky
+  const blocks=[];
+  if(!shown.length) blocks.push({k:"empty", html:EMPTY_TABS_HTML});
+  shown.forEach(n=>blocks.push({k:"t:"+n, html:tabHtml(n)}));
   if(emptyNames.length){
-    const d=document.createElement("details"); d.className="tabs-idle"; d.open=EMPTY_OPEN;
-    d.innerHTML='<summary>💤 Prázdné lístky ('+emptyNames.length+'): '+emptyNames.map(esc).join(", ")+'</summary>';
-    const inner=document.createElement("div"); inner.className="tabs";
-    emptyNames.forEach(n=>inner.appendChild(tabEl(n)));
-    d.appendChild(inner);
-    d.addEventListener("toggle",()=>{ EMPTY_OPEN=d.open; });
-    list.appendChild(d);
+    blocks.push({k:"idle", html:'<details class="tabs-idle"'+(EMPTY_OPEN?" open":"")+'><summary>💤 Prázdné lístky ('+emptyNames.length+'): '
+      +emptyNames.map(esc).join(", ")+'</summary><div class="tabs">'+emptyNames.map(tabHtml).join("")+'</div></details>'});
   }
-  $("#tabsTotal").textContent=!totalBeers?"":"rozpito "+totalBeers+" "+plBeer(totalBeers)+" · "+totalKc+" Kč"+(leaderName&&leaderC>0?" · 👑 "+leaderName:"");
+  const sameShape = TABS_DRAWN.length===blocks.length && TABS_DRAWN.every((d,i)=>d.k===blocks[i].k && d.el.parentNode===list);
+  if(sameShape){
+    blocks.forEach((b,i)=>{ const d=TABS_DRAWN[i]; if(d.html!==b.html){ const el=htmlToEl(b.html); d.el.replaceWith(el); d.el=el; d.html=b.html; } });
+  } else {
+    list.innerHTML="";
+    TABS_DRAWN=blocks.map(b=>{ const el=htmlToEl(b.html); list.appendChild(el); return {k:b.k, html:b.html, el}; });
+  }
+  setText($("#tabsTotal"), !totalBeers?"":"rozpito "+totalBeers+" "+plBeer(totalBeers)+" · "+totalKc+" Kč"+(leaderName&&leaderC>0?" · 👑 "+leaderName:""));
 }
+// Jeden posluchač pro všechna tlačítka lístků (přežije i výměnu jednotlivých lístků)
+$("#tabsList").addEventListener("click",ev=>{
+  const b=ev.target.closest("button[data-act]"); if(!b) return;
+  const t=b.closest(".tab"); if(!t) return;
+  const n=t.dataset.name, act=b.dataset.act;
+  if(act==="plus") tabDelta(n,"large",ev);
+  else if(act==="plus-small") tabDelta(n,"small",ev);
+  else if(act==="minus") tabDelta(n,null,ev);
+  else if(act==="pay") payTab(n);
+});
+$("#tabsList").addEventListener("toggle",ev=>{ if(ev.target.classList && ev.target.classList.contains("tabs-idle")) EMPTY_OPEN=ev.target.open; },true);
 let tabBusy=false;
 // Atomické čárkování v databázi (migrace_v138.sql): každá čárka je jeden zápis,
 // takže se při souběžném čárkování nic neztratí; čas a cenu určuje server.
@@ -1852,7 +1864,7 @@ function renderSoundBtn(){
   b.title="Zvuky zap/vyp – teď "+(SOUND_ON?"zapnuté":"vypnuté");
 }
 $("#soundBtn").onclick=()=>{ SOUND_ON=!SOUND_ON; try{ localStorage.setItem("studovna_sound",SOUND_ON?"1":"0"); }catch(e){}
-  renderSoundBtn(); toast(SOUND_ON?"Zvuky zapnuté 🔊":"Zvuky vypnuté 🔇"); if(SOUND_ON){ unlockSpeech(); playPraise("large"); } };
+  renderSoundBtn(); toast(SOUND_ON?"Zvuky zapnuté 🔊":"Zvuky vypnuté 🔇"); if(SOUND_ON){ unlockAudio(); playPraise("large"); } };
 renderSoundBtn();
 
 // ====== VLASTNÍ DIALOG (náhrada prompt/confirm) ======
@@ -2215,7 +2227,7 @@ function makeQRInto(target,text,size){
 // Verze aplikace – JEDINÝ zdroj pravdy. Při vydání změny ji zvyš ručně;
 // deploy (.github/workflows/ftp-deploy.yml) si ji odsud přečte do changelog.json.
 // Dřív se verze počítala z počtu commitů, takže neodpovídala kódu (v1.33 vs. „v1.35“).
-const APP_VERSION_CODE = "v1.41";
+const APP_VERSION_CODE = "v1.42";
 const CHANGELOG_URL = "changelog.json";
 let CHANGELOG = [], APP_VERSION = APP_VERSION_CODE;
 async function loadChangelog(){
