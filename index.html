@@ -1514,14 +1514,15 @@ async function askDeletePayment(rec){
   await loadHallSince();
   // Platba starší než poslední obnova síně slávy už v současném pořadí není,
   // takže by odečet sebral piva, která tam za ni nikdy nebyla připsaná
-  const vSini = HALL_SINCE ? (rec.ts||0) >= HALL_SINCE : true;
+  const part = hallPart(rec, HALL_SINCE||0);
+  const vSini = !!part;
   // Ze sudu se odečítá jen platba vzniklá po naražení aktuálního sudu (a jen její čárky od naražení)
   await loadKegStart();
   const zSudu = kegMarksOf(rec, KEG_START||0).length;
   const co = fmtDateTime(rec.ts)+" · "+(rec.name||"?")+"\n"+(rec.beers||0)+" "+plBeer(rec.beers||0)+" · "+(rec.amount||0)+" Kč";
   if(!await askConfirm("🗑️ Smazat platbu?",co+"\n\n"
-      +(vSini ? "Piva i útrata se odečtou ze síně slávy."
-              : "Síň slávy zůstane beze změny — platba je starší než její poslední obnova.")
+      +(vSini ? "Ze síně slávy zmizí "+fmtCount(part.large,part.small)+" · "+part.paid+" Kč."
+              : "Síň slávy zůstane beze změny — piva z této platby se vypila před její poslední obnovou.")
       +"\n"+(zSudu ? "Z počítadla sudu se odečte "+zSudu+" "+plBeer(zSudu)+"."
               : "Počítadlo sudu zůstane beze změny"+((rec.ts||0)<(KEG_START||0)?" — platba je starší než naražení sudu.":"."))
       +"\nTohle se nedá vrátit.","Smazat platbu")) return;
@@ -1718,9 +1719,39 @@ async function resetHall(){
   if(sb){ const {error}=await adminRpc("admin_reset_hall",{},"vynulování síně slávy"); if(error) return false; HALL_SINCE=null; await loadHallSince(); return true; }
   await sSet("hall","{}",true); await saveHallSince(Date.now()); return true;
 }
+// Síň slávy se počítá z evidence plateb a rozhoduje čas VYPITÍ (čárky), ne zaplacení:
+// započítají se jen piva načárkovaná od poslední obnovy síně slávy. Kdo dlouho
+// nezaplatí a pak zaplatí najednou, nedostane se tak nahoru s pivy z doby před obnovou.
+// Vrací část platby, která do síně slávy patří: {large, small, paid} nebo null.
+function hallPart(r,since){
+  const mk=Array.isArray(r.mk)?r.mk:[];
+  // Časy čárek použijeme, jen když jsou úplné (počet sedí a žádný chybí);
+  // jinak se jako dřív rozhoduje podle data platby
+  const exact = mk.length>0 && mk.length===(r.beers||mk.length) && mk.every(m=>m && m.t>0);
+  if(!exact){
+    if(since && (r.ts||0)<since) return null;
+    const c=payCounts(r); return {large:c.large, small:c.small, paid:r.amount||0};
+  }
+  const inn=mk.filter(m=>m.t>=since);
+  if(!inn.length) return null;
+  const small=inn.filter(m=>m.s==="small").length, large=inn.length-small;
+  // Útrata jen za piva od obnovy; u platby přes obnovu poměrem (malé = 0,6 velkého)
+  const w=arr=>arr.reduce((t,m)=>t+(m.s==="small"?0.6:1),0);
+  const paid = inn.length===mk.length ? (r.amount||0) : Math.round((r.amount||0)*w(inn)/w(mk));
+  return {large, small, paid};
+}
+async function computeHall(){
+  const pays=await paymentsCached(true), since=HALL_SINCE||0, h={};
+  pays.forEach(r=>{
+    const p=hallPart(r,since); if(!p || !(p.large+p.small)) return;
+    const x=h[r.name||"?"]||(h[r.name||"?"]={large:0,small:0,paid:0,beers:0});
+    x.large+=p.large; x.small+=p.small; x.paid+=p.paid; x.beers=Math.round((x.large+x.small*0.6)*10)/10;
+  });
+  return h;
+}
 async function renderHall(){
-  const h=await loadHall(); const list=$("#hallList");
   await loadHallSince();
+  const h=await computeHall(); const list=$("#hallList");
   const since=$("#hallSince");
   if(since) since.textContent = HALL_SINCE ? "🗓️ vedeno od "+fmtDate(HALL_SINCE)+" · "+hallDuration(HALL_SINCE) : "";
   // řazení podle útraty v Kč, při shodě podle počtu kusů
@@ -2227,7 +2258,7 @@ function makeQRInto(target,text,size){
 // Verze aplikace – JEDINÝ zdroj pravdy. Při vydání změny ji zvyš ručně;
 // deploy (.github/workflows/ftp-deploy.yml) si ji odsud přečte do changelog.json.
 // Dřív se verze počítala z počtu commitů, takže neodpovídala kódu (v1.33 vs. „v1.35“).
-const APP_VERSION_CODE = "v1.42";
+const APP_VERSION_CODE = "v1.43";
 const CHANGELOG_URL = "changelog.json";
 let CHANGELOG = [], APP_VERSION = APP_VERSION_CODE;
 async function loadChangelog(){
