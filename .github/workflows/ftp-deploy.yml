@@ -39,6 +39,13 @@ jobs:
                 if [ -n "$V" ]; then CUR="$V"
                 elif [ "$N" -le "$LEGACY_MAX" ]; then V=$(printf 'v%d.%02d' $((1 + N/100)) $((N%100)))
                 else V="${CUR:-$VERZE}"; fi
+                # Technické změny (jen deploy, SQL migrace, README…) uživatele nezajímají –
+                # do seznamu jen to, co mění samotnou aplikaci (index.html, hlášky…)
+                FILES=$(git diff --name-only "$full^1" "$full" 2>/dev/null || true)
+                if [ -n "$FILES" ] && ! printf '%s\n' "$FILES" \
+                     | grep -qvE '^(\.github/|\.gitignore$|README\.md$|changelog-cs\.json$|.*\.sql$)'; then
+                  continue
+                fi
                 # z názvu PR pryč „(#9)“ na konci a „v1.42: “ na začátku – verze se ukazuje zvlášť
                 jq -n -c --arg sha "$sha" --arg date "$date" --arg message "$msg" --arg version "$V" \
                   '{sha:$sha, date:$date, version:$version,
