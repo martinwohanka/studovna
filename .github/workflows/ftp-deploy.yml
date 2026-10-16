@@ -30,15 +30,23 @@ jobs:
           LEGACY_MAX=33
           SEP=$'\x1f'
           CUR=""
-          git log --pretty=tformat:"%H${SEP}%h${SEP}%ad${SEP}%s" --date=format:'%d. %m. %Y' -n 30 \
+          # --first-parent: jen to, co přibylo do main – u PR jen merge commit, ne ještě
+          # jednou každý commit z PR (jinak by se každá změna v seznamu ukázala 2×)
+          git log --first-parent --pretty=tformat:"%H${SEP}%h${SEP}%ad${SEP}%s" --date=format:'%d. %m. %Y' -n 30 \
             | while IFS="$SEP" read -r full sha date msg; do
                 N=$(git rev-list --count "$full")
                 V=$(verze_v "$full")
                 if [ -n "$V" ]; then CUR="$V"
                 elif [ "$N" -le "$LEGACY_MAX" ]; then V=$(printf 'v%d.%02d' $((1 + N/100)) $((N%100)))
                 else V="${CUR:-$VERZE}"; fi
+                # z názvu PR pryč „(#9)“ na konci a „v1.42: “ na začátku – verze se ukazuje zvlášť
                 jq -n -c --arg sha "$sha" --arg date "$date" --arg message "$msg" --arg version "$V" \
-                  '{sha:$sha, date:$date, message:$message, version:$version}'
+                  '{sha:$sha, date:$date, version:$version,
+                    message: ($message | sub(" \\(#[0-9]+\\)$"; "") | sub("^v[0-9]+\\.[0-9]+: "; "")
+                      | (.[0:1]) as $c
+                      | if (.[1:2] | test("^[A-Z]")) then . else   # iPhone, eShop… nechat
+                        (({"á":"Á","č":"Č","ď":"Ď","é":"É","ě":"Ě","í":"Í","ň":"Ň","ó":"Ó","ř":"Ř","š":"Š","ť":"Ť","ú":"Ú","ů":"Ů","ý":"Ý","ž":"Ž"}[$c]
+                           // ($c | ascii_upcase)) + .[1:]) end)}'
               done \
             | jq -s -c . > changelog.json
 
