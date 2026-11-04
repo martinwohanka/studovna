@@ -34,6 +34,11 @@ jobs:
           # jednou každý commit z PR (jinak by se každá změna v seznamu ukázala 2×)
           git log --first-parent --pretty=tformat:"%H${SEP}%h${SEP}%ad${SEP}%s" --date=format:'%d. %m. %Y' -n 30 \
             | while IFS="$SEP" read -r full sha date msg; do
+                # merge commit („Merge pull request #12 from …“) – popis je název PR v těle
+                case "$msg" in "Merge pull request "*|"Merge branch "*)
+                  B=$(git log -1 --format=%b "$full" | sed '/^[[:space:]]*$/d' | head -n 1)
+                  [ -n "$B" ] && msg="$B" ;;
+                esac
                 N=$(git rev-list --count "$full")
                 V=$(verze_v "$full")
                 if [ -n "$V" ]; then CUR="$V"
