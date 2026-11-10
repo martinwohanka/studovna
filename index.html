@@ -120,6 +120,8 @@
     width:40px;height:40px;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;
     color:var(--txt-2);background:rgba(255,255,255,.04);border:1px solid var(--line);transition:.2s ease;}
   .admin-btn:hover{color:var(--amber);border-color:var(--amber);transform:rotate(45deg);box-shadow:0 0 0 4px rgba(245,185,66,.1)}
+  .admin-btn.wheel-top{right:62px;font-size:20px;line-height:1}
+  .admin-btn.wheel-top:hover{transform:rotate(-60deg)}
 
   /* ===== odpočet ===== */
   .count{margin-top:16px;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
@@ -241,6 +243,7 @@
   @media (max-width:480px){
     .hero{padding:16px 14px 14px}
     .admin-btn{top:10px;right:10px;width:44px;height:44px}
+    .admin-btn.wheel-top{right:62px}
     .logo{width:52px;margin-bottom:4px}
     .kicker{font-size:10.5px;letter-spacing:.12em;padding:4px 11px;margin-bottom:8px}
     h1{font-size:31px;margin:0 0 10px}
@@ -357,9 +360,6 @@
   .hf-val b{color:var(--amber);font-weight:700}
   .hf > div{min-width:0}
   /* kolo štěstí */
-  .wheel-btn{flex:1 1 100%;background:none;border:1px dashed var(--line-2);color:var(--txt);font-family:'Space Grotesk',sans-serif;
-    font-weight:600;font-size:15px;border-radius:var(--r-sm);padding:12px 18px;cursor:pointer;transition:.18s ease}
-  .wheel-btn:hover{border-color:var(--amber);color:var(--amber)}
   .wheel-wrap{position:relative;width:min(300px,78vw);margin:6px auto 0}
   .wheel-wrap svg{width:100%;height:auto;display:block}
   .wheel-rot{transform-origin:150px 150px;transition:transform 4.6s cubic-bezier(.12,.72,.12,1)}
@@ -594,7 +594,7 @@
   @media (hover:none){
     /* iOS drží :hover i po dotyku → tlačítko by zůstalo „zvednuté“ */
     .mini:hover,.btn:hover,.btn-gold:hover,.btn-green:hover,.btn-danger:hover,.sess-save:hover,.keg-new:hover,
-    .ledger-open:hover,.wa-share:hover,.pay-csv:hover,.admin-btn:hover,.tab:hover{transform:none;box-shadow:none}
+    .ledger-open:hover,.wa-share:hover,.pay-csv:hover,.admin-btn:hover,.admin-btn.wheel-top:hover,.tab:hover{transform:none;box-shadow:none}
     .tab:hover{background:var(--card);border-color:var(--line)}
     .tab.mine:hover{border-color:rgba(245,185,66,.55);box-shadow:0 0 0 3px rgba(245,185,66,.12)}
     /* Rozmazané pozadí (backdrop-filter) nad pohyblivými bublinkami musí Safari
@@ -646,6 +646,7 @@
   <div class="wrap">
 
     <header class="hero">
+      <button class="admin-btn wheel-top" id="wheelBtn" type="button" title="Kolo štěstí – kdo platí rundu?" aria-label="Kolo štěstí – kdo platí rundu?">🎡</button>
       <button class="admin-btn" id="adminBtn" title="Administrace" aria-label="Administrace">
         <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"/>
@@ -694,7 +695,6 @@
       <div class="tabs" id="tabsList"></div>
       <div class="addform">
         <button class="btn" id="openTabBtn" style="flex:1">🍺 Začínám pít — založit lístek</button>
-        <button class="wheel-btn" id="wheelBtn" type="button">🎡 Kdo platí rundu? Roztoč kolo štěstí</button>
       </div>
       <p class="note">
         Velké pivo = <b class="price-now">40 Kč</b>, malé = <b class="price-small-now">24 Kč</b>. Čárkuj svoje piva tlačítkem <b>+ 🍺</b> (mínusem vrátíš poslední), čárky jdou po pětkách, <span style="color:#7ec8e3">malá jsou modrá</span>.<br>
@@ -2689,7 +2689,7 @@ $("#wheelModal").addEventListener("click",e=>{ if(e.target.id==="wheelModal" && 
 // Tituly a tempo závisí na čase – jednou za minutu překreslit (bez sítě)
 setInterval(()=>{ if(document.hidden) return; drawTabs(); renderKeg(false); }, 60000);
 
-const APP_VERSION_CODE = "v1.47";
+const APP_VERSION_CODE = "v1.48";
 const CHANGELOG_URL = "changelog.json";
 let CHANGELOG = [], APP_VERSION = APP_VERSION_CODE;
 async function loadChangelog(){
