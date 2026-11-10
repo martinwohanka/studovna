@@ -274,6 +274,25 @@
   .hall-name{flex:1;font-weight:600;letter-spacing:-.005em}
   .hall-stat{font-family:'Space Grotesk',sans-serif;font-weight:600;color:var(--txt-2);font-variant-numeric:tabular-nums;white-space:nowrap}
   .hall-stat b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700}
+  /* koláč síně slávy – podíl na útratě */
+  .hall-pie{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);display:grid;grid-template-columns:190px 1fr;gap:18px;align-items:center}
+  .hall-pie[hidden]{display:none}
+  .hall-pie .hp-title{grid-column:1/-1;font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--txt-2)}
+  .hall-pie svg{width:190px;height:190px;display:block;overflow:visible}
+  .hall-pie .hp-seg{cursor:pointer;transition:opacity .2s,transform .2s;transform-origin:95px 95px}
+  .hall-pie.hl .hp-seg{opacity:.35}
+  .hall-pie.hl .hp-seg.on{opacity:1;transform:scale(1.04)}
+  .hall-pie .hp-c1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:21px;fill:var(--txt)}
+  .hall-pie .hp-c2{font-size:11.5px;fill:var(--txt-2)}
+  .hp-legend{display:flex;flex-direction:column;gap:2px;min-width:0;max-width:360px}
+  .hp-li{display:grid;grid-template-columns:12px 1fr auto;gap:9px;align-items:center;padding:6px 8px;border-radius:8px;cursor:pointer;font-size:14px}
+  .hp-li:hover,.hp-li.on{background:var(--card-2)}
+  .hp-sw{width:12px;height:12px;border-radius:4px}
+  .hp-nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+  .hp-v{font-family:'Space Grotesk',sans-serif;color:var(--txt-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .hp-v b{color:var(--txt);font-weight:700}
+  @media (max-width:520px){ .hall-pie{grid-template-columns:1fr;justify-items:center} .hp-legend{width:100%;max-width:none} }
+  @media (prefers-reduced-motion:reduce){ .hall-pie .hp-seg{transition:none} }
 
   /* ===== toast / tooltip ===== */
   .toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);
@@ -630,6 +649,7 @@
       </div>
       <div class="hall-since" id="hallSince"></div>
       <div class="hall-list" id="hallList"></div>
+      <div class="hall-pie" id="hallPie" hidden></div>
     </section>
 
     <footer class="site-footer">
@@ -1824,6 +1844,57 @@ async function computeHall(){
   });
   return h;
 }
+// Koláč síně slávy: podíl každého na útratě (Kč), pořadí stejné jako v seznamu.
+// Barvy v pevném pořadí (ověřené pro barvoslepé na tmavém pozadí), víc než 6 lidí → „ostatní“.
+let HP_SEL=null;   // vybraný (ťuknutý) výsek – jméno, přežije obnovení dat
+const HP_COLORS=["#3987e5","#d95926","#199e70","#c98500","#d55181","#9085e9"], HP_OTHER="#6b7280";
+function renderHallPie(h,names){
+  const box=$("#hallPie"); if(!box) return;
+  const total=names.reduce((t,n)=>t+(h[n].paid||0),0);
+  if(names.length<2 || total<=0){ box.hidden=true; box.innerHTML=""; return; }
+  let items=names.map((n,i)=>({name:n,val:h[n].paid||0,color:HP_COLORS[i]}));
+  if(items.length>HP_COLORS.length){
+    const rest=items.slice(HP_COLORS.length-1);
+    items=items.slice(0,HP_COLORS.length-1);
+    items.push({name:"ostatní ("+rest.length+")",val:rest.reduce((t,x)=>t+x.val,0),color:HP_OTHER});
+  }
+  items=items.filter(x=>x.val>0);
+  const C=95,R=86,RI=56, pct=v=>{ const p=v/total*100; return (p<1&&p>0?"<1":Math.round(p))+" %"; };
+  const pt=(a,r)=>[(C+r*Math.sin(a)).toFixed(2),(C-r*Math.cos(a)).toFixed(2)];
+  let a=0, segs="";
+  items.forEach((x,i)=>{
+    const da=x.val/total*Math.PI*2, a2=a+da, big=da>Math.PI?1:0;
+    let d;
+    if(da>=Math.PI*2-1e-6){   // jediný výsek = celý kruh
+      d=`M${C} ${C-R}A${R} ${R} 0 1 1 ${C-0.01} ${C-R}Z M${C} ${C-RI}A${RI} ${RI} 0 1 0 ${C+0.01} ${C-RI}Z`;
+    } else {
+      const [x1,y1]=pt(a,R),[x2,y2]=pt(a2,R),[x3,y3]=pt(a2,RI),[x4,y4]=pt(a,RI);
+      d=`M${x1} ${y1}A${R} ${R} 0 ${big} 1 ${x2} ${y2}L${x3} ${y3}A${RI} ${RI} 0 ${big} 0 ${x4} ${y4}Z`;
+    }
+    segs+=`<path class="hp-seg" data-i="${i}" d="${d}" fill="${x.color}" stroke="#131518" stroke-width="2" stroke-linejoin="round" fill-rule="evenodd"><title>${esc(x.name)}: ${x.val} Kč (${pct(x.val)})</title></path>`;
+    a=a2;
+  });
+  box.innerHTML=`<div class="hp-title">🥧 Kdo kolik propil</div>
+    <svg viewBox="0 0 190 190" role="img" aria-label="Koláčový graf podílu na útratě v síni slávy">${segs}
+      <text class="hp-c1" x="${C}" y="${C+4}" text-anchor="middle">${total} Kč</text>
+      <text class="hp-c2" x="${C}" y="${C+22}" text-anchor="middle">celkem</text></svg>
+    <div class="hp-legend">${items.map((x,i)=>`<div class="hp-li" data-i="${i}"><span class="hp-sw" style="background:${x.color}"></span><span class="hp-nm">${esc(x.name)}</span><span class="hp-v"><b>${pct(x.val)}</b> · ${x.val} Kč</span></div>`).join("")}</div>`;
+  box.hidden=false;
+  const c1=box.querySelector(".hp-c1"), c2=box.querySelector(".hp-c2");
+  const show=i=>{
+    box.classList.toggle("hl",i!=null);
+    box.querySelectorAll("[data-i]").forEach(el=>el.classList.toggle("on",el.dataset.i==String(i)));
+    if(i==null){ c1.textContent=total+" Kč"; c2.textContent="celkem"; }
+    else { const x=items[i]; c1.textContent=pct(x.val); c2.textContent=x.name.length>16?x.name.slice(0,15)+"…":x.name; }
+  };
+  let cur=items.findIndex(x=>x.name===HP_SEL); if(cur<0) cur=null;
+  box.querySelectorAll("[data-i]").forEach(el=>{
+    const i=+el.dataset.i;
+    el.addEventListener("mouseenter",()=>show(i));
+    el.addEventListener("mouseleave",()=>show(cur));
+    el.addEventListener("click",()=>{ cur=(cur===i?null:i); HP_SEL=cur==null?null:items[cur].name; show(cur); });   // ťuknutí na mobilu
+  });
+}
 async function renderHall(){
   await loadHallSince();
   const h=await computeHall(); const list=$("#hallList");
@@ -1832,13 +1903,14 @@ async function renderHall(){
   // řazení podle útraty v Kč, při shodě podle počtu kusů
   const cnt=n=>{ const c=hallCounts(h[n]); return c.large+c.small; };
   const names=Object.keys(h).sort((a,b)=>(h[b].paid-h[a].paid)||(cnt(b)-cnt(a))||a.localeCompare(b,"cs"));
-  if(!names.length){ list.innerHTML='<div class="tabs-empty">Síň slávy zatím zeje prázdnotou. Zaplať lístek a zapiš se do dějin. 🏆</div>'; $("#hallTotal").textContent=""; WA_HALL=""; return; }
+  if(!names.length){ list.innerHTML='<div class="tabs-empty">Síň slávy zatím zeje prázdnotou. Zaplať lístek a zapiš se do dějin. 🏆</div>'; $("#hallTotal").textContent=""; WA_HALL=""; renderHallPie(h,[]); return; }
   const medals=["🥇","🥈","🥉"]; let tl=0,ts=0,tk=0; list.innerHTML="";
   names.forEach((n,i)=>{ const r=h[n]; const c=hallCounts(r); tl+=c.large; ts+=c.small; tk+=r.paid;
     const el=document.createElement("div"); el.className="hall-row"+(i<3?" top":"");
     el.innerHTML=`<span class="hall-rank">${medals[i]||(i+1+".")}</span><span class="hall-name">${esc(n)}</span><span class="hall-stat">${fmtCount(c.large,c.small)} · <b>${r.paid} Kč</b></span>`;
     list.appendChild(el); });
   $("#hallTotal").textContent="celkem "+fmtCount(tl,ts)+" · "+tk+" Kč";
+  renderHallPie(h,names);
 
   let msg="🏆 Síň slávy — Studovna u Drobka\n";
   if(HALL_SINCE) msg+="🗓️ vedeno od "+fmtDate(HALL_SINCE)+" ("+hallDuration(HALL_SINCE)+")\n";
@@ -2333,7 +2405,7 @@ function makeQRInto(target,text,size){
 // Verze aplikace – JEDINÝ zdroj pravdy. Při vydání změny ji zvyš ručně;
 // deploy (.github/workflows/ftp-deploy.yml) si ji odsud přečte do changelog.json.
 // Dřív se verze počítala z počtu commitů, takže neodpovídala kódu (v1.33 vs. „v1.35“).
-const APP_VERSION_CODE = "v1.44";
+const APP_VERSION_CODE = "v1.45";
 const CHANGELOG_URL = "changelog.json";
 let CHANGELOG = [], APP_VERSION = APP_VERSION_CODE;
 async function loadChangelog(){
