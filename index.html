@@ -2621,6 +2621,14 @@ function renderHallFun(pays,since){
   if(r) items.push(["🦉","Noční sova",r.who,'<b>'+r.v+'</b> '+plBeer(r.v)+' po půlnoci']);
   r=best(ms=>{ const g=gaps(ms); return g.length?Math.max(...g):null; },20*MIN);
   if(r) items.push(["🚽","Nejdelší pauza na záchod",r.who,'<b>'+fmtDur(r.v)+'</b> bez piva']);
+  // 🧾 Nejstarší dluh: kdo má na otevřeném lístku nejstarší nezaplacenou čárku
+  let debt=null;
+  Object.keys(TABS).forEach(n=>{ const ts=tabMarks(TABS[n]).map(m=>m&&m.t).filter(t=>t>0); if(!ts.length) return;
+    const t0=Math.min(...ts); if(!debt || t0<debt.t0) debt={who:n,t0,marks:tabMarks(TABS[n])}; });
+  if(debt){
+    const age=Date.now()-debt.t0, days=Math.floor(age/(24*HOUR)), c=debt.marks.length, kc=marksTotal(debt.marks);
+    items.push([days>=7?"🕸️":"🧾","Nejstarší dluh",debt.who,'nezaplaceno <b>'+(days>=1?days+" "+plDay(days):fmtDur(age))+'</b> · '+c+' '+plBeer(c)+' · '+kc+' Kč']);
+  }
   if(!items.length){ box.hidden=true; box.innerHTML=""; box.__h=""; return; }
   setHTML(box,'<div class="hf-title">🎖️ Medaile síně slávy</div><div class="hf-grid">'+items.map(([i,l,w,v])=>
     '<div class="hf"><span class="hf-ico">'+i+'</span><div><div class="hf-lbl">'+l+'</div><div class="hf-who">'+esc(w)+'</div><div class="hf-val">'+v+'</div></div></div>').join("")+'</div>');
@@ -2681,7 +2689,7 @@ $("#wheelModal").addEventListener("click",e=>{ if(e.target.id==="wheelModal" && 
 // Tituly a tempo závisí na čase – jednou za minutu překreslit (bez sítě)
 setInterval(()=>{ if(document.hidden) return; drawTabs(); renderKeg(false); }, 60000);
 
-const APP_VERSION_CODE = "v1.46";
+const APP_VERSION_CODE = "v1.47";
 const CHANGELOG_URL = "changelog.json";
 let CHANGELOG = [], APP_VERSION = APP_VERSION_CODE;
 async function loadChangelog(){
