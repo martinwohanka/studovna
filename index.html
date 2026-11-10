@@ -315,6 +315,65 @@
   @keyframes kegPulse{0%,100%{opacity:1}50%{opacity:.62}}
   @media (prefers-reduced-motion:reduce){.count .keg-alert{animation:none}}
   /* ===== nalévací animace ===== */
+
+  /* ====== ZÁBAVA ====== */
+  /* konfety */
+  .confetti{position:fixed;inset:0;pointer-events:none;z-index:300;overflow:hidden}
+  .confetti i{position:absolute;top:-14px;width:9px;height:14px;border-radius:2px;opacity:.95;animation:cfFall linear forwards}
+  @keyframes cfFall{0%{transform:translate(0,0) rotate(0)}100%{transform:translate(var(--dx),110vh) rotate(var(--rot));opacity:.9}}
+  /* velký nápis přes obrazovku (jubilejní pivo, padlý sud) */
+  .celeb{position:fixed;left:50%;top:38%;z-index:310;pointer-events:none;text-align:center;width:min(92vw,440px);
+    transform:translate(-50%,-50%);background:rgba(14,16,21,.94);border:1px solid rgba(245,185,66,.55);border-radius:var(--r-lg);
+    padding:20px 22px;box-shadow:0 24px 70px rgba(0,0,0,.6),0 0 0 6px rgba(245,185,66,.08);animation:celebIn 2.9s ease forwards}
+  .celeb .ce-big{font-size:46px;line-height:1.1}
+  .celeb .ce-t{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(22px,6vw,28px);margin-top:6px;
+    background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .celeb .ce-s{color:var(--txt-2);margin-top:4px;font-size:15px}
+  .celeb.rip{border-color:rgba(176,184,194,.5)}
+  .celeb.rip .ce-t{background:none;color:var(--txt)}
+  @keyframes celebIn{0%{opacity:0;transform:translate(-50%,-50%) scale(.6) rotate(-6deg)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.06) rotate(1deg)}
+    20%{transform:translate(-50%,-50%) scale(1) rotate(0)}85%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-60%) scale(.96)}}
+  /* živý sud: pod 20 % se klinká a víc bublá */
+  .kegbox.low .keg-gauge svg{animation:kegWobble 2.6s ease-in-out infinite;transform-origin:50% 100%}
+  .kegbox.low .kg-bub{animation-duration:.9s}
+  @keyframes kegWobble{0%,62%,100%{transform:rotate(0)}68%{transform:rotate(-3deg)}76%{transform:rotate(2.5deg)}84%{transform:rotate(-1.5deg)}92%{transform:rotate(.8deg)}}
+  /* tempo stolu */
+  .keg-info .kpace{margin-top:7px;font-size:13.5px;color:var(--txt);line-height:1.45}
+  .keg-info .kpace b{color:var(--amber)}
+  .count .keg-line .kpace{margin-top:6px}
+  /* titul u jména na lístku */
+  .ttl{font-size:11.5px;font-weight:600;color:var(--txt);background:rgba(255,255,255,.07);border:1px solid var(--line-2);
+    border-radius:999px;padding:2px 8px;white-space:nowrap;cursor:help}
+  /* medaile síně slávy */
+  .hall-fun{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+  .hall-fun[hidden]{display:none}
+  .hall-fun .hf-title{font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--txt-2);margin-bottom:10px}
+  .hf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+  .hf{display:flex;gap:11px;align-items:center;padding:11px 13px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--card)}
+  .hf-ico{font-size:26px;line-height:1}
+  .hf-lbl{font-size:12px;color:var(--txt-2);font-weight:600;letter-spacing:.02em}
+  .hf-who{font-weight:700;font-size:15.5px;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hf-val{font-size:13px;color:var(--txt-2)}
+  .hf-val b{color:var(--amber);font-weight:700}
+  .hf > div{min-width:0}
+  /* kolo štěstí */
+  .wheel-btn{flex:1 1 100%;background:none;border:1px dashed var(--line-2);color:var(--txt);font-family:'Space Grotesk',sans-serif;
+    font-weight:600;font-size:15px;border-radius:var(--r-sm);padding:12px 18px;cursor:pointer;transition:.18s ease}
+  .wheel-btn:hover{border-color:var(--amber);color:var(--amber)}
+  .wheel-wrap{position:relative;width:min(300px,78vw);margin:6px auto 0}
+  .wheel-wrap svg{width:100%;height:auto;display:block}
+  .wheel-rot{transform-origin:150px 150px;transition:transform 4.6s cubic-bezier(.12,.72,.12,1)}
+  .wheel-ptr{position:absolute;left:50%;top:-6px;transform:translateX(-50%);width:0;height:0;border-left:13px solid transparent;
+    border-right:13px solid transparent;border-top:24px solid var(--amber);filter:drop-shadow(0 3px 4px rgba(0,0,0,.6));z-index:2}
+  .wheel-res{text-align:center;min-height:30px;margin-top:14px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:21px}
+  .wheel-res b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  @media (prefers-reduced-motion:reduce){
+    .confetti{display:none}
+    .celeb{animation:celebFade 2.9s ease forwards}
+    .kegbox.low .keg-gauge svg{animation:none}
+    .wheel-rot{transition-duration:.6s}
+  }
+  @keyframes celebFade{0%{opacity:0}10%,85%{opacity:1}100%{opacity:0}}
   .pourwrap{position:fixed;z-index:200;pointer-events:none;transform:translate(-50%,-50%);animation:pourFloat 1s ease-out forwards}
   .pourwrap .beer{transform:scaleY(0);transform-origin:center bottom;animation:pourFill .5s ease-out forwards}
   .pourwrap .foam{opacity:0;animation:pourFoam .35s ease-out .42s forwards}
@@ -635,6 +694,7 @@
       <div class="tabs" id="tabsList"></div>
       <div class="addform">
         <button class="btn" id="openTabBtn" style="flex:1">🍺 Začínám pít — založit lístek</button>
+        <button class="wheel-btn" id="wheelBtn" type="button">🎡 Kdo platí rundu? Roztoč kolo štěstí</button>
       </div>
       <p class="note">
         Velké pivo = <b class="price-now">40 Kč</b>, malé = <b class="price-small-now">24 Kč</b>. Čárkuj svoje piva tlačítkem <b>+ 🍺</b> (mínusem vrátíš poslední), čárky jdou po pětkách, <span style="color:#7ec8e3">malá jsou modrá</span>.<br>
@@ -650,6 +710,7 @@
       <div class="hall-since" id="hallSince"></div>
       <div class="hall-list" id="hallList"></div>
       <div class="hall-pie" id="hallPie" hidden></div>
+      <div class="hall-fun" id="hallFun" hidden></div>
     </section>
 
     <footer class="site-footer">
@@ -659,6 +720,19 @@
   </div>
 
   <div class="toast" id="toast"></div>
+
+  <div class="modal" id="wheelModal">
+    <div class="modal-card" style="max-width:400px">
+      <h3>🎡 Kdo platí rundu?</h3>
+      <p class="modal-hint">Kolo vybere náhodně z lidí, kteří dnes pijí. Jen pro zábavu – nic se neúčtuje.</p>
+      <div class="wheel-wrap"><div class="wheel-ptr"></div><div id="wheelSvg"></div></div>
+      <div class="wheel-res" id="wheelRes" aria-live="polite"></div>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="wheelClose" type="button">Zavřít</button>
+        <button class="btn" id="wheelSpin" type="button">Roztočit 🎲</button>
+      </div>
+    </div>
+  </div>
 
   <datalist id="knownNames"></datalist>
   <div class="modal" id="nameModal">
@@ -1218,7 +1292,7 @@ function drawTabs(){
     totalBeers+=c; totalKc+=tot; if(c>leaderC){ leaderC=c; leaderName=n; }
     const isMe=isMine(n);
     let lastTxt=""; const ts=marks.map(m=>m&&m.t).filter(Boolean); if(ts.length){ lastTxt="poslední "+fmtLastSeen(Math.max(...ts)); }
-    return `<div class="tab${isMe?" mine":""}" data-name="${esc(n).replace(/"/g,"&quot;")}"><div class="tab-row"><div class="tab-name"><span>🍻</span><span>${esc(n)}</span>${isMe?'<span class="star">ty</span>':''}</div><div class="tab-price">${c} ${plBeer(c)} · <b>${tot} Kč</b></div></div><div class="tab-marks${marks.some(m=>m&&m.pend)?" pend":""}">${tallyMarks(marks)||"&nbsp;"}</div>${lastTxt?'<div class="tab-last">'+lastTxt+'</div>':''}<div class="tab-actions"><button class="mini" data-act="minus" title="Vrátit poslední pivo" aria-label="Vrátit poslední pivo">−</button><button class="mini plus" data-act="plus">+ 🍺 velké</button><button class="mini plus-small" data-act="plus-small">+ 🍺 malé</button><button class="mini pay" data-act="pay">Platím 💸</button></div></div>`;
+    return `<div class="tab${isMe?" mine":""}" data-name="${esc(n).replace(/"/g,"&quot;")}"><div class="tab-row"><div class="tab-name"><span>🍻</span><span>${esc(n)}</span>${isMe?'<span class="star">ty</span>':''}${tabTitle(marks)}</div><div class="tab-price">${c} ${plBeer(c)} · <b>${tot} Kč</b></div></div><div class="tab-marks${marks.some(m=>m&&m.pend)?" pend":""}">${tallyMarks(marks)||"&nbsp;"}</div>${lastTxt?'<div class="tab-last">'+lastTxt+'</div>':''}<div class="tab-actions"><button class="mini" data-act="minus" title="Vrátit poslední pivo" aria-label="Vrátit poslední pivo">−</button><button class="mini plus" data-act="plus">+ 🍺 velké</button><button class="mini plus-small" data-act="plus-small">+ 🍺 malé</button><button class="mini pay" data-act="pay">Platím 💸</button></div></div>`;
   };
   // Sud se vykresluje i bez otevřených lístků (renderKeg) — tady jen lístky
   const blocks=[];
@@ -1336,6 +1410,7 @@ function tabDelta(name,size,ev){
     pourEffect(ev); playPraise(size);
     toast(size==="small" ? "Malé načárkováno pro "+name+" × ("+marks.length+". pivo)" : "Načárkováno pro "+name+" 🍺 ("+marks.length+". pivo)");
     warnIfKegLow();
+    checkJubilee(name);
     tabEnqueue({kind:"mark", name, size, mark});
     return;
   }
@@ -1688,7 +1763,7 @@ async function renderKeg(fresh){
       // Bez objemu se nedá spočítat, kolik zbývá – jen text a výzva k doplnění
       let head='🛢️ '+(st.name?'<b>'+esc(st.name)+'</b> · naražen ':'Sud naražen ')+'<span class="keg-when">'+fmtLastSeen(st.since)+'</span>';
       line.classList.remove("has-gauge");
-      line.innerHTML=head+foot+'<div class="keg-alert">✏️ U sudu chybí název a objem — doplň je v adminu (Upravit údaje o sudu).</div>';
+      line.innerHTML=head+tablePaceHTML(st)+foot+'<div class="keg-alert">✏️ U sudu chybí název a objem — doplň je v adminu (Upravit údaje o sudu).</div>';
       return;
     }
     let alert="";
@@ -1699,7 +1774,7 @@ async function renderKeg(fresh){
       : '<div class="kleft"><span class="nw">≈ '+st.leftBeers+' '+plBeer(st.leftBeers)+'</span> <span class="kl-l nw">('+fmtLiters(st.leftL)+' l)</span></div>');
     const info='<div class="kname">🛢️ '+esc(st.name||"Sud")+'</div>'
       +'<div class="kmeta">sud '+fmtLiters(st.size)+' l · naražen <span class="keg-when">'+fmtLastSeen(st.since)+'</span></div>'
-      +left+foot+alert;
+      +left+tablePaceHTML(st)+foot+alert;
     // SVG sudu necháváme stejné, ať hladina po čárce plynule klesne (jen se posune)
     let box=line.querySelector(".kegbox");
     if(!box || box.dataset.size!==String(st.size)){
@@ -1709,6 +1784,7 @@ async function renderKeg(fresh){
     }
     const inf=box.querySelector(".keg-info"); if(inf.__h!==info){ inf.__h=info; inf.innerHTML=info; }
     setKegLevel(box, st.size, Math.max(0, st.size-st.liters));
+    watchKegFall(st);
   }
 }
 // ---- sud jako „srážkoměr“: hladina piva podle zbývajících litrů ----
@@ -1903,6 +1979,7 @@ async function renderHall(){
   // řazení podle útraty v Kč, při shodě podle počtu kusů
   const cnt=n=>{ const c=hallCounts(h[n]); return c.large+c.small; };
   const names=Object.keys(h).sort((a,b)=>(h[b].paid-h[a].paid)||(cnt(b)-cnt(a))||a.localeCompare(b,"cs"));
+  renderHallFun(await paymentsCached(false), HALL_SINCE||0);
   if(!names.length){ list.innerHTML='<div class="tabs-empty">Síň slávy zatím zeje prázdnotou. Zaplať lístek a zapiš se do dějin. 🏆</div>'; $("#hallTotal").textContent=""; WA_HALL=""; renderHallPie(h,[]); return; }
   const medals=["🥇","🥈","🥉"]; let tl=0,ts=0,tk=0; list.innerHTML="";
   names.forEach((n,i)=>{ const r=h[n]; const c=hallCounts(r); tl+=c.large; ts+=c.small; tk+=r.paid;
@@ -2405,7 +2482,206 @@ function makeQRInto(target,text,size){
 // Verze aplikace – JEDINÝ zdroj pravdy. Při vydání změny ji zvyš ručně;
 // deploy (.github/workflows/ftp-deploy.yml) si ji odsud přečte do changelog.json.
 // Dřív se verze počítala z počtu commitů, takže neodpovídala kódu (v1.33 vs. „v1.35“).
-const APP_VERSION_CODE = "v1.45";
+
+// ====================== ZÁBAVA ======================
+// Všechno se počítá z časů čárek (lístky + evidence plateb), nic se neukládá do DB.
+const MIN=60000, HOUR=3600000, EVE_GAP=6*HOUR;   // pauza delší než 6 h = jiný večer
+// Čárky „dnešního večera“: od posledního okamžiku, kdy byla aspoň 6 h pauza
+function tonight(marks,now){
+  now=now||Date.now();
+  const ts=(marks||[]).map(m=>m&&m.t).filter(t=>t>0).sort((a,b)=>a-b);
+  if(!ts.length || now-ts[ts.length-1]>EVE_GAP) return [];
+  let i=ts.length-1; while(i>0 && ts[i]-ts[i-1]<=EVE_GAP) i--;
+  const from=ts[i];
+  return (marks||[]).filter(m=>m && m.t>=from).sort((a,b)=>a.t-b.t);
+}
+// Všechny čárky člověka: otevřený lístek + jeho zaplacené lístky (kvůli večeru přes placení)
+function personMarks(name){
+  const out=tabMarks(TABS[name]).slice(), key=normName(name);
+  (PAY_CACHE||[]).forEach(r=>{ if(normName(r.name)===key && Array.isArray(r.mk)) r.mk.forEach(m=>{ if(m&&m.t) out.push(m); }); });
+  return out;
+}
+function fmtDur(ms){ const m=Math.round(ms/MIN), h=Math.floor(m/60); return h ? h+" h "+(m%60)+" min" : m+" min"; }
+function fmtHM(ts){ const d=new Date(ts); return d.getHours()+":"+p2(d.getMinutes()); }
+
+// ---- zvuky (Web Audio, bez souborů) ----
+function acReady(){ if(!SOUND_ON) return null; const ac=audioCtx(); if(!ac) return null;
+  if(ac.state==="suspended"){ try{ const p=ac.resume(); if(p&&p.catch) p.catch(()=>{}); }catch(e){} } return ac; }
+function tone(ac,f,t,d,type,vol){
+  const o=ac.createOscillator(), g=ac.createGain(); o.type=type||"triangle"; o.frequency.setValueAtTime(f,t);
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol||0.14,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+d);
+  o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t+d+0.02); return o;
+}
+// Fanfára: ta-ta-ta-táá
+function playFanfare(delay){
+  const ac=acReady(); if(!ac) return; const t=ac.currentTime+(delay||0);
+  [[523,0,.14],[659,.15,.14],[784,.30,.14],[1047,.45,.55]].forEach(([f,o,d])=>{ tone(ac,f,t+o,d,"triangle",.13); tone(ac,f*2,t+o,d,"sine",.03); });
+}
+// „Blup“ padlého sudu: dvě klesající bubliny
+function playBlup(){
+  const ac=acReady(); if(!ac) return; const t=ac.currentTime;
+  [[0,520,90],[.32,420,70]].forEach(([o,f1,f2])=>{ const osc=tone(ac,f1,t+o,.38,"sine",.22); osc.frequency.exponentialRampToValueAtTime(f2,t+o+.34); });
+  [[.8,330],[1.05,262],[1.3,196]].forEach(([o,f])=>tone(ac,f,t+o,.32,"triangle",.1));   // smutné tú-tú-túú
+}
+function playTick(){ const ac=acReady(); if(!ac) return; tone(ac,1800,ac.currentTime,.035,"square",.025); }
+
+// ---- konfety a velký nápis ----
+function confetti(n){
+  try{ if(matchMedia("(prefers-reduced-motion: reduce)").matches) return; }catch(e){}
+  const box=document.createElement("div"); box.className="confetti";
+  const cols=["#f5b942","#e8762d","#3987e5","#199e70","#d55181","#9085e9","#fff6e2"];
+  for(let i=0;i<(n||70);i++){
+    const c=document.createElement("i");
+    c.style.left=(Math.random()*100)+"vw"; c.style.background=cols[i%cols.length];
+    c.style.setProperty("--dx",(Math.random()*160-80).toFixed(0)+"px");
+    c.style.setProperty("--rot",(Math.random()*900-450).toFixed(0)+"deg");
+    c.style.animationDuration=(1.9+Math.random()*1.6).toFixed(2)+"s"; c.style.animationDelay=(Math.random()*.5).toFixed(2)+"s";
+    if(i%3===0){ c.style.width="7px"; c.style.height="7px"; c.style.borderRadius="50%"; }
+    box.appendChild(c);
+  }
+  document.body.appendChild(box); setTimeout(()=>box.remove(),4300);
+}
+function celebrate(big,title,sub,cls){
+  document.querySelectorAll(".celeb").forEach(e=>e.remove());
+  const d=document.createElement("div"); d.className="celeb"+(cls?" "+cls:""); d.setAttribute("role","status");
+  d.innerHTML='<div class="ce-big">'+big+'</div><div class="ce-t">'+esc(title)+'</div>'+(sub?'<div class="ce-s">'+esc(sub)+'</div>':'');
+  document.body.appendChild(d); setTimeout(()=>d.remove(),3000);
+}
+
+// ---- 1) jubilejní pivo večera ----
+const JUBILEE={5:["🖐️","Pětka!","{n} rozjíždí večer"],10:["🏆","Desítka!","{n} je legenda večera"],
+  15:["🙇","Patnáctka!","{n}, stůl se klaní"],20:["📜","Dvacítka!","{n} píše dějiny Studovny"]};
+function checkJubilee(name){
+  const k=tonight(personMarks(name)).length;
+  if(k<5 || k%5) return;
+  const j=JUBILEE[k]||["🚀",k+". pivo!","{n} je mimo kategorie"];
+  celebrate(j[0], j[1], j[2].replace("{n}",name)+" · "+k+". pivo večera");
+  confetti(k>=10?110:70); playFanfare(1.25);   // fanfára až po hlášce „Čauviny!“
+}
+
+// ---- 3) padlý sud ----
+let KEG_SEEN=null;   // {since, left} z minulého vykreslení
+function watchKegFall(st){
+  const left=Math.max(0,st.size-st.liters), prev=KEG_SEEN;
+  KEG_SEEN={since:st.since,left};
+  if(prev && prev.since===st.since && prev.left>0.05 && left<=0.05){
+    celebrate("🪦","Sud padl!",(st.name||"Sud")+" · R.I.P. Ať žije další!","rip"); playBlup();
+  }
+}
+
+// ---- 4) titul večera u jména ----
+function tabTitle(marks){
+  const tm=tonight(marks), n=tm.length, now=Date.now(); if(!n) return "";
+  const t=(ico,name,why)=>'<span class="ttl" title="'+why+'">'+ico+' '+name+'</span>';
+  if(tm.filter(m=>now-m.t<=30*MIN).length>=3) return t("🚀","Raketa","3 a víc piv za poslední půlhodinu");
+  const h=new Date(tm[n-1].t).getHours();
+  if(h>=0 && h<5) return t("🦉","Noční sova","čárkuje po půlnoci");
+  if(n>=2 && tm.every(m=>m.s==="small")) return t("🐣","Mlíčňák","dnes jen malá piva");
+  const span=now-tm[0].t;
+  if(span>=HOUR && n/(span/HOUR)<=1) return t("🐌","Šnek","nanejvýš jedno pivo za hodinu");
+  return "";
+}
+
+// ---- 5) tempo stolu ----
+function tableMarks(){
+  const all=[]; Object.keys(TABS).forEach(n=>tabMarks(TABS[n]).forEach(m=>{ if(m&&m.t) all.push(m); }));
+  (PAY_CACHE||[]).forEach(r=>{ if(Array.isArray(r.mk)) r.mk.forEach(m=>{ if(m&&m.t) all.push(m); }); });
+  return all;
+}
+function tablePaceHTML(st){
+  const now=Date.now(), last=tableMarks().filter(m=>m.t<=now && now-m.t<=HOUR && m.t>=(st.since||0));
+  if(last.length<2) return "";
+  const n=last.length, lph=last.reduce((t,m)=>t+(m.s==="small"?L_SMALL:L_LARGE),0);
+  const ico=n>=10?"🚀":(n>=5?"🔥":"🐢");
+  let h='<div class="kpace">'+ico+' Stůl jede <b>'+n+' '+plBeer(n)+'/hod</b>';
+  const left=st.size?Math.max(0,st.size-st.liters):0;
+  if(left>0 && lph>0){ const eta=now+left/lph*HOUR; if(eta-now<=10*HOUR) h+=' · sud padne kolem <b>'+fmtHM(eta)+'</b>'; }
+  return h+'</div>';
+}
+
+// ---- 6) medaile síně slávy ----
+function renderHallFun(pays,since){
+  const box=$("#hallFun"); if(!box) return;
+  const per={};   // jméno → seřazené čárky od obnovy síně slávy (jen záznamy s časy čárek)
+  (pays||[]).forEach(r=>{ if(!Array.isArray(r.mk)) return; const nm=r.name||"?";
+    r.mk.forEach(m=>{ if(m && m.t>=since) (per[nm]||(per[nm]=[])).push(m); }); });
+  const best=(fn,minV,cmp)=>{ let w=null,v=null; Object.keys(per).sort((a,b)=>a.localeCompare(b,"cs")).forEach(n=>{
+      const x=fn(per[n].slice().sort((a,b)=>a.t-b.t)); if(x==null || x<minV) return;
+      if(v==null || (cmp==="min"?x<v:x>v)){ v=x; w=n; } }); return w?{who:w,v}:null; };
+  const gaps=ms=>{ const g=[]; for(let i=1;i<ms.length;i++){ const d=ms[i].t-ms[i-1].t; if(d<=EVE_GAP) g.push(d); } return g; };
+  const evDay=t=>{ const d=new Date(t-6*HOUR); return d.getFullYear()+"-"+d.getMonth()+"-"+d.getDate(); };
+  const items=[];
+  let r=best(ms=>{ const g=gaps(ms).filter(d=>d>=3*MIN); return g.length?Math.min(...g):null; },0,"min");
+  if(r) items.push(["⚡","Nejrychlejší pivo",r.who,'další pivo za <b>'+fmtDur(r.v)+'</b>']);
+  r=best(ms=>new Set(ms.map(m=>evDay(m.t))).size,2);
+  if(r) items.push(["🗓️","Nejvěrnější štamgast",r.who,'<b>'+r.v+'</b> '+(r.v>=5?"večerů":"večery")]);
+  r=best(ms=>ms.filter(m=>m.s==="small").length,1);
+  if(r) items.push(["🍼","Král malých piv",r.who,'<b>'+r.v+'</b> '+plSmall(r.v)]);
+  r=best(ms=>ms.filter(m=>{ const h=new Date(m.t).getHours(); return h>=0&&h<5; }).length,1);
+  if(r) items.push(["🦉","Noční sova",r.who,'<b>'+r.v+'</b> '+plBeer(r.v)+' po půlnoci']);
+  r=best(ms=>{ const g=gaps(ms); return g.length?Math.max(...g):null; },20*MIN);
+  if(r) items.push(["🚽","Nejdelší pauza na záchod",r.who,'<b>'+fmtDur(r.v)+'</b> bez piva']);
+  if(!items.length){ box.hidden=true; box.innerHTML=""; box.__h=""; return; }
+  setHTML(box,'<div class="hf-title">🎖️ Medaile síně slávy</div><div class="hf-grid">'+items.map(([i,l,w,v])=>
+    '<div class="hf"><span class="hf-ico">'+i+'</span><div><div class="hf-lbl">'+l+'</div><div class="hf-who">'+esc(w)+'</div><div class="hf-val">'+v+'</div></div></div>').join("")+'</div>');
+  box.hidden=false;
+}
+
+// ---- 8) kolo štěstí: kdo platí rundu ----
+let WHEEL={names:[],rot:0,busy:false};
+function wheelNames(){
+  const all=Object.keys(TABS).sort((a,b)=>a.localeCompare(b,"cs"));
+  const drinking=all.filter(n=>tonight(tabMarks(TABS[n])).length);
+  return drinking.length>=2 ? drinking : all;
+}
+function wheelSVG(names){
+  const n=names.length, C=150, R=146, seg=360/n, cols=HP_COLORS;
+  const pt=a=>[(C+R*Math.sin(a*Math.PI/180)).toFixed(2),(C-R*Math.cos(a*Math.PI/180)).toFixed(2)];
+  let g="";
+  names.forEach((nm,i)=>{
+    let col=cols[i%cols.length]; if(i===n-1 && n>1 && i%cols.length===0) col=cols[2];   // ať nesousedí dvě stejné barvy
+    const a1=i*seg, a2=a1+seg, [x1,y1]=pt(a1), [x2,y2]=pt(a2);
+    g+='<path d="M'+C+' '+C+'L'+x1+' '+y1+'A'+R+' '+R+' 0 '+(seg>180?1:0)+' 1 '+x2+' '+y2+'Z" fill="'+col+'" stroke="#12151b" stroke-width="2"/>';
+    const label=nm.length>14?nm.slice(0,13)+"…":nm;
+    const mid=a1+seg/2, left=mid>180;   // v levé polovině text otočit, ať není vzhůru nohama
+    g+='<text transform="rotate('+(left?mid+90:mid-90).toFixed(2)+' '+C+' '+C+')" x="'+(left?C-R+12:C+R-12)+'" y="'+(C+5)+'" text-anchor="'+(left?"start":"end")+'" fill="#fff" font-family="Space Grotesk,sans-serif" font-weight="700" font-size="'+(n>8?12:15)+'">'+esc(label)+'</text>';
+  });
+  return '<svg viewBox="0 0 300 300" role="img" aria-label="Kolo štěstí"><g class="wheel-rot" id="wheelRot" style="transform:rotate('+WHEEL.rot+'deg)">'+g+'</g>'
+    +'<circle cx="'+C+'" cy="'+C+'" r="20" fill="#12151b" stroke="rgba(255,255,255,.25)" stroke-width="2"/><text x="'+C+'" y="'+(C+7)+'" text-anchor="middle" font-size="19">🍺</text></svg>';
+}
+function openWheel(){
+  const names=wheelNames();
+  if(names.length<2){ toast("Na kolo štěstí jsou potřeba aspoň dva lístky 🎡"); return; }
+  WHEEL.names=names; WHEEL.rot=0; WHEEL.busy=false;
+  $("#wheelSvg").innerHTML=wheelSVG(names); $("#wheelRes").textContent=""; $("#wheelSpin").disabled=false;
+  $("#wheelModal").style.display="flex";
+}
+function spinWheel(){
+  if(WHEEL.busy) return; WHEEL.busy=true; unlockAudio();
+  const n=WHEEL.names.length, seg=360/n, win=Math.floor(Math.random()*n);
+  const jitter=(Math.random()*0.7-0.35)*seg;                     // ať se nezastaví vždy uprostřed výseku
+  const target=360-(win*seg+seg/2)+jitter;                       // výherní výsek pod šipkou nahoře
+  const base=WHEEL.rot-(WHEEL.rot%360);
+  WHEEL.rot=base+360*6+((target%360)+360)%360;
+  const rot=$("#wheelRot"); $("#wheelRes").textContent="Točí se… 🤞"; $("#wheelSpin").disabled=true;
+  rot.style.transform="rotate("+WHEEL.rot+"deg)";
+  let ticks=0; const tk=setInterval(()=>{ if(++ticks>26) return clearInterval(tk); playTick(); }, 60+ticks*6);
+  let reduce=false; try{ reduce=matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){}
+  setTimeout(()=>{
+    clearInterval(tk); WHEEL.busy=false; $("#wheelSpin").disabled=false;
+    const nm=WHEEL.names[win];
+    $("#wheelRes").innerHTML='🍻 Rundu platí <b>'+esc(nm)+'</b>!';
+    confetti(90); playFanfare(0);
+  }, reduce?700:4700);
+}
+$("#wheelBtn").onclick=openWheel;
+$("#wheelSpin").onclick=spinWheel;
+$("#wheelClose").onclick=()=>{ $("#wheelModal").style.display="none"; };
+$("#wheelModal").addEventListener("click",e=>{ if(e.target.id==="wheelModal" && !WHEEL.busy) e.currentTarget.style.display="none"; });
+// Tituly a tempo závisí na čase – jednou za minutu překreslit (bez sítě)
+setInterval(()=>{ if(document.hidden) return; drawTabs(); renderKeg(false); }, 60000);
+
+const APP_VERSION_CODE = "v1.46";
 const CHANGELOG_URL = "changelog.json";
 let CHANGELOG = [], APP_VERSION = APP_VERSION_CODE;
 async function loadChangelog(){
