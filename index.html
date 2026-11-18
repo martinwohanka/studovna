@@ -2625,6 +2625,23 @@ function renderHallFun(pays,since){
   if(r) items.push(["🦉","Noční sova",r.who,'<b>'+r.v+'</b> '+plBeer(r.v)+' po půlnoci']);
   r=best(ms=>{ const g=gaps(ms); return g.length?Math.max(...g):null; },20*MIN);
   if(r) items.push(["🚽","Nejdelší pauza na záchod",r.who,'<b>'+fmtDur(r.v)+'</b> bez piva']);
+  // večery jednoho člověka: evDay → seřazené čárky
+  const eves=ms=>{ const g={}; ms.forEach(m=>(g[evDay(m.t)]||(g[evDay(m.t)]=[])).push(m)); return Object.values(g); };
+  r=best(ms=>Math.max(...eves(ms).map(e=>e.length)),2);
+  if(r) items.push(["🍺","Rekord večera",r.who,'<b>'+r.v+'</b> '+plBeer(r.v)+' za jeden večer']);
+  // 🐢 Diesel: nejpomalejší průměrné tempo ve večerech, kdy dal aspoň 4 piva
+  r=best(ms=>{ const iv=eves(ms).filter(e=>e.length>=4).map(e=>(e[e.length-1].t-e[0].t)/(e.length-1));
+    return iv.length?iv.reduce((a,b)=>a+b,0)/iv.length:null; },0);
+  if(r) items.push(["🐢","Diesel",r.who,'v průměru pivo za <b>'+fmtDur(r.v)+'</b>']);
+  // 💸 Rychlý plátce: nejkratší průměrná doba od posledního piva na lístku po zaplacení
+  const payDelay={};
+  (pays||[]).forEach(r=>{ if(!Array.isArray(r.mk) || !r.ts || r.ts<since) return;
+    const last=Math.max(0,...r.mk.map(m=>(m&&m.t)||0)); if(!last || r.ts<last) return;
+    (payDelay[r.name||"?"]||(payDelay[r.name||"?"]=[])).push(r.ts-last); });
+  let fast=null;
+  Object.keys(payDelay).sort((a,b)=>a.localeCompare(b,"cs")).forEach(n=>{ const d=payDelay[n], v=d.reduce((a,b)=>a+b,0)/d.length;
+    if(!fast || v<fast.v) fast={who:n,v}; });
+  if(fast) items.push(["💸","Rychlý plátce",fast.who,'platí v průměru <b>'+(fast.v<MIN?"hned":fmtDur(fast.v))+'</b> po posledním pivu']);
   // 🧾 Nejstarší dluh: kdo má na otevřeném lístku nejstarší nezaplacenou čárku
   let debt=null;
   Object.keys(TABS).forEach(n=>{ const ts=tabMarks(TABS[n]).map(m=>m&&m.t).filter(t=>t>0); if(!ts.length) return;
@@ -2693,7 +2710,7 @@ $("#wheelModal").addEventListener("click",e=>{ if(e.target.id==="wheelModal" && 
 // Tituly a tempo závisí na čase – jednou za minutu překreslit (bez sítě)
 setInterval(()=>{ if(document.hidden) return; drawTabs(); renderKeg(false); }, 60000);
 
-const APP_VERSION_CODE = "v1.49";
+const APP_VERSION_CODE = "v1.50";
 const CHANGELOG_URL = "changelog.json";
 let CHANGELOG = [], APP_VERSION = APP_VERSION_CODE;
 async function loadChangelog(){
