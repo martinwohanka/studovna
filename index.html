@@ -1278,6 +1278,8 @@ const EMPTY_TABS_HTML='<div class="tabs-empty">Zatím nikdo nepije 🥲 Založ s
 function htmlToEl(html){ const t=document.createElement("template"); t.innerHTML=html; return t.content.firstElementChild; }
 function setText(el,txt){ if(el && el.textContent!==txt) el.textContent=txt; }
 function drawTabs(){
+  // medaile berou i rozpitá piva – překreslit je s každou čárkou (platby z mezipaměti, bez sítě)
+  if(PAY_CACHE) renderHallFun(PAY_CACHE, HALL_SINCE||0);
   const tabs=TABS; const me=rememberedName().toLowerCase();
   const list=$("#tabsList");
   const names=Object.keys(tabs).sort((a,b)=>a.localeCompare(b,"cs"));
@@ -2602,9 +2604,11 @@ function tablePaceHTML(st){
 // ---- 6) medaile síně slávy ----
 function renderHallFun(pays,since){
   const box=$("#hallFun"); if(!box) return;
-  const per={};   // jméno → seřazené čárky od obnovy síně slávy (jen záznamy s časy čárek)
-  (pays||[]).forEach(r=>{ if(!Array.isArray(r.mk)) return; const nm=r.name||"?";
-    r.mk.forEach(m=>{ if(m && m.t>=since) (per[nm]||(per[nm]=[])).push(m); }); });
+  // jméno → čárky od obnovy síně slávy: zaplacené i ty, co jsou zrovna rozpité na otevřených lístcích
+  // (jen čárky se známým časem; zaplacením se čárky z lístku přesunou do platby, takže se nepočítají dvakrát)
+  const per={}, add=(nm,m)=>{ if(m && m.t>0 && m.t>=since) (per[nm]||(per[nm]=[])).push(m); };
+  (pays||[]).forEach(r=>{ if(Array.isArray(r.mk)) r.mk.forEach(m=>add(r.name||"?",m)); });
+  Object.keys(TABS).forEach(n=>tabMarks(TABS[n]).forEach(m=>add(n,m)));
   const best=(fn,minV,cmp)=>{ let w=null,v=null; Object.keys(per).sort((a,b)=>a.localeCompare(b,"cs")).forEach(n=>{
       const x=fn(per[n].slice().sort((a,b)=>a.t-b.t)); if(x==null || x<minV) return;
       if(v==null || (cmp==="min"?x<v:x>v)){ v=x; w=n; } }); return w?{who:w,v}:null; };
@@ -2689,7 +2693,7 @@ $("#wheelModal").addEventListener("click",e=>{ if(e.target.id==="wheelModal" && 
 // Tituly a tempo závisí na čase – jednou za minutu překreslit (bez sítě)
 setInterval(()=>{ if(document.hidden) return; drawTabs(); renderKeg(false); }, 60000);
 
-const APP_VERSION_CODE = "v1.48";
+const APP_VERSION_CODE = "v1.49";
 const CHANGELOG_URL = "changelog.json";
 let CHANGELOG = [], APP_VERSION = APP_VERSION_CODE;
 async function loadChangelog(){
