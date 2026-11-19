@@ -39,6 +39,8 @@ jobs:
                   B=$(git log -1 --format=%b "$full" | sed '/^[[:space:]]*$/d' | head -n 1)
                   [ -n "$B" ] && msg="$B" ;;
                 esac
+                # drobnosti, které uživatelům nechceme hlásit: „[bez logu]“ v názvu commitu / PR
+                case "$msg" in *"[bez logu]"*) continue ;; esac
                 N=$(git rev-list --count "$full")
                 V=$(verze_v "$full")
                 if [ -n "$V" ]; then CUR="$V"
