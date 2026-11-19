@@ -2615,7 +2615,7 @@ function renderHallFun(pays,since){
   const gaps=ms=>{ const g=[]; for(let i=1;i<ms.length;i++){ const d=ms[i].t-ms[i-1].t; if(d<=EVE_GAP) g.push(d); } return g; };
   const evDay=t=>{ const d=new Date(t-6*HOUR); return d.getFullYear()+"-"+d.getMonth()+"-"+d.getDate(); };
   const items=[];
-  let r=best(ms=>{ const g=gaps(ms).filter(d=>d>=3*MIN); return g.length?Math.min(...g):null; },0,"min");
+  let r=best(ms=>{ const g=gaps(ms).filter(d=>d>=5*MIN); return g.length?Math.min(...g):null; },0,"min");
   if(r) items.push(["⚡","Nejrychlejší pivo",r.who,'další pivo za <b>'+fmtDur(r.v)+'</b>']);
   r=best(ms=>new Set(ms.map(m=>evDay(m.t))).size,2);
   if(r) items.push(["🗓️","Nejvěrnější štamgast",r.who,'<b>'+r.v+'</b> '+(r.v>=5?"večerů":"večery")]);
