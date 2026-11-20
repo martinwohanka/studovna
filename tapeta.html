@@ -382,6 +382,21 @@ setInterval(tick,1000);
 // po probuzení počítače hned obnovit
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) refresh(); });
 tick(); refresh();
+
+// ---- samoaktualizace: jednou za 10 minut se podívá, jestli na webu není nová verze tapety ----
+// (Lively drží stránku otevřenou pořád, takže by se úpravy jinak projevily až po restartu)
+let VER_BASE=null;
+function verHash(t){ let h=0; for(let i=0;i<t.length;i++){ h=(h*31+t.charCodeAt(i))|0; } return h+":"+t.length; }
+async function checkUpdate(){
+  try{
+    const r=await fetch(location.origin+location.pathname+"?v="+Date.now(),{cache:"no-store"});
+    if(!r.ok) return;
+    const h=verHash(await r.text());
+    if(VER_BASE===null){ VER_BASE=h; return; }
+    if(h!==VER_BASE) location.replace(location.origin+location.pathname+"?t="+Date.now());   // nová verze → načíst znovu (obejde mezipaměť)
+  }catch(e){ /* bez sítě nebo spuštěno ze souboru – zkusí se příště */ }
+}
+checkUpdate(); setInterval(checkUpdate,10*60000);
 </script>
 </body>
 </html>
