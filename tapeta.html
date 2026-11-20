@@ -86,6 +86,22 @@
   .live i{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:blink 2s ease-in-out infinite}
   .live.off i{background:var(--red);box-shadow:0 0 10px var(--red);animation:none}
   @keyframes blink{50%{opacity:.35}}
+  /* medaile síně slávy po krajích */
+  .meds{position:absolute;top:268px;width:318px;display:flex;flex-direction:column;gap:14px}
+  .meds.l{left:26px}.meds.r{right:26px}
+  .meds .mt{font-size:14px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--txt-2);margin:0 0 2px 4px}
+  .meds.r .mt{text-align:right;margin:0 4px 2px 0}
+  .md{display:flex;gap:14px;align-items:center;padding:14px 16px;border:1px solid var(--line-2);border-radius:20px;
+    background:rgba(18,21,27,.72);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 18px 40px rgba(0,0,0,.4);
+    transition:transform .25s ease,border-color .25s ease;animation:mdIn .6s ease both}
+  .md:hover{transform:translateY(-4px) scale(1.02);border-color:rgba(245,185,66,.5)}
+  .md-ico{font-size:36px;line-height:1;flex:none}
+  .md>div{min-width:0}
+  .md-lbl{font-size:14px;color:var(--txt-2);font-weight:600;letter-spacing:.02em}
+  .md-who{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .md-val{font-size:15px;color:var(--txt-2);line-height:1.35}
+  .md-val b{color:var(--amber);font-weight:700}
+  @keyframes mdIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
   @media (prefers-reduced-motion:reduce){.bub,.kg-bub,.keg-alert,.live i,.kegbox.low .keg-gauge svg{animation:none}}
 </style>
 </head>
@@ -122,6 +138,9 @@
     <div class="when" id="sessionWhen"></div>
     <div class="keg-line" id="kegLine"></div>
   </section>
+
+  <div class="meds l" id="medL"></div>
+  <div class="meds r" id="medR"></div>
 
   <div class="foot">
     <a class="open" id="openApp" href="./" target="_blank" rel="noopener">🍺 Otevřít aplikaci</a>
@@ -226,7 +245,7 @@ addEventListener("resize",fit); fit();
   $("#bubs").innerHTML=h; })();
 
 // ---- data (jen čtení – stejné výpočty jako aplikace) ----
-let SESSION_OVERRIDE=null, KEG_START=null, KEG_NAME="", KEG_SIZE=0, TABS={}, PAY_CACHE=[], LAST_OK=0;
+let HALL_SINCE=null, SESSION_OVERRIDE=null, KEG_START=null, KEG_NAME="", KEG_SIZE=0, TABS={}, PAY_CACHE=[], LAST_OK=0;
 function nextWed(){ const now=new Date(), d=new Date(now); d.setDate(now.getDate()+((3-now.getDay()+7)%7)); d.setHours(18,0,0,0); if(d<=now) d.setDate(d.getDate()+7); return d; }
 function nextSession(){
   if(SESSION_OVERRIDE){ const d=new Date(String(SESSION_OVERRIDE).split("|")[0]);
@@ -236,7 +255,8 @@ function nextSession(){
 async function sel(period){ const {data,error}=await sb.from("suggestions").select("beer").eq("period",period).range(0,99999); if(error) throw error; return (data||[]).map(r=>r.beer); }
 async function loadAll(){
   if(!sb) throw new Error("bez spojení");
-  const [ses,keg,pays,tabs]=await Promise.all([sel("__session__"),sel("__keg__"),sel("__payment__"),sb.from("tabs").select("name,beers,marks")]);
+  const [ses,keg,pays,tabs,hall]=await Promise.all([sel("__session__"),sel("__keg__"),sel("__payment__"),sb.from("tabs").select("name,beers,marks"),sel("__hall_since__")]);
+  HALL_SINCE=parseInt(hall[0],10)||null;
   if(tabs.error) throw tabs.error;
   SESSION_OVERRIDE=ses[0]||null;
   if(keg[0]){ const s=String(keg[0]).trim();
@@ -276,6 +296,67 @@ function renderKeg(){
   setHTML(box.querySelector(".keg-info"),info);
   setKegLevel(box,st.size,Math.max(0,st.size-st.liters));
 }
+// ---- medaile síně slávy (stejný výpočet jako v aplikaci – kopie renderHallFun z index.html) ----
+const EVE_GAP=6*HOUR, PRICE=40;
+const plSmall=n=>n===1?"malé":(n>=2&&n<=4?"malá":"malých");
+const plDay=n=>n===1?"den":(n>=2&&n<=4?"dny":"dní");
+function fmtDur(ms){ const m=Math.round(ms/MIN), h=Math.floor(m/60); return h ? h+" h "+(m%60)+" min" : m+" min"; }
+function marksTotal(marks){ return (marks||[]).reduce((s,m)=>s+((m&&m.p)||PRICE),0); }
+function medalItems(pays,since){
+  // jméno → čárky od obnovy síně slávy: zaplacené i ty, co jsou zrovna rozpité na otevřených lístcích
+  // (jen čárky se známým časem; zaplacením se čárky z lístku přesunou do platby, takže se nepočítají dvakrát)
+  const per={}, add=(nm,m)=>{ if(m && m.t>0 && m.t>=since) (per[nm]||(per[nm]=[])).push(m); };
+  (pays||[]).forEach(r=>{ if(Array.isArray(r.mk)) r.mk.forEach(m=>add(r.name||"?",m)); });
+  Object.keys(TABS).forEach(n=>tabMarks(TABS[n]).forEach(m=>add(n,m)));
+  const best=(fn,minV,cmp)=>{ let w=null,v=null; Object.keys(per).sort((a,b)=>a.localeCompare(b,"cs")).forEach(n=>{
+      const x=fn(per[n].slice().sort((a,b)=>a.t-b.t)); if(x==null || x<minV) return;
+      if(v==null || (cmp==="min"?x<v:x>v)){ v=x; w=n; } }); return w?{who:w,v}:null; };
+  const gaps=ms=>{ const g=[]; for(let i=1;i<ms.length;i++){ const d=ms[i].t-ms[i-1].t; if(d<=EVE_GAP) g.push(d); } return g; };
+  const evDay=t=>{ const d=new Date(t-6*HOUR); return d.getFullYear()+"-"+d.getMonth()+"-"+d.getDate(); };
+  const items=[];
+  let r=best(ms=>{ const g=gaps(ms).filter(d=>d>=5*MIN); return g.length?Math.min(...g):null; },0,"min");
+  if(r) items.push(["⚡","Nejrychlejší pivo",r.who,'další pivo za <b>'+fmtDur(r.v)+'</b>']);
+  r=best(ms=>new Set(ms.map(m=>evDay(m.t))).size,2);
+  if(r) items.push(["🗓️","Nejvěrnější štamgast",r.who,'<b>'+r.v+'</b> '+(r.v>=5?"večerů":"večery")]);
+  r=best(ms=>ms.filter(m=>m.s==="small").length,1);
+  if(r) items.push(["🍼","Král malých piv",r.who,'<b>'+r.v+'</b> '+plSmall(r.v)]);
+  r=best(ms=>ms.filter(m=>{ const h=new Date(m.t).getHours(); return h>=0&&h<5; }).length,1);
+  if(r) items.push(["🦉","Noční sova",r.who,'<b>'+r.v+'</b> '+plBeer(r.v)+' po půlnoci']);
+  r=best(ms=>{ const g=gaps(ms); return g.length?Math.max(...g):null; },20*MIN);
+  if(r) items.push(["🚽","Nejdelší pauza na záchod",r.who,'<b>'+fmtDur(r.v)+'</b> bez piva']);
+  // večery jednoho člověka: evDay → seřazené čárky
+  const eves=ms=>{ const g={}; ms.forEach(m=>(g[evDay(m.t)]||(g[evDay(m.t)]=[])).push(m)); return Object.values(g); };
+  r=best(ms=>Math.max(...eves(ms).map(e=>e.length)),2);
+  if(r) items.push(["🍺","Rekord večera",r.who,'<b>'+r.v+'</b> '+plBeer(r.v)+' za jeden večer']);
+  // 🐢 Diesel: nejpomalejší průměrné tempo ve večerech, kdy dal aspoň 4 piva
+  r=best(ms=>{ const iv=eves(ms).filter(e=>e.length>=4).map(e=>(e[e.length-1].t-e[0].t)/(e.length-1));
+    return iv.length?iv.reduce((a,b)=>a+b,0)/iv.length:null; },0);
+  if(r) items.push(["🐢","Diesel",r.who,'v průměru pivo za <b>'+fmtDur(r.v)+'</b>']);
+  // 💸 Rychlý plátce: nejkratší průměrná doba od posledního piva na lístku po zaplacení
+  const payDelay={};
+  (pays||[]).forEach(r=>{ if(!Array.isArray(r.mk) || !r.ts || r.ts<since) return;
+    const last=Math.max(0,...r.mk.map(m=>(m&&m.t)||0)); if(!last || r.ts<last) return;
+    (payDelay[r.name||"?"]||(payDelay[r.name||"?"]=[])).push(r.ts-last); });
+  let fast=null;
+  Object.keys(payDelay).sort((a,b)=>a.localeCompare(b,"cs")).forEach(n=>{ const d=payDelay[n], v=d.reduce((a,b)=>a+b,0)/d.length;
+    if(!fast || v<fast.v) fast={who:n,v}; });
+  if(fast) items.push(["💸","Rychlý plátce",fast.who,'platí v průměru <b>'+(fast.v<MIN?"hned":fmtDur(fast.v))+'</b> po posledním pivu']);
+  // 🧾 Nejstarší dluh: kdo má na otevřeném lístku nejstarší nezaplacenou čárku
+  let debt=null;
+  Object.keys(TABS).forEach(n=>{ const ts=tabMarks(TABS[n]).map(m=>m&&m.t).filter(t=>t>0); if(!ts.length) return;
+    const t0=Math.min(...ts); if(!debt || t0<debt.t0) debt={who:n,t0,marks:tabMarks(TABS[n])}; });
+  if(debt){
+    const age=Date.now()-debt.t0, days=Math.floor(age/(24*HOUR)), c=debt.marks.length, kc=marksTotal(debt.marks);
+    items.push([days>=7?"🕸️":"🧾","Nejstarší dluh",debt.who,'nezaplaceno <b>'+(days>=1?days+" "+plDay(days):fmtDur(age))+'</b> · '+c+' '+plBeer(c)+' · '+kc+' Kč']);
+  }
+  return items;
+}
+function renderMedals(){
+  const items=medalItems(PAY_CACHE,HALL_SINCE||0), half=Math.ceil(items.length/2);
+  const card=([i,l,w,v],k)=>'<div class="md" style="animation-delay:'+(k*0.08).toFixed(2)+'s"><span class="md-ico">'+i+'</span><div><div class="md-lbl">'+l+'</div><div class="md-who">'+esc(w)+'</div><div class="md-val">'+v+'</div></div></div>';
+  setHTML($("#medL"), items.length ? '<div class="mt">🎖️ Medaile síně slávy</div>'+items.slice(0,half).map(card).join("") : "");
+  setHTML($("#medR"), items.length>1 ? '<div class="mt">🎖️ Medaile síně slávy</div>'+items.slice(half).map((x,k)=>card(x,k+half)).join("") : "");
+}
 function tick(){
   const t=nextSession(), diff=t-new Date();
   setHTML($("#sessionWhen"),'📅 <span class="sess-day">'+DAY_NAMES[t.getDay()]+'</span> '+t.getDate()+". "+(t.getMonth()+1)+". "+t.getFullYear()+" · "+p2(t.getHours())+":"+p2(t.getMinutes()));
@@ -289,14 +370,14 @@ function tick(){
 let busy=false, again=false;
 async function refresh(){
   if(busy){ again=true; return; } busy=true;
-  try{ await loadAll(); renderKeg(); }catch(e){ /* zkusí se znovu při dalším obnovení */ }
+  try{ await loadAll(); renderKeg(); renderMedals(); }catch(e){ /* zkusí se znovu při dalším obnovení */ }
   busy=false; tick(); if(again){ again=false; refresh(); }
 }
 // živé změny z databáze (čárka, platba, nový sud, změna termínu) + pojistka každou minutu
 let rtT=null;
 try{ const ch=sb.channel("tapeta"); ["tabs","suggestions"].forEach(t=>ch.on("postgres_changes",{event:"*",schema:"public",table:t},()=>{ clearTimeout(rtT); rtT=setTimeout(refresh,800); })); ch.subscribe(); }catch(e){}
 setInterval(refresh,60000);
-setInterval(()=>{ tick(); renderKeg(); },1000*30);
+setInterval(()=>{ tick(); renderKeg(); renderMedals(); },1000*30);
 setInterval(tick,1000);
 // po probuzení počítače hned obnovit
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) refresh(); });
