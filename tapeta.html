@@ -46,12 +46,13 @@
     background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;font-variant-numeric:tabular-nums}
   .when{font-size:27px;color:var(--txt-2)}
   .when .sess-day{color:var(--red);font-weight:700;text-transform:capitalize}
-  .keg-line{margin-top:30px;padding-top:30px;border-top:1px solid var(--line);font-size:22px;color:var(--txt-2);line-height:1.5}
+  .lower{margin-top:30px;padding-top:30px;border-top:1px solid var(--line);display:flex;justify-content:center;align-items:center;gap:36px}
+  .keg-line{font-size:20px;color:var(--txt-2);line-height:1.45;flex:1 1 auto;min-width:0}
   .keg-line:empty{display:none}
   .keg-line b{color:var(--amber);font-weight:700}
   .keg-when{color:var(--txt);font-weight:600;white-space:nowrap}
   .nw{white-space:nowrap}
-  .kegbox{display:grid;grid-template-columns:230px 1fr;gap:34px;align-items:center;text-align:left;max-width:820px;margin:0 auto}
+  .kegbox{display:grid;grid-template-columns:190px 1fr;gap:26px;align-items:center;text-align:left;max-width:820px;margin:0 auto}
   .keg-gauge svg{width:100%;height:auto;display:block;overflow:visible}
   .kg-liq,.kg-lvl{transition:transform 1.2s cubic-bezier(.3,.7,.2,1),opacity .3s ease}
   .kg-t1{stroke:rgba(255,255,255,.6);stroke-width:1.4}
@@ -67,9 +68,9 @@
   .kegbox.low .keg-gauge svg{animation:kegWobble 2.6s ease-in-out infinite;transform-origin:50% 100%}
   .kegbox.low .kg-bub{animation-duration:.9s}
   @keyframes kegWobble{0%,62%,100%{transform:rotate(0)}68%{transform:rotate(-3deg)}76%{transform:rotate(2.5deg)}84%{transform:rotate(-1.5deg)}92%{transform:rotate(.8deg)}}
-  .keg-info .kname{font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--amber);font-size:34px;line-height:1.2}
+  .keg-info .kname{font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--amber);font-size:30px;line-height:1.2}
   .keg-info .kmeta{margin-top:4px}
-  .keg-info .kleft{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:68px;line-height:1.1;margin-top:12px;color:var(--txt)}
+  .keg-info .kleft{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:54px;line-height:1.1;margin-top:12px;color:var(--txt)}
   .keg-info .kleft .kl-l,.keg-info .kleft span+span{font-size:.45em;font-weight:600;color:var(--txt-2)}
   .keg-info .kleft.keg-empty{color:var(--red)}
   .keg-info .kpace{margin-top:10px;color:var(--txt)}
@@ -79,13 +80,27 @@
   @keyframes kegPulse{0%,100%{opacity:1}50%{opacity:.62}}
 
   .foot{position:absolute;left:0;right:0;bottom:54px;display:flex;justify-content:center;align-items:center;gap:22px}
-  .open{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:20px;color:#0a0c10;background:var(--grad);border:none;border-radius:16px;
-    padding:15px 30px;cursor:pointer;text-decoration:none;transition:transform .18s,box-shadow .18s}
-  .open:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(232,118,45,.45)}
   .live{font-size:15px;color:rgba(176,184,194,.7);display:flex;align-items:center;gap:9px}
   .live i{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:blink 2s ease-in-out infinite}
   .live.off i{background:var(--red);box-shadow:0 0 10px var(--red);animation:none}
   @keyframes blink{50%{opacity:.35}}
+  /* koláč síně slávy v kartě vedle sudu (stejný jako v aplikaci) */
+  .hall-pie{flex:none;width:430px;padding-left:36px;border-left:1px solid var(--line);display:grid;grid-template-columns:170px 1fr;gap:16px;align-items:center;text-align:left}
+  .hall-pie[hidden]{display:none}
+  .hall-pie .hp-title{grid-column:1/-1;font-size:15px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--txt-2)}
+  .hall-pie svg{width:170px;height:170px;display:block;overflow:visible}
+  .hall-pie .hp-seg{cursor:pointer;transition:opacity .2s,transform .2s;transform-origin:95px 95px}
+  .hall-pie.hl .hp-seg{opacity:.35}
+  .hall-pie.hl .hp-seg.on{opacity:1;transform:scale(1.04)}
+  .hall-pie .hp-c1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:21px;fill:var(--txt)}
+  .hall-pie .hp-c2{font-size:11.5px;fill:var(--txt-2)}
+  .hp-legend{display:flex;flex-direction:column;gap:1px;min-width:0}
+  .hp-li{display:grid;grid-template-columns:12px 1fr auto;gap:8px;align-items:center;padding:4px 7px;border-radius:8px;cursor:pointer;font-size:15px}
+  .hp-li:hover,.hp-li.on{background:var(--card-2)}
+  .hp-sw{width:12px;height:12px;border-radius:4px}
+  .hp-nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--txt)}
+  .hp-v{font-family:'Space Grotesk',sans-serif;color:var(--txt-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .hp-v b{color:var(--txt);font-weight:700}
   /* medaile síně slávy po krajích */
   .meds{position:absolute;top:268px;width:318px;display:flex;flex-direction:column;gap:14px}
   .meds.l{left:26px}.meds.r{right:26px}
@@ -136,14 +151,16 @@
     <div class="lbl">Do dalšího meetingu zbývá</div>
     <div class="clock" id="clock">…</div>
     <div class="when" id="sessionWhen"></div>
-    <div class="keg-line" id="kegLine"></div>
+    <div class="lower">
+      <div class="keg-line" id="kegLine"></div>
+      <div class="hall-pie" id="hallPie" hidden></div>
+    </div>
   </section>
 
   <div class="meds l" id="medL"></div>
   <div class="meds r" id="medR"></div>
 
   <div class="foot">
-    <a class="open" id="openApp" href="./" target="_blank" rel="noopener">🍺 Otevřít aplikaci</a>
     <span class="live" id="live"><i></i><span id="liveTxt">načítám…</span></span>
   </div>
 </div>
@@ -351,6 +368,89 @@ function medalItems(pays,since){
   }
   return items;
 }
+// ---- koláč síně slávy (kopie hallPart / renderHallPie z index.html) ----
+function payCounts(r){ const small=r.small||0; return {small, large:(r.large!=null)?r.large:((r.beers||0)-small)}; }
+function hallCounts(r){
+  if(r.large!=null||r.small!=null) return {large:r.large||0, small:r.small||0};
+  return {large:Math.round(r.beers||0), small:0};
+}
+function hallPart(r,since){
+  const mk=Array.isArray(r.mk)?r.mk:[];
+  // Časy čárek použijeme, jen když jsou úplné (počet sedí a žádný chybí);
+  // jinak se jako dřív rozhoduje podle data platby
+  const exact = mk.length>0 && mk.length===(r.beers||mk.length) && mk.every(m=>m && m.t>0);
+  if(!exact){
+    if(since && (r.ts||0)<since) return null;
+    const c=payCounts(r); return {large:c.large, small:c.small, paid:r.amount||0};
+  }
+  const inn=mk.filter(m=>m.t>=since);
+  if(!inn.length) return null;
+  const small=inn.filter(m=>m.s==="small").length, large=inn.length-small;
+  // Útrata jen za piva od obnovy; u platby přes obnovu poměrem (malé = 0,6 velkého)
+  const w=arr=>arr.reduce((t,m)=>t+(m.s==="small"?0.6:1),0);
+  const paid = inn.length===mk.length ? (r.amount||0) : Math.round((r.amount||0)*w(inn)/w(mk));
+  return {large, small, paid};
+}
+let HP_SEL=null;   // vybraný (ťuknutý) výsek – jméno, přežije obnovení dat
+const HP_COLORS=["#3987e5","#d95926","#199e70","#c98500","#d55181","#9085e9"], HP_OTHER="#6b7280";
+function renderHallPie(h,names){
+  const box=$("#hallPie"); if(!box) return;
+  const total=names.reduce((t,n)=>t+(h[n].paid||0),0);
+  if(names.length<2 || total<=0){ box.hidden=true; box.innerHTML=""; return; }
+  let items=names.map((n,i)=>({name:n,val:h[n].paid||0,color:HP_COLORS[i]}));
+  if(items.length>HP_COLORS.length){
+    const rest=items.slice(HP_COLORS.length-1);
+    items=items.slice(0,HP_COLORS.length-1);
+    items.push({name:"ostatní ("+rest.length+")",val:rest.reduce((t,x)=>t+x.val,0),color:HP_OTHER});
+  }
+  items=items.filter(x=>x.val>0);
+  const C=95,R=86,RI=56, pct=v=>{ const p=v/total*100; return (p<1&&p>0?"<1":Math.round(p))+" %"; };
+  const pt=(a,r)=>[(C+r*Math.sin(a)).toFixed(2),(C-r*Math.cos(a)).toFixed(2)];
+  let a=0, segs="";
+  items.forEach((x,i)=>{
+    const da=x.val/total*Math.PI*2, a2=a+da, big=da>Math.PI?1:0;
+    let d;
+    if(da>=Math.PI*2-1e-6){   // jediný výsek = celý kruh
+      d=`M${C} ${C-R}A${R} ${R} 0 1 1 ${C-0.01} ${C-R}Z M${C} ${C-RI}A${RI} ${RI} 0 1 0 ${C+0.01} ${C-RI}Z`;
+    } else {
+      const [x1,y1]=pt(a,R),[x2,y2]=pt(a2,R),[x3,y3]=pt(a2,RI),[x4,y4]=pt(a,RI);
+      d=`M${x1} ${y1}A${R} ${R} 0 ${big} 1 ${x2} ${y2}L${x3} ${y3}A${RI} ${RI} 0 ${big} 0 ${x4} ${y4}Z`;
+    }
+    segs+=`<path class="hp-seg" data-i="${i}" d="${d}" fill="${x.color}" stroke="#131518" stroke-width="2" stroke-linejoin="round" fill-rule="evenodd"><title>${esc(x.name)}: ${x.val} Kč (${pct(x.val)})</title></path>`;
+    a=a2;
+  });
+  box.innerHTML=`<div class="hp-title">🥧 Kdo kolik propil</div>
+    <svg viewBox="0 0 190 190" role="img" aria-label="Koláčový graf podílu na útratě v síni slávy">${segs}
+      <text class="hp-c1" x="${C}" y="${C+4}" text-anchor="middle">${total} Kč</text>
+      <text class="hp-c2" x="${C}" y="${C+22}" text-anchor="middle">celkem</text></svg>
+    <div class="hp-legend">${items.map((x,i)=>`<div class="hp-li" data-i="${i}"><span class="hp-sw" style="background:${x.color}"></span><span class="hp-nm">${esc(x.name)}</span><span class="hp-v"><b>${pct(x.val)}</b> · ${x.val} Kč</span></div>`).join("")}</div>`;
+  box.hidden=false;
+  const c1=box.querySelector(".hp-c1"), c2=box.querySelector(".hp-c2");
+  const show=i=>{
+    box.classList.toggle("hl",i!=null);
+    box.querySelectorAll("[data-i]").forEach(el=>el.classList.toggle("on",el.dataset.i==String(i)));
+    if(i==null){ c1.textContent=total+" Kč"; c2.textContent="celkem"; }
+    else { const x=items[i]; c1.textContent=pct(x.val); c2.textContent=x.name.length>16?x.name.slice(0,15)+"…":x.name; }
+  };
+  let cur=items.findIndex(x=>x.name===HP_SEL); if(cur<0) cur=null;
+  box.querySelectorAll("[data-i]").forEach(el=>{
+    const i=+el.dataset.i;
+    el.addEventListener("mouseenter",()=>show(i));
+    el.addEventListener("mouseleave",()=>show(cur));
+    el.addEventListener("click",()=>{ cur=(cur===i?null:i); HP_SEL=cur==null?null:items[cur].name; show(cur); });   // ťuknutí na mobilu
+  });
+}
+function renderPie(){
+  const since=HALL_SINCE||0, h={};
+  PAY_CACHE.forEach(r=>{ const p=hallPart(r,since); if(!p || !(p.large+p.small)) return;
+    const x=h[r.name||"?"]||(h[r.name||"?"]={large:0,small:0,paid:0,beers:0});
+    x.large+=p.large; x.small+=p.small; x.paid+=p.paid; x.beers=Math.round((x.large+x.small*0.6)*10)/10; });
+  const cnt=n=>{ const c=hallCounts(h[n]); return c.large+c.small; };
+  const names=Object.keys(h).sort((a,b)=>(h[b].paid-h[a].paid)||(cnt(b)-cnt(a))||a.localeCompare(b,"cs"));
+  const key=JSON.stringify(names.map(n=>[n,h[n].paid]));
+  if(renderPie.key===key) return;   // bez změny nepřekreslovat (ať nezmizí zvýraznění pod myší)
+  renderPie.key=key; renderHallPie(h,names);
+}
 function renderMedals(){
   const items=medalItems(PAY_CACHE,HALL_SINCE||0), half=Math.ceil(items.length/2);
   const card=([i,l,w,v],k)=>'<div class="md" style="animation-delay:'+(k*0.08).toFixed(2)+'s"><span class="md-ico">'+i+'</span><div><div class="md-lbl">'+l+'</div><div class="md-who">'+esc(w)+'</div><div class="md-val">'+v+'</div></div></div>';
@@ -370,7 +470,7 @@ function tick(){
 let busy=false, again=false;
 async function refresh(){
   if(busy){ again=true; return; } busy=true;
-  try{ await loadAll(); renderKeg(); renderMedals(); }catch(e){ /* zkusí se znovu při dalším obnovení */ }
+  try{ await loadAll(); renderKeg(); renderMedals(); renderPie(); }catch(e){ /* zkusí se znovu při dalším obnovení */ }
   busy=false; tick(); if(again){ again=false; refresh(); }
 }
 // živé změny z databáze (čárka, platba, nový sud, změna termínu) + pojistka každou minutu
