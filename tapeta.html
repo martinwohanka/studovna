@@ -117,17 +117,6 @@
   .md-val{font-size:15px;color:var(--txt-2);line-height:1.35}
   .md-val b{color:var(--amber);font-weight:700}
   @keyframes mdIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-  /* dočasný vzkaz přes celou tapetu */
-  #hey{position:absolute;inset:0;z-index:50;display:none;align-items:center;justify-content:center;flex-direction:column;text-align:center;
-    background:radial-gradient(1100px 700px at 50% 50%,rgba(20,16,10,.82),rgba(10,12,16,.94));-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
-  #hey.on{display:flex;animation:heyIn 1.2s ease both}
-  #hey .h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:150px;letter-spacing:-.035em;line-height:1.02;
-    background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 20px 60px rgba(232,118,45,.35))}
-  #hey .h2{margin-top:34px;font-size:42px;color:var(--txt)}
-  #hey .h3{margin-top:18px;font-size:20px;letter-spacing:.2em;text-transform:uppercase;color:var(--txt-2)}
-  #hey .hl{animation:heyBounce 2.4s ease-in-out infinite}
-  @keyframes heyIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
-  @keyframes heyBounce{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-14px) rotate(-3deg)}}
   @media (prefers-reduced-motion:reduce){.bub,.kg-bub,.keg-alert,.live i,.kegbox.low .keg-gauge svg{animation:none}}
 </style>
 </head>
@@ -170,13 +159,6 @@
 
   <div class="meds l" id="medL"></div>
   <div class="meds r" id="medR"></div>
-
-  <div id="hey" aria-live="polite">
-    <div class="h1">inža, Ivo a Drobek</div>
-    <div class="h1 hl">jsou nejlepší!</div>
-    <div class="h2">🍻 🍺 🍺 🍺 🍻</div>
-    <div class="h3">Studovna u Drobka · od léta Páně 2019</div>
-  </div>
 
   <div class="foot">
     <span class="live" id="live"><i></i><span id="liveTxt">načítám…</span></span>
@@ -500,16 +482,6 @@ setInterval(tick,1000);
 // po probuzení počítače hned obnovit
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) refresh(); });
 tick(); refresh();
-
-// ---- dočasný vzkaz: 20 minut od chvíle, kdy si ho tapeta stáhne (nejpozději do HEY_MAX), pak zase běžná tapeta ----
-const HEY_FROM=1795278183719, HEY_LEN=20*MIN, HEY_MAX=HEY_FROM+35*MIN, PAGE_START=Date.now();
-function heyActive(){
-  const now=Date.now(); if(now<HEY_FROM || now>HEY_MAX) return false;
-  let fs=0; try{ fs=+localStorage.getItem("studovna_hey1")||0; if(!fs){ fs=now; localStorage.setItem("studovna_hey1",String(fs)); } }catch(e){ fs=PAGE_START; }
-  return now<fs+HEY_LEN;
-}
-function heyTick(){ $("#hey").classList.toggle("on",heyActive()); }
-heyTick(); setInterval(heyTick,15000);
 
 // ---- samoaktualizace: jednou za 10 minut se podívá, jestli na webu není nová verze tapety ----
 // (Lively drží stránku otevřenou pořád, takže by se úpravy jinak projevily až po restartu)
