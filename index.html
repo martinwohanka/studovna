@@ -327,15 +327,16 @@
   /* velký nápis přes obrazovku (jubilejní pivo, padlý sud) */
   .celeb{position:fixed;left:50%;top:38%;z-index:310;pointer-events:none;text-align:center;width:min(92vw,440px);
     transform:translate(-50%,-50%);background:rgba(14,16,21,.94);border:1px solid rgba(245,185,66,.55);border-radius:var(--r-lg);
-    padding:20px 22px;box-shadow:0 24px 70px rgba(0,0,0,.6),0 0 0 6px rgba(245,185,66,.08);animation:celebIn 2.9s ease forwards}
+    padding:20px 22px;box-shadow:0 24px 70px rgba(0,0,0,.6),0 0 0 6px rgba(245,185,66,.08);animation:celebIn 7s ease forwards}
   .celeb .ce-big{font-size:46px;line-height:1.1}
   .celeb .ce-t{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(22px,6vw,28px);margin-top:6px;
     background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
   .celeb .ce-s{color:var(--txt-2);margin-top:4px;font-size:15px}
   .celeb.rip{border-color:rgba(176,184,194,.5)}
   .celeb.rip .ce-t{background:none;color:var(--txt)}
-  @keyframes celebIn{0%{opacity:0;transform:translate(-50%,-50%) scale(.6) rotate(-6deg)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.06) rotate(1deg)}
-    20%{transform:translate(-50%,-50%) scale(1) rotate(0)}85%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-60%) scale(.96)}}
+  /* nápis je vidět 7 s: náběh ~0,35 s, pak drží, na konci ~0,5 s mizí */
+  @keyframes celebIn{0%{opacity:0;transform:translate(-50%,-50%) scale(.6) rotate(-6deg)}5%{opacity:1;transform:translate(-50%,-50%) scale(1.06) rotate(1deg)}
+    8%{transform:translate(-50%,-50%) scale(1) rotate(0)}93%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-60%) scale(.96)}}
   /* živý sud: pod 20 % se klinká a víc bublá */
   .kegbox.low .keg-gauge svg{animation:kegWobble 2.6s ease-in-out infinite;transform-origin:50% 100%}
   .kegbox.low .kg-bub{animation-duration:.9s}
@@ -369,11 +370,11 @@
   .wheel-res b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
   @media (prefers-reduced-motion:reduce){
     .confetti{display:none}
-    .celeb{animation:celebFade 2.9s ease forwards}
+    .celeb{animation:celebFade 7s ease forwards}
     .kegbox.low .keg-gauge svg{animation:none}
     .wheel-rot{transition-duration:.6s}
   }
-  @keyframes celebFade{0%{opacity:0}10%,85%{opacity:1}100%{opacity:0}}
+  @keyframes celebFade{0%{opacity:0}5%,93%{opacity:1}100%{opacity:0}}
   .pourwrap{position:fixed;z-index:200;pointer-events:none;transform:translate(-50%,-50%);animation:pourFloat 1s ease-out forwards}
   .pourwrap .beer{transform:scaleY(0);transform-origin:center bottom;animation:pourFill .5s ease-out forwards}
   .pourwrap .foam{opacity:0;animation:pourFoam .35s ease-out .42s forwards}
@@ -2547,7 +2548,7 @@ function celebrate(big,title,sub,cls){
   document.querySelectorAll(".celeb").forEach(e=>e.remove());
   const d=document.createElement("div"); d.className="celeb"+(cls?" "+cls:""); d.setAttribute("role","status");
   d.innerHTML='<div class="ce-big">'+big+'</div><div class="ce-t">'+esc(title)+'</div>'+(sub?'<div class="ce-s">'+esc(sub)+'</div>':'');
-  document.body.appendChild(d); setTimeout(()=>d.remove(),3000);
+  document.body.appendChild(d); setTimeout(()=>d.remove(),7100);
 }
 
 // ---- 1) jubilejní pivo večera ----
@@ -2710,7 +2711,7 @@ $("#wheelModal").addEventListener("click",e=>{ if(e.target.id==="wheelModal" && 
 // Tituly a tempo závisí na čase – jednou za minutu překreslit (bez sítě)
 setInterval(()=>{ if(document.hidden) return; drawTabs(); renderKeg(false); }, 60000);
 
-const APP_VERSION_CODE = "v1.50";
+const APP_VERSION_CODE = "v1.51";
 const CHANGELOG_URL = "changelog.json";
 let CHANGELOG = [], APP_VERSION = APP_VERSION_CODE;
 async function loadChangelog(){
