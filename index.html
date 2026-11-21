@@ -2659,10 +2659,10 @@ function renderHallFun(pays,since){
 
 // ---- 8) kolo štěstí: kdo platí rundu ----
 let WHEEL={names:[],rot:0,busy:false};
+// Jen kdo zrovna pije: má na lístku čárku z dnešního večera (poslední čárka před méně než 6 h).
+// Staré nezaplacené lístky z minulých večerů do kola nepatří.
 function wheelNames(){
-  const all=Object.keys(TABS).sort((a,b)=>a.localeCompare(b,"cs"));
-  const drinking=all.filter(n=>tonight(tabMarks(TABS[n])).length);
-  return drinking.length>=2 ? drinking : all;
+  return Object.keys(TABS).sort((a,b)=>a.localeCompare(b,"cs")).filter(n=>tonight(tabMarks(TABS[n])).length);
 }
 function wheelSVG(names){
   const n=names.length, C=150, R=146, seg=360/n, cols=HP_COLORS;
@@ -2681,7 +2681,7 @@ function wheelSVG(names){
 }
 function openWheel(){
   const names=wheelNames();
-  if(names.length<2){ toast("Na kolo štěstí jsou potřeba aspoň dva lístky 🎡"); return; }
+  if(names.length<2){ toast("Na kolo štěstí jsou potřeba aspoň dva lidi, kteří dnes pijí 🎡"); return; }
   WHEEL.names=names; WHEEL.rot=0; WHEEL.busy=false;
   $("#wheelSvg").innerHTML=wheelSVG(names); $("#wheelRes").textContent=""; $("#wheelSpin").disabled=false;
   $("#wheelModal").style.display="flex";
@@ -2711,7 +2711,7 @@ $("#wheelModal").addEventListener("click",e=>{ if(e.target.id==="wheelModal" && 
 // Tituly a tempo závisí na čase – jednou za minutu překreslit (bez sítě)
 setInterval(()=>{ if(document.hidden) return; drawTabs(); renderKeg(false); }, 60000);
 
-const APP_VERSION_CODE = "v1.51";
+const APP_VERSION_CODE = "v1.52";
 const CHANGELOG_URL = "changelog.json";
 let CHANGELOG = [], APP_VERSION = APP_VERSION_CODE;
 async function loadChangelog(){
