@@ -172,9 +172,9 @@
   <div class="meds r" id="medR"></div>
 
   <div id="hey" aria-live="polite">
-    <div class="h1">Vítej,</div>
-    <div class="h1 hl">Věrko!</div>
-    <div class="h2">👋 🍻 🍺 🍻 👋</div>
+    <div class="h1">Pecháček přišel,</div>
+    <div class="h1 hl">hurá!</div>
+    <div class="h2">🎉 🍻 🥳 🍻 🎉</div>
     <div class="h3">Studovna u Drobka · od léta Páně 2019</div>
   </div>
 
@@ -501,11 +501,11 @@ setInterval(tick,1000);
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) refresh(); });
 tick(); refresh();
 
-// ---- dočasný vzkaz: 10 minut od chvíle, kdy si ho tapeta stáhne (nejpozději do HEY_MAX), pak zase běžná tapeta ----
-const HEY_FROM=1795543948166, HEY_LEN=10*MIN, HEY_MAX=HEY_FROM+25*MIN, PAGE_START=Date.now();
+// ---- dočasný vzkaz: 5 minut od chvíle, kdy si ho tapeta stáhne (nejpozději do HEY_MAX), pak zase běžná tapeta ----
+const HEY_FROM=1795550142003, HEY_LEN=5*MIN, HEY_MAX=HEY_FROM+16*MIN, PAGE_START=Date.now();
 function heyActive(){
   const now=Date.now(); if(now<HEY_FROM || now>HEY_MAX) return false;
-  let fs=0; try{ fs=+localStorage.getItem("studovna_hey2")||0; if(!fs){ fs=now; localStorage.setItem("studovna_hey2",String(fs)); } }catch(e){ fs=PAGE_START; }
+  let fs=0; try{ fs=+localStorage.getItem("studovna_hey3")||0; if(!fs){ fs=now; localStorage.setItem("studovna_hey3",String(fs)); } }catch(e){ fs=PAGE_START; }
   return now<fs+HEY_LEN;
 }
 function heyTick(){ $("#hey").classList.toggle("on",heyActive()); }
