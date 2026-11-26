@@ -117,6 +117,36 @@
   .md-val{font-size:15px;color:var(--txt-2);line-height:1.35}
   .md-val b{color:var(--amber);font-weight:700}
   @keyframes mdIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  /* kolo štěstí: ikonka vpravo nahoře, kolo přes celou tapetu */
+  .wbtn{position:absolute;top:78px;right:64px;z-index:20;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;
+    background:none;border:0;color:var(--txt-2);font:600 13px Inter,sans-serif;letter-spacing:.16em;text-transform:uppercase}
+  .wbtn span{width:92px;height:92px;border-radius:50%;display:grid;place-items:center;font-size:50px;line-height:1;
+    border:1px solid var(--line-2);background:rgba(18,21,27,.72);box-shadow:0 18px 40px rgba(0,0,0,.4);transition:transform .5s ease,border-color .25s ease}
+  .wbtn:hover span{transform:rotate(-90deg) scale(1.06);border-color:rgba(245,185,66,.55)}
+  .wbtn:hover{color:var(--amber)}
+  #wheel{position:absolute;inset:0;z-index:60;display:none;align-items:center;justify-content:center;flex-direction:column;
+    background:rgba(6,8,11,.82);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+  #wheel.on{display:flex;animation:heyIn .5s ease both}
+  #wheel .wt{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:54px;letter-spacing:-.02em}
+  #wheel .wh{margin-top:8px;font-size:19px;color:var(--txt-2)}
+  .wwrap{position:relative;width:600px;height:600px;margin-top:26px}
+  .wwrap svg{width:100%;height:100%;display:block}
+  .wrot{transform-origin:150px 150px;transition:transform 4.6s cubic-bezier(.12,.72,.12,1)}
+  .wptr{position:absolute;left:50%;top:-12px;transform:translateX(-50%);width:0;height:0;border-left:24px solid transparent;
+    border-right:24px solid transparent;border-top:44px solid var(--amber);filter:drop-shadow(0 4px 6px rgba(0,0,0,.6));z-index:2}
+  .wres{min-height:60px;margin-top:22px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:44px}
+  .wres b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .wact{display:flex;gap:18px;margin-top:14px}
+  .wact button{cursor:pointer;font:700 22px 'Space Grotesk',sans-serif;padding:16px 34px;border-radius:16px;border:1px solid var(--line-2);
+    background:rgba(255,255,255,.05);color:var(--txt);transition:transform .2s ease}
+  .wact button:hover{transform:translateY(-2px)}
+  .wact .go{background:var(--grad);color:#1a1206;border-color:transparent}
+  .wact button:disabled{opacity:.5;cursor:default;transform:none}
+  .wempty{margin-top:34px;font-size:26px;color:var(--txt-2);max-width:760px;text-align:center;line-height:1.4}
+  .wconf{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:61}
+  .wconf i{position:absolute;top:-20px;width:14px;height:22px;border-radius:3px;animation:wcf linear forwards}
+  @keyframes wcf{to{transform:translate(var(--dx),1140px) rotate(var(--rot));opacity:.9}}
+  @media (prefers-reduced-motion:reduce){.wrot{transition-duration:.6s}.wconf{display:none}}
   /* dočasný vzkaz přes celou tapetu */
   #hey{position:absolute;inset:0;z-index:50;display:none;align-items:center;justify-content:center;flex-direction:column;text-align:center;
     background:radial-gradient(1100px 700px at 50% 50%,rgba(20,16,10,.82),rgba(10,12,16,.94));-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
@@ -170,6 +200,14 @@
 
   <div class="meds l" id="medL"></div>
   <div class="meds r" id="medR"></div>
+
+  <button class="wbtn" id="wheelBtn" type="button" title="Kolo štěstí – kdo platí rundu?"><span>🎡</span>Kolo štěstí</button>
+  <div id="wheel" role="dialog" aria-label="Kolo štěstí">
+    <div class="wt">🎡 Kdo platí rundu?</div>
+    <div class="wh">Kolo vybere náhodně z lidí, kteří dnes pijí. Jen pro zábavu – nic se neúčtuje.</div>
+    <div id="wheelBody"></div>
+    <div class="wact"><button id="wheelClose" type="button">Zavřít</button><button class="go" id="wheelSpin" type="button">Roztočit 🎲</button></div>
+  </div>
 
   <div id="hey" aria-live="polite">
     <div class="h1">Pecháček přišel,</div>
@@ -510,6 +548,74 @@ setInterval(tick,1000);
 // po probuzení počítače hned obnovit
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) refresh(); });
 tick(); refresh();
+
+// ---- kolo štěstí (stejné jako v aplikaci): jen kdo zrovna pije – čárka z dnešního večera ----
+function tonight(marks,now){
+  now=now||Date.now();
+  const ts=(marks||[]).map(m=>m&&m.t).filter(t=>t>0).sort((a,b)=>a-b);
+  if(!ts.length || now-ts[ts.length-1]>EVE_GAP) return [];
+  let i=ts.length-1; while(i>0 && ts[i]-ts[i-1]<=EVE_GAP) i--;
+  return (marks||[]).filter(m=>m && m.t>=ts[i]);
+}
+let WHEEL={names:[],rot:0,busy:false,closeT:null};
+function wheelNames(){ return Object.keys(TABS).sort((a,b)=>a.localeCompare(b,"cs")).filter(n=>tonight(tabMarks(TABS[n])).length); }
+function wheelSVG(names){
+  const n=names.length, C=150, R=146, seg=360/n, cols=HP_COLORS;
+  const pt=a=>[(C+R*Math.sin(a*Math.PI/180)).toFixed(2),(C-R*Math.cos(a*Math.PI/180)).toFixed(2)];
+  let g="";
+  names.forEach((nm,i)=>{
+    let col=cols[i%cols.length]; if(i===n-1 && n>1 && i%cols.length===0) col=cols[2];   // ať nesousedí dvě stejné barvy
+    const a1=i*seg, a2=a1+seg, [x1,y1]=pt(a1), [x2,y2]=pt(a2);
+    g+='<path d="M'+C+' '+C+'L'+x1+' '+y1+'A'+R+' '+R+' 0 '+(seg>180?1:0)+' 1 '+x2+' '+y2+'Z" fill="'+col+'" stroke="#12151b" stroke-width="2"/>';
+    const label=nm.length>14?nm.slice(0,13)+"…":nm, mid=a1+seg/2, left=mid>180;   // v levé polovině text otočit, ať není vzhůru nohama
+    g+='<text transform="rotate('+(left?mid+90:mid-90).toFixed(2)+' '+C+' '+C+')" x="'+(left?C-R+12:C+R-12)+'" y="'+(C+5)+'" text-anchor="'+(left?"start":"end")+'" fill="#fff" font-family="Space Grotesk,sans-serif" font-weight="700" font-size="'+(n>8?12:15)+'">'+esc(label)+'</text>';
+  });
+  return '<svg viewBox="0 0 300 300" role="img" aria-label="Kolo štěstí"><g class="wrot" id="wheelRot" style="transform:rotate('+WHEEL.rot+'deg)">'+g+'</g>'
+    +'<circle cx="'+C+'" cy="'+C+'" r="20" fill="#12151b" stroke="rgba(255,255,255,.25)" stroke-width="2"/><text x="'+C+'" y="'+(C+7)+'" text-anchor="middle" font-size="19">🍺</text></svg>';
+}
+function wheelAutoClose(){ clearTimeout(WHEEL.closeT); WHEEL.closeT=setTimeout(()=>{ if(!WHEEL.busy) closeWheel(); },3*MIN); }   // ať na ploše nezůstane viset
+function openWheel(){
+  const names=wheelNames(); WHEEL.names=names; WHEEL.rot=0; WHEEL.busy=false;
+  if(names.length<2){
+    $("#wheelBody").innerHTML='<div class="wempty">Na kolo štěstí jsou potřeba aspoň dva lidi, kteří dnes pijí 🍺<br>Až se u stolu sejdete, zkuste to znovu.</div>';
+    $("#wheelSpin").hidden=true;
+  }else{
+    $("#wheelBody").innerHTML='<div class="wwrap"><div class="wptr"></div>'+wheelSVG(names)+'</div><div class="wres" id="wheelRes" aria-live="polite"></div>';
+    $("#wheelSpin").hidden=false; $("#wheelSpin").disabled=false;
+  }
+  $("#wheel").classList.add("on"); wheelAutoClose();
+}
+function closeWheel(){ clearTimeout(WHEEL.closeT); $("#wheel").classList.remove("on"); }
+function wheelConfetti(){
+  const box=document.createElement("div"), cols=["#f5b942","#e8762d","#3987e5","#199e70","#d55181","#9085e9","#fff6e2"];
+  box.className="wconf";
+  for(let i=0;i<110;i++){ const c=document.createElement("i");
+    c.style.left=(Math.random()*100)+"%"; c.style.background=cols[i%cols.length];
+    c.style.setProperty("--dx",(Math.random()*240-120).toFixed(0)+"px"); c.style.setProperty("--rot",(Math.random()*900-450).toFixed(0)+"deg");
+    c.style.animationDuration=(2+Math.random()*1.6).toFixed(2)+"s"; c.style.animationDelay=(Math.random()*.5).toFixed(2)+"s";
+    if(i%3===0){ c.style.width="11px"; c.style.height="11px"; c.style.borderRadius="50%"; }
+    box.appendChild(c); }
+  $("#wheel").appendChild(box); setTimeout(()=>box.remove(),4500);
+}
+function spinWheel(){
+  if(WHEEL.busy || WHEEL.names.length<2) return; WHEEL.busy=true;
+  const n=WHEEL.names.length, seg=360/n, win=Math.floor(Math.random()*n);
+  const jitter=(Math.random()*0.7-0.35)*seg, target=360-(win*seg+seg/2)+jitter;   // výherní výsek pod šipkou nahoře
+  WHEEL.rot=WHEEL.rot-(WHEEL.rot%360)+360*6+((target%360)+360)%360;
+  $("#wheelRes").textContent="Točí se… 🤞"; $("#wheelSpin").disabled=true;
+  $("#wheelRot").style.transform="rotate("+WHEEL.rot+"deg)";
+  let reduce=false; try{ reduce=matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){}
+  setTimeout(()=>{
+    WHEEL.busy=false; $("#wheelSpin").disabled=false;
+    $("#wheelRes").innerHTML='🍻 Rundu platí <b>'+esc(WHEEL.names[win])+'</b>!';
+    if(!reduce) wheelConfetti(); wheelAutoClose();
+  }, reduce?700:4700);
+}
+$("#wheelBtn").onclick=openWheel;
+$("#wheelSpin").onclick=spinWheel;
+$("#wheelClose").onclick=closeWheel;
+$("#wheel").addEventListener("click",e=>{ if(e.target.id==="wheel" && !WHEEL.busy) closeWheel(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape" && !WHEEL.busy) closeWheel(); });
 
 // ---- dočasný vzkaz: 5 minut od chvíle, kdy si ho tapeta stáhne (nejpozději do HEY_MAX), pak zase běžná tapeta ----
 const HEY_FROM=1795550142003, HEY_LEN=5*MIN, HEY_MAX=HEY_FROM+16*MIN, PAGE_START=Date.now();
