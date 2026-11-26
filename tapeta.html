@@ -357,6 +357,16 @@ function medalItems(pays,since){
   if(r) items.push(["🍼","Král malých piv",r.who,'<b>'+r.v+'</b> '+plSmall(r.v)]);
   r=best(ms=>ms.filter(m=>{ const h=new Date(m.t).getHours(); return h>=0&&h<5; }).length,1);
   if(r) items.push(["🦉","Noční sova",r.who,'<b>'+r.v+'</b> '+plBeer(r.v)+' po půlnoci']);
+  // 🌅 / 🌃 nejdřívější a nejpozdější pivo dne podle hodin. Den začíná v 6:00 ráno, takže pivo
+  // v 1:30 po půlnoci je „pozdní“ (patří k předchozímu večeru), ne „ranní“.
+  const dayPos=t=>{ const d=new Date(t-6*HOUR); return d.getHours()*60+d.getMinutes()+d.getSeconds()/60; };
+  const atTxt=t=>{ const d=new Date(t); return '<b>'+d.getHours()+':'+p2(d.getMinutes())+'</b> ('+d.getDate()+'. '+(d.getMonth()+1)+'.)'; };
+  let early=null, late=null;
+  Object.keys(per).sort((a,b)=>a.localeCompare(b,"cs")).forEach(n=>per[n].forEach(m=>{ const v=dayPos(m.t);
+    if(!early || v<early.v) early={who:n,v,t:m.t};
+    if(!late || v>late.v) late={who:n,v,t:m.t}; }));
+  if(early) items.push(["🌅","Nejdřívější pivo dne",early.who,'pivo už v '+atTxt(early.t)]);
+  if(late && (!early || late.t!==early.t)) items.push(["🌃","Nejpozdější pivo dne",late.who,'pivo ještě v '+atTxt(late.t)]);
   r=best(ms=>{ const g=gaps(ms); return g.length?Math.max(...g):null; },20*MIN);
   if(r) items.push(["🚽","Nejdelší pauza na záchod",r.who,'<b>'+fmtDur(r.v)+'</b> bez piva']);
   // večery jednoho člověka: evDay → seřazené čárky
