@@ -79,7 +79,7 @@
     border:1px solid rgba(255,107,107,.35);animation:kegPulse 1.6s ease-in-out infinite}
   @keyframes kegPulse{0%,100%{opacity:1}50%{opacity:.62}}
 
-  .foot{position:absolute;left:0;right:0;bottom:54px;display:flex;justify-content:center;align-items:center;gap:22px}
+  .foot{position:absolute;left:0;right:0;bottom:16px;display:flex;justify-content:center;align-items:center;gap:22px}
   .live{font-size:15px;color:rgba(176,184,194,.7);display:flex;align-items:center;gap:9px}
   .live i{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:blink 2s ease-in-out infinite}
   .live.off i{background:var(--red);box-shadow:0 0 10px var(--red);animation:none}
@@ -147,6 +147,19 @@
   .wconf i{position:absolute;top:-20px;width:14px;height:22px;border-radius:3px;animation:wcf linear forwards}
   @keyframes wcf{to{transform:translate(var(--dx),1140px) rotate(var(--rot));opacity:.9}}
   @media (prefers-reduced-motion:reduce){.wrot{transition-duration:.6s}.wconf{display:none}}
+  /* kdo dnes pije – kartičky pod hlavní dlaždicí */
+  .drink{position:absolute;left:50%;top:900px;transform:translateX(-50%);width:1180px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px 12px}
+  .drink:empty{display:none}
+  .drink .dt{font-size:14px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--txt-2);margin-right:6px}
+  .dk{display:flex;align-items:center;gap:12px;padding:9px 18px 9px 16px;border:1px solid var(--line-2);border-radius:16px;
+    background:rgba(18,21,27,.72);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 14px 30px rgba(0,0,0,.35);
+    transition:transform .25s ease,border-color .25s ease;animation:mdIn .6s ease both}
+  .dk:hover{transform:translateY(-3px);border-color:rgba(245,185,66,.5)}
+  .dk.top{border-color:rgba(245,185,66,.55);box-shadow:0 14px 30px rgba(0,0,0,.35),0 0 24px rgba(245,185,66,.15)}
+  .dk-nm{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:21px;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dk-n{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:24px;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;font-variant-numeric:tabular-nums}
+  .dk-u{font-size:15px;color:var(--txt-2);margin-left:-6px}
+  .drink.many .dk{padding:5px 13px 5px 12px;gap:9px;border-radius:13px}.drink.many .dk-nm{font-size:18px;max-width:150px}.drink.many .dk-n{font-size:20px}
   /* dočasný vzkaz přes celou tapetu */
   #hey{position:absolute;inset:0;z-index:50;display:none;align-items:center;justify-content:center;flex-direction:column;text-align:center;
     background:radial-gradient(1100px 700px at 50% 50%,rgba(20,16,10,.82),rgba(10,12,16,.94));-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
@@ -197,6 +210,8 @@
       <div class="hall-pie" id="hallPie" hidden></div>
     </div>
   </section>
+
+  <div class="drink" id="drink" aria-live="polite"></div>
 
   <div class="meds l" id="medL"></div>
   <div class="meds r" id="medR"></div>
@@ -536,14 +551,14 @@ function tick(){
 let busy=false, again=false;
 async function refresh(){
   if(busy){ again=true; return; } busy=true;
-  try{ await loadAll(); renderKeg(); renderMedals(); renderPie(); }catch(e){ /* zkusí se znovu při dalším obnovení */ }
+  try{ await loadAll(); renderKeg(); renderMedals(); renderPie(); renderDrinkers(); }catch(e){ /* zkusí se znovu při dalším obnovení */ }
   busy=false; tick(); if(again){ again=false; refresh(); }
 }
 // živé změny z databáze (čárka, platba, nový sud, změna termínu) + pojistka každou minutu
 let rtT=null;
 try{ const ch=sb.channel("tapeta"); ["tabs","suggestions"].forEach(t=>ch.on("postgres_changes",{event:"*",schema:"public",table:t},()=>{ clearTimeout(rtT); rtT=setTimeout(refresh,800); })); ch.subscribe(); }catch(e){}
 setInterval(refresh,60000);
-setInterval(()=>{ tick(); renderKeg(); renderMedals(); },1000*30);
+setInterval(()=>{ tick(); renderKeg(); renderMedals(); renderDrinkers(); },1000*30);
 setInterval(tick,1000);
 // po probuzení počítače hned obnovit
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) refresh(); });
@@ -616,6 +631,23 @@ $("#wheelSpin").onclick=spinWheel;
 $("#wheelClose").onclick=closeWheel;
 $("#wheel").addEventListener("click",e=>{ if(e.target.id==="wheel" && !WHEEL.busy) closeWheel(); });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape" && !WHEEL.busy) closeWheel(); });
+
+// ---- kdo dnes pije: kartičky pod hlavní dlaždicí (počet piv za dnešní večer, i když část už zaplatil) ----
+const normName=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/\s+/g," ").trim();
+function personMarks(name){
+  const out=tabMarks(TABS[name]).slice(), key=normName(name);
+  (PAY_CACHE||[]).forEach(r=>{ if(normName(r.name)===key && Array.isArray(r.mk)) r.mk.forEach(m=>{ if(m&&m.t) out.push(m); }); });
+  return out;
+}
+function renderDrinkers(){
+  const box=$("#drink"), list=wheelNames().map(n=>({n,c:tonight(personMarks(n)).length})).sort((a,b)=>b.c-a.c||a.n.localeCompare(b.n,"cs"));
+  if(!list.length){ setHTML(box,""); return; }
+  const top=list[0].c;
+  setHTML(box,'<span class="dt">🍻 Dnes pijí</span>'+list.map((x,k)=>'<div class="dk'+(x.c===top&&list.length>1?' top':'')+'" style="animation-delay:'+(k*0.06).toFixed(2)+'s"><span class="dk-nm">'+esc(x.n)+'</span><span class="dk-n">'+x.c+'</span><span class="dk-u">'+plBeer(x.c)+'</span></div>').join(""));
+  box.classList.toggle("many",list.length>6);
+  // hned pod hlavní dlaždici (její výška se mění podle sudu a koláče)
+  const c=document.querySelector(".count"); if(c) box.style.top=(c.offsetTop+c.offsetHeight+16)+"px";
+}
 
 // ---- dočasný vzkaz: 5 minut od chvíle, kdy si ho tapeta stáhne (nejpozději do HEY_MAX), pak zase běžná tapeta ----
 const HEY_FROM=1795550142003, HEY_LEN=5*MIN, HEY_MAX=HEY_FROM+16*MIN, PAGE_START=Date.now();
